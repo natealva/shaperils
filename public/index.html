@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shayprils â Every. Single. Day.</title>
+  <title>Shayprils &mdash; Every. Single. Weekday.</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>ðº</text></svg>">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
@@ -417,7 +417,7 @@
     <div class="header">
       <div class="logo">Shayprils</div>
       <div class="tagline">Rally the crew to Shays</div>
-      <div class="month-badge">April 2026 â Every. Single. Day.</div>
+      <div class="month-badge">April 2026 &mdash; Every. Single. Weekday.</div>
     </div>
     <div class="card" style="margin-top: 24px;">
       <div class="card-title"><span class="icon icon-brick">S</span> Sign In</div>
@@ -507,7 +507,7 @@
         </button>
         <button class="msg-btn" onclick="sendMessage('solo_join')">
           <span class="msg-icon">1</span>
-          <div><span class="btn-label">Going solo â please join!</span>
+          <div><span class="btn-label">Going solo &mdash; please join!</span>
           <span class="btn-desc">Flying solo and want company</span></div>
         </button>
         <button class="msg-btn" onclick="toggleEl('companionBox')">
@@ -525,7 +525,7 @@
         <button class="msg-btn" onclick="sendMessage('who_wants')">
           <span class="msg-icon">?</span>
           <div><span class="btn-label">Who wants to go to Shays?</span>
-          <span class="btn-desc">Rally the troops â see who's down</span></div>
+          <span class="btn-desc">Rally the troops &mdash; see who's down</span></div>
         </button>
         <button class="msg-btn" onclick="toggleEl('customBox')">
           <span class="msg-icon">...</span>
@@ -542,7 +542,7 @@
     <!-- CALENDAR TAB -->
     <div id="tab-calendar" class="tab-content">
       <div class="card">
-        <div class="card-title"><span class="icon icon-brown">A</span> April 2026 â Attendance</div>
+        <div class="card-title"><span class="icon icon-brown">A</span> April 2026 &mdash; Attendance</div>
         <div id="calUserSelect" class="cal-user-select"></div>
         <div class="cal-grid">
           <div class="cal-header">Mon</div><div class="cal-header">Tue</div>
@@ -1056,7 +1056,7 @@ async function loadVouchRequests() {
           <div class="vouch-header">${escapeHtml(v.requester_name)} needs a vouch</div>
           <div class="vouch-detail">Claims they were at Shays on  ${formatted}</div>
           <div class="vouch-actions">
-            <button class="btn btn-green" onclick="approveVouch('${v.id}')">I was there â vouch for them</button>
+            <button class="btn btn-green" onclick="approveVouch('${v.id}')">I was there &mdash; vouch for them</button>
           </div>
         </div>`;
       }).join('');
@@ -1131,7 +1131,7 @@ async function loadAlbum() {
 
 function openLightbox(src, name, date) {
   document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightboxInfo').textContent = name + ' â ' + date;
+  document.getElementById('lightboxInfo').textContent = name + ' &mdash; ' + date;
   document.getElementById('lightbox').classList.add('visible');
 }
 
