@@ -707,6 +707,7 @@ function showApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('userNameDisplay').textContent = currentUser.name;
+    document.getElementById("adminNavBtn").style.display = "";
   checkTodayCheckin();
 }
 
