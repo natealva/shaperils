@@ -8,6 +8,7 @@ const store = require('./store');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const ADMIN_PIN = process.env.ADMIN_PIN || '8675';
 
 // Middleware
 app.use(cors());
@@ -202,6 +203,14 @@ app.get('/api/checkin/mine', authMiddleware, (req, res) => {
   res.json({ checkins });
 });
 
+
+// Delete own checkin/selfie
+app.delete('/api/checkin/:id', authMiddleware, (req, res) => {
+  const result = store.deleteCheckin(req.params.id, req.user.id);
+  if (result.error) return res.status(400).json(result);
+  res.json({ success: true, message: 'Selfie deleted' });
+});
+
 // Get check-ins for a specific date
 app.get('/api/checkin/date/:date', (req, res) => {
   const checkins = store.getCheckinsForDate(req.params.date);
@@ -315,6 +324,34 @@ app.get('/api/calendar', (req, res) => {
 });
 
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+// ADMIN ROUTES
+app.get('/api/admin/users', adminAuth, (req, res) => {
+  res.json({ users: store.adminGetAllUsers() });
+});
+
+app.put('/api/admin/users/:id', adminAuth, (req, res) => {
+  const result = store.adminUpdateUser(req.params.id, req.body);
+  if (result.error) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.delete('/api/admin/users/:id', adminAuth, (req, res) => {
+  const result = store.adminDeleteUser(req.params.id);
+  if (result.error) return res.status(400).json(result);
+  res.json({ success: true });
+});
+
+app.get('/api/admin/checkins', adminAuth, (req, res) => {
+  res.json({ checkins: store.getAllCheckins() });
+});
+
+app.delete('/api/admin/checkins/:id', adminAuth, (req, res) => {
+  const result = store.adminDeleteCheckin(req.params.id);
+  if (result.error) return res.status(400).json(result);
+  res.json({ success: true });
+});
+
 // OTHER ROUTES
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
