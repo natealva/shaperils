@@ -117,6 +117,7 @@ function getAllCheckins() {
 function getAllPhotos() {
   const data = load();
   return (data.checkins || []).filter(c => c.selfie).map(c => ({
+    id: c.id,
     user_id: c.user_id,
     user_name: c.user_name,
     date: c.date,
@@ -296,6 +297,63 @@ function calculateStreak(weekdays, checkedDates, today) {
   return streak;
 }
 
+
+// Delete a checkin (user can delete own)
+function deleteCheckin(checkinId, userId) {
+  const data = load();
+  const idx = data.checkins.findIndex(c => c.id === checkinId && c.user_id === userId);
+  if (idx === -1) return { error: 'Not found or not yours' };
+  const checkin = data.checkins[idx];
+  data.checkins.splice(idx, 1);
+  save(data);
+  if (checkin.selfie) {
+    try { fs.unlinkSync(path.join(SELFIES_DIR, checkin.selfie)); } catch(e) {}
+  }
+  return { success: true };
+}
+
+// Admin: delete any checkin
+function adminDeleteCheckin(checkinId) {
+  const data = load();
+  const idx = data.checkins.findIndex(c => c.id === checkinId);
+  if (idx === -1) return { error: 'Not found' };
+  const checkin = data.checkins[idx];
+  data.checkins.splice(idx, 1);
+  save(data);
+  if (checkin.selfie) {
+    try { fs.unlinkSync(path.join(SELFIES_DIR, checkin.selfie)); } catch(e) {}
+  }
+  return { success: true };
+}
+
+// Admin: deactivate user
+function adminDeleteUser(userId) {
+  const data = load();
+  const user = data.users.find(u => u.id === userId);
+  if (!user) return { error: 'Not found' };
+  user.active = false;
+  save(data);
+  return { success: true };
+}
+
+// Admin: update user info
+function adminUpdateUser(userId, updates) {
+  const data = load();
+  const user = data.users.find(u => u.id === userId);
+  if (!user) return { error: 'Not found' };
+  if (updates.name) user.name = updates.name;
+  if (updates.phone) user.phone = normalizePhone(updates.phone);
+  if (typeof updates.active === 'boolean') user.active = updates.active;
+  save(data);
+  return { success: true, user };
+}
+
+// Admin: get all users including inactive
+function adminGetAllUsers() {
+  const data = load();
+  return data.users;
+}
+
 module.exports = {
   getUser,
   getUserByToken,
@@ -317,5 +375,10 @@ module.exports = {
   getRecentMessages,
   normalizePhone,
   getAprilWeekdays,
+  deleteCheckin,
+  adminDeleteCheckin,
+  adminDeleteUser,
+  adminUpdateUser,
+  adminGetAllUsers,
   SELFIES_DIR,
 };
