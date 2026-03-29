@@ -36,6 +36,12 @@ function authMiddleware(req, res, next) {
   next();
 }
 
+function adminAuth(req, res, next) {
+  const pin = req.headers['x-admin-pin'];
+  if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'Invalid admin PIN' });
+  next();
+}
+
 // âââ Helper: Send SMS âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function sendToSubscribers(senderName, messageText, excludeUserId = null) {
   const subscribers = store.getSubscribedUsers();
