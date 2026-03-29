@@ -3,66 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shaperils â Rally the Crew to Shays</title>
+  <title>Shayprils â Every. Single. Day.</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>ðº</text></svg>">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
     :root {
-      --bg: #0f0f13;
-      --surface: #1a1a24;
-      --surface-hover: #22222f;
-      --border: #2a2a3a;
-      --amber: #f59e0b;
-      --amber-glow: rgba(245, 158, 11, 0.15);
-      --amber-dark: #b45309;
-      --green: #22c55e;
-      --green-glow: rgba(34, 197, 94, 0.15);
-      --blue: #3b82f6;
-      --purple: #a855f7;
-      --red: #ef4444;
-      --text: #e4e4e7;
-      --text-muted: #71717a;
-      --text-dim: #52525b;
+      --cream: #FFF8EE;
+      --cream-dark: #F0E4D0;
+      --tan: #E8D5B7;
+      --brick: #9B3B3B;
+      --brick-dark: #6B2D2D;
+      --brick-light: #C15A5A;
+      --brown: #3E2723;
+      --brown-medium: #5D4037;
+      --brown-light: #8D6E63;
+      --wood: #D7B98E;
+      --red-accent: #C1392B;
+      --green: #4A7C59;
+      --green-light: #E8F5E9;
+      --green-bg: rgba(74,124,89,0.1);
+      --red-bg: rgba(193,57,43,0.08);
+      --text: #2C1810;
+      --text-muted: #6D5D53;
+      --text-dim: #9E8E84;
+      --border: #DDD0C0;
+      --surface: #FFFFFF;
+      --shadow: 0 2px 12px rgba(44,24,16,0.08);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
+      background: var(--cream);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
     }
-
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%; left: -50%;
-      width: 200%; height: 200%;
-      background: radial-gradient(ellipse at 30% 20%, rgba(245,158,11,0.04) 0%, transparent 50%),
-                  radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.03) 0%, transparent 50%);
-      z-index: -1;
-      animation: bgShift 20s ease-in-out infinite alternate;
-    }
-    @keyframes bgShift { 0%{transform:translate(0,0)} 100%{transform:translate(-5%,-5%)} }
 
     .container { max-width: 520px; margin: 0 auto; padding: 20px 16px 100px; }
 
     /* âââ Header âââ */
     .header { text-align: center; padding: 24px 0 16px; }
     .logo {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 2.6rem; font-weight: 700; letter-spacing: -1px;
-      background: linear-gradient(135deg, var(--amber), #fbbf24, var(--amber-dark));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.8rem; font-weight: 800; letter-spacing: -0.5px;
+      color: var(--brick-dark);
     }
-    .tagline { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+    .tagline { color: var(--text-muted); font-size: 0.9rem; margin-top: 2px; }
     .month-badge {
-      display: inline-block; margin-top: 10px; padding: 4px 12px;
-      background: var(--amber-glow); border: 1px solid rgba(245,158,11,0.25);
-      border-radius: 20px; font-size: 0.75rem; color: var(--amber);
+      display: inline-block; margin-top: 10px; padding: 5px 14px;
+      background: var(--brick); color: var(--cream);
+      border-radius: 20px; font-size: 0.75rem;
       font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
     }
 
@@ -71,25 +64,36 @@
       display: flex; align-items: center; justify-content: space-between;
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 12px; padding: 10px 16px; margin-bottom: 12px;
+      box-shadow: var(--shadow);
     }
     .user-bar .greeting { font-size: 0.85rem; color: var(--text-muted); }
-    .user-bar .greeting strong { color: var(--amber); }
+    .user-bar .greeting strong { color: var(--brick); }
     .user-bar .logout-btn {
       background: none; border: none; color: var(--text-dim); cursor: pointer;
       font-size: 0.8rem; padding: 4px 8px;
     }
-    .user-bar .logout-btn:hover { color: var(--red); }
+    .user-bar .logout-btn:hover { color: var(--red-accent); }
 
     /* âââ Cards âââ */
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 16px; padding: 20px; margin-bottom: 14px;
+      box-shadow: var(--shadow);
     }
     .card-title {
-      font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem;
-      font-weight: 600; margin-bottom: 14px;
+      font-family: 'Playfair Display', serif; font-size: 1.15rem;
+      font-weight: 700; margin-bottom: 14px; color: var(--brown);
       display: flex; align-items: center; gap: 8px;
     }
+    .card-title .icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .icon-brick { background: var(--brick); }
+    .icon-green { background: var(--green); }
+    .icon-brown { background: var(--brown-medium); }
+    .icon-red { background: var(--red-accent); }
 
     /* âââ Bottom Nav âââ */
     .bottom-nav {
@@ -98,6 +102,7 @@
       display: flex; justify-content: center; gap: 0;
       padding: 0; z-index: 100;
       max-width: 520px; margin: 0 auto;
+      box-shadow: 0 -2px 12px rgba(44,24,16,0.06);
     }
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
@@ -109,9 +114,14 @@
       font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 500;
       transition: color 0.2s;
     }
-    .nav-btn .nav-icon { font-size: 1.3rem; }
-    .nav-btn.active { color: var(--amber); }
-    .nav-btn:hover { color: var(--text); }
+    .nav-btn .nav-icon {
+      font-size: 0.75rem; font-weight: 700; width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; background: transparent; transition: all 0.2s;
+    }
+    .nav-btn.active { color: var(--brick); font-weight: 600; }
+    .nav-btn.active .nav-icon { background: var(--brick); color: white; }
+    .nav-btn:hover { color: var(--brown); }
 
     .tab-content { display: none; }
     .tab-content.active { display: block; }
@@ -119,17 +129,17 @@
     /* âââ Forms âââ */
     .form-group { margin-bottom: 12px; }
     .form-group label {
-      display: block; font-size: 0.75rem; font-weight: 500;
+      display: block; font-size: 0.75rem; font-weight: 600;
       color: var(--text-muted); margin-bottom: 5px;
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     input[type="text"], input[type="tel"] {
-      width: 100%; padding: 11px 14px; background: var(--bg);
+      width: 100%; padding: 11px 14px; background: var(--cream);
       border: 1px solid var(--border); border-radius: 10px;
       color: var(--text); font-family: 'Inter', sans-serif;
       font-size: 0.95rem; outline: none; transition: border-color 0.2s;
     }
-    input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-glow); }
+    input:focus { border-color: var(--brick); box-shadow: 0 0 0 3px rgba(155,59,59,0.12); }
     input::placeholder { color: var(--text-dim); }
 
     /* âââ Buttons âââ */
@@ -141,31 +151,51 @@
     }
     .btn:active { transform: scale(0.98); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--amber), var(--amber-dark)); color: #000;
+    .btn-primary { background: var(--brick); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--brick-dark); box-shadow: 0 4px 16px rgba(155,59,59,0.25); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover:not(:disabled) { box-shadow: 0 4px 16px rgba(74,124,89,0.25); }
+    .btn-outline {
+      background: transparent; color: var(--brick); border: 2px solid var(--brick);
     }
-    .btn-primary:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(245,158,11,0.35); }
-    .btn-green {
-      background: linear-gradient(135deg, var(--green), #16a34a); color: #000;
-    }
-    .btn-green:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(34,197,94,0.35); }
+    .btn-outline:hover:not(:disabled) { background: var(--brick); color: white; }
 
-    /* âââ Message Buttons âââ */
+    /* âââ Big Heading-to-Shays button âââ */
+    .heading-btn {
+      width: 100%; padding: 20px; border: none; border-radius: 16px;
+      background: var(--brick); color: white; cursor: pointer;
+      font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700;
+      transition: all 0.2s; margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(155,59,59,0.25);
+    }
+    .heading-btn:hover { background: var(--brick-dark); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(155,59,59,0.35); }
+    .heading-btn:active { transform: scale(0.98) translateY(0); }
+    .heading-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .heading-btn .btn-subtitle {
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 400;
+      opacity: 0.85; margin-top: 4px;
+    }
+
+    /* âââ Rally option buttons âââ */
     .msg-btn {
       width: 100%; padding: 14px 16px; border: 1px solid var(--border);
-      border-radius: 12px; background: var(--bg); color: var(--text);
+      border-radius: 12px; background: var(--cream); color: var(--text);
       font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 500;
       cursor: pointer; transition: all 0.2s; text-align: left;
       display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
     }
-    .msg-btn:hover { background: var(--surface-hover); border-color: var(--amber); }
+    .msg-btn:hover { background: var(--cream-dark); border-color: var(--brick); }
     .msg-btn:active { transform: scale(0.98); }
-    .msg-btn .emoji { font-size: 1.4rem; flex-shrink: 0; }
+    .msg-btn .msg-icon {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--brick);
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
     .msg-btn .btn-label { font-weight: 600; display: block; }
     .msg-btn .btn-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
 
     .expandable { display: none; margin-top: 8px; margin-bottom: 8px; padding: 14px;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+      background: var(--cream); border: 1px solid var(--border); border-radius: 12px;
       animation: slideDown 0.2s ease; }
     .expandable.visible { display: block; }
     @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
@@ -183,9 +213,9 @@
     /* âââ Selfie / Camera âââ */
     .camera-area {
       position: relative; width: 100%; aspect-ratio: 1;
-      background: #000; border-radius: 16px; overflow: hidden;
+      background: var(--cream-dark); border-radius: 16px; overflow: hidden;
       margin-bottom: 14px; display: flex; align-items: center;
-      justify-content: center;
+      justify-content: center; border: 2px dashed var(--border);
     }
     .camera-area video, .camera-area img {
       width: 100%; height: 100%; object-fit: cover;
@@ -194,16 +224,16 @@
     .camera-placeholder {
       color: var(--text-dim); text-align: center; padding: 40px;
     }
-    .camera-placeholder .cam-icon { font-size: 3rem; margin-bottom: 8px; }
+    .camera-placeholder .cam-icon { font-size: 2rem; margin-bottom: 8px; color: var(--brown-light); }
     .camera-controls { display: flex; gap: 8px; }
     .camera-controls .btn { flex: 1; }
 
     .checkin-status {
-      text-align: center; padding: 20px; background: var(--green-glow);
-      border: 1px solid rgba(34,197,94,0.3); border-radius: 12px;
+      text-align: center; padding: 20px; background: var(--green-bg);
+      border: 1px solid rgba(74,124,89,0.25); border-radius: 12px;
       margin-bottom: 14px;
     }
-    .checkin-status .big-check { font-size: 2.5rem; }
+    .checkin-status .big-check { font-size: 2rem; color: var(--green); font-weight: 700; }
     .checkin-status .status-text { color: var(--green); font-weight: 600; margin-top: 4px; }
 
     /* âââ Calendar âââ */
@@ -218,28 +248,34 @@
       aspect-ratio: 1; border-radius: 10px; display: flex;
       flex-direction: column; align-items: center; justify-content: center;
       font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border);
-      background: var(--bg); position: relative; cursor: default;
+      background: var(--cream); position: relative; cursor: default;
       transition: all 0.2s;
     }
-    .cal-day.future { opacity: 0.4; }
-    .cal-day.today { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber-glow); }
-    .cal-day.hit { background: var(--green-glow); border-color: rgba(34,197,94,0.4); color: var(--green); }
-    .cal-day.missed { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--red); }
+    .cal-day.future { opacity: 0.35; }
+    .cal-day.today { border-color: var(--brick); box-shadow: 0 0 0 2px rgba(155,59,59,0.15); }
+    .cal-day.hit { background: var(--green-light); border-color: rgba(74,124,89,0.4); color: var(--green); }
+    .cal-day.missed { background: var(--red-bg); border-color: rgba(193,57,43,0.3); color: var(--red-accent); }
+    .cal-day.vouched { background: #FFF3E0; border-color: rgba(210,150,60,0.5); color: #B81¶0B; }
+    .cal-day.pending-vouch { background: #FFF8E1; border-color: rgba(210,150,60,0.3); color: #D2960C; border-style: dashed; }
     .cal-day .day-num { font-size: 0.95rem; }
-    .cal-day .day-indicator { font-size: 0.7rem; margin-top: 1px; }
-    .cal-day.hit .day-indicator::after { content: 'â'; }
-    .cal-day.missed .day-indicator::after { content: 'â'; }
+    .cal-day .day-indicator { font-size: 0.65rem; margin-top: 1px; }
+    .cal-day.hit .day-indicator::after { content: 'Yes'; }
+    .cal-day.missed .day-indicator::after { content: 'No'; }
+    .cal-day.vouched .day-indicator::after { content: 'Vouched'; font-size: 0.55rem; }
+    .cal-day.pending-vouch .day-indicator::after { content: 'Pending'; font-size: 0.55rem; }
+    .cal-day.missed.clickable { cursor: pointer; }
+    .cal-day.missed.clickable:hover { border-color: var(--brick); background: var(--cream-dark); }
 
     .cal-user-select {
       margin-bottom: 14px; display: flex; gap: 6px; flex-wrap: wrap;
     }
     .cal-user-btn {
       padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
-      background: var(--bg); color: var(--text-muted); cursor: pointer;
+      background: var(--cream); color: var(--text-muted); cursor: pointer;
       font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 500;
       transition: all 0.2s;
     }
-    .cal-user-btn.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+    .cal-user-btn.active { background: var(--brick); border-color: var(--brick); color: white; }
 
     /* âââ Leaderboard âââ */
     .lb-item {
@@ -248,23 +284,79 @@
     }
     .lb-item:last-child { border-bottom: none; }
     .lb-rank {
-      font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem;
+      font-family: 'Playfair Display', serif; font-size: 1.3rem;
       font-weight: 700; width: 36px; text-align: center; flex-shrink: 0;
     }
-    .lb-rank.gold { color: #fbbf24; }
-    .lb-rank.silver { color: #94a3b8; }
-    .lb-rank.bronze { color: #d97706; }
+    .lb-rank.gold { color: #D4A017; }
+    .lb-rank.silver { color: #8E8E8E; }
+    .lb-rank.bronze { color: #A0522D; }
     .lb-info { flex: 1; }
     .lb-name { font-weight: 600; font-size: 0.95rem; }
     .lb-stats { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
     .lb-bar-wrap {
-      width: 60px; height: 6px; background: var(--bg);
+      width: 60px; height: 6px; background: var(--cream-dark);
       border-radius: 3px; overflow: hidden; flex-shrink: 0;
     }
     .lb-bar {
       height: 100%; border-radius: 3px;
-      background: linear-gradient(90deg, var(--green), var(--amber));
+      background: linear-gradient(90deg, var(--green), var(--brick));
     }
+
+    /* âââ Album âââ */
+    .album-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+    }
+    .album-item {
+      aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+      position: relative; cursor: pointer; background: var(--cream-dark);
+    }
+    .album-item img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.2s;
+    }
+    .album-item:hover img { transform: scale(1.05); }
+    .album-item .album-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(44,24,16,0.8));
+      color: white; padding: 20px 6px 6px; font-size: 0.7rem; font-weight: 500;
+    }
+    .album-date-header {
+      font-family: 'Playfair Display', serif; font-weight: 600;
+      font-size: 0.95rem; color: var(--brown); padding: 14px 0 8px;
+      border-bottom: 1px solid var(--border); margin-bottom: 8px;
+    }
+    .album-date-header:first-child { padding-top: 0; }
+
+    /* âââ Lightbox âââ */
+    .lightbox {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(44,24,16,0.9); z-index: 300;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .lightbox.visible { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 80vh; border-radius: 12px; }
+    .lightbox-info {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      color: white; text-align: center; font-size: 0.9rem;
+    }
+    .lightbox-close {
+      position: absolute; top: 20px; right: 20px; background: none; border: none;
+      color: white; font-size: 1.5rem; cursor: pointer; padding: 8px;
+    }
+
+    /* âââ Vouch system âââ */
+    .vouch-card {
+      background: #FFF8E1; border: 1px solid rgba(210,150,60,0.3);
+      border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    }
+    .vouch-card .vouch-header {
+      font-weight: 600; font-size: 0.9rem; color: var(--brown); margin-bottom: 4px;
+    }
+    .vouch-card .vouch-detail {
+      font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .vouch-actions { display: flex; gap: 8px; }
+    .vouch-actions .btn { width: auto; padding: 8px 16px; font-size: 0.82rem; }
 
     /* âââ History âââ */
     .history-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
@@ -279,38 +371,58 @@
       transform: translateX(-50%) translateY(100px);
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 12px; padding: 12px 20px; font-size: 0.88rem;
-      color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      color: var(--text); box-shadow: 0 8px 32px rgba(44,24,16,0.15);
       transition: transform 0.3s ease; z-index: 200;
       max-width: 90vw; text-align: center;
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
     .toast.success { border-color: var(--green); }
-    .toast.error { border-color: var(--red); }
+    .toast.error { border-color: var(--red-accent); }
 
     /* âââ Login screen âââ */
     .login-screen {
       min-height: 100vh; display: flex; align-items: center;
       justify-content: center; padding: 20px;
+      background: linear-gradient(165deg, var(--cream) 0%, var(--cream-dark) 100%);
     }
     .login-card { width: 100%; max-width: 380px; }
 
     .hidden { display: none !important; }
+
+    /* âââ Vouch modal âââ */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(44,24,16,0.5); z-index: 250;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 16px; padding: 24px;
+      max-width: 360px; width: 100%; box-shadow: 0 12px 40px rgba(44,24,16,0.2);
+    }
+    .modal-title {
+      font-family: 'Playfair Display', serif; font-size: 1.1rem;
+      font-weight: 700; color: var(--brown); margin-bottom: 12px;
+    }
+    .modal p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-actions .btn { flex: 1; padding: 11px; font-size: 0.88rem; }
   </style>
 </head>
 <body>
 
-<!-- âââââââââââââââ LOGIN SCREEN âââââââââââââââ -->
+<!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
     <div class="header">
-      <div class="logo">Shaperils</div>
+      <div class="logo">Shayprils</div>
       <div class="tagline">Rally the crew to Shays</div>
       <div class="month-badge">April 2026 â Every. Single. Day.</div>
     </div>
     <div class="card" style="margin-top: 24px;">
-      <div class="card-title"><span>ð±</span> Sign In</div>
+      <div class="card-title"><span class="icon icon-brick">S</span> Sign In</div>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
-        Enter your name and number. Your device will remember you.
+        Enter your name and phone number. We'll remember you next time.
       </p>
       <div class="form-group">
         <label>Your Name</label>
@@ -320,16 +432,16 @@
         <label>Phone Number</label>
         <input type="tel" id="loginPhone" placeholder="(555) 123-4567" />
       </div>
-      <button class="btn btn-primary" onclick="doLogin()">Join Shaperils</button>
+      <button class="btn btn-primary" onclick="doLogin()">Join Shayprils</button>
     </div>
   </div>
 </div>
 
-<!-- âââââââââââââââ MAIN APP âââââââââââââââ -->
+<!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="container">
     <div class="header">
-      <div class="logo">Shaperils</div>
+      <div class="logo">Shayprils</div>
       <div class="tagline">Rally the crew to Shays</div>
     </div>
 
@@ -338,35 +450,41 @@
       <button class="logout-btn" onclick="doLogout()">Sign out</button>
     </div>
 
-    <!-- âââ CHECK-IN TAB âââ -->
+    <!-- CHECK-IN TAB -->
     <div id="tab-checkin" class="tab-content active">
+      <!-- Big "I'm heading to Shays" button -->
+      <button class="heading-btn" onclick="sendHeading()">
+        I'm heading to Shays!
+        <div class="btn-subtitle">Tap to text everyone you're on your way</div>
+      </button>
+
       <div id="alreadyCheckedIn" class="checkin-status hidden">
-        <div class="big-check">â</div>
+        <div class="big-check">Checked In</div>
         <div class="status-text">You already checked in today!</div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
-          Come back tomorrow. Streak alive ð¥
+          Come back tomorrow. Streak alive!
         </p>
       </div>
       <div id="checkinForm">
         <div class="card">
-          <div class="card-title"><span>ð¸</span> Check in at Shays</div>
+          <div class="card-title"><span class="icon icon-green">C</span> Check In at Shays</div>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">
-            Take a selfie at Shays to log today's check-in.
+            Upload a selfie at Shays to log today's check-in. One photo per day.
           </p>
           <div class="camera-area" id="cameraArea">
             <video id="cameraVideo" autoplay playsinline style="display:none;"></video>
             <img id="selfiePreview" style="display:none;" />
             <canvas id="selfieCanvas"></canvas>
             <div id="cameraPlaceholder" class="camera-placeholder">
-              <div class="cam-icon">ð·</div>
-              <div>Tap below to open camera</div>
+              <div class="cam-icon">[ Camera ]</div>
+              <div>Tap below to open camera or upload a photo</div>
             </div>
           </div>
           <div class="camera-controls">
             <button id="btnStartCamera" class="btn btn-primary" onclick="startCamera()">Open Camera</button>
-            <button id="btnCapture" class="btn btn-primary hidden" onclick="capturePhoto()">ð¸ Snap</button>
-            <button id="btnRetake" class="btn btn-primary hidden" onclick="retakePhoto()">Retake</button>
-            <button id="btnCheckin" class="btn btn-green hidden" onclick="submitCheckin()">â Check In</button>
+            <button id="btnCapture" class="btn btn-primary hidden" onclick="capturePhoto()">Snap</button>
+            <button id="btnRetake" class="btn btn-outline hidden" onclick="retakePhoto()">Retake</button>
+            <button id="btnCheckin" class="btn btn-green hidden" onclick="submitCheckin()">Check In</button>
           </div>
           <div style="text-align:center; margin-top:10px;">
             <label style="color: var(--text-dim); font-size: 0.8rem; cursor: pointer;">
@@ -378,22 +496,22 @@
       </div>
     </div>
 
-    <!-- âââ RALLY TAB âââ -->
+    <!-- RALLY TAB -->
     <div id="tab-rally" class="tab-content">
       <div class="card">
-        <div class="card-title"><span>ð£</span> Send a Shays Alert</div>
+        <div class="card-title"><span class="icon icon-brick">R</span> Send a Shays Alert</div>
         <button class="msg-btn" onclick="sendMessage('heading_now')">
-          <span class="emoji">ð</span>
+          <span class="msg-icon">Go</span>
           <div><span class="btn-label">I'm heading to Shays now!</span>
           <span class="btn-desc">Let everyone know you're on the way</span></div>
         </button>
         <button class="msg-btn" onclick="sendMessage('solo_join')">
-          <span class="emoji">ð</span>
+          <span class="msg-icon">1</span>
           <div><span class="btn-label">Going solo â please join!</span>
           <span class="btn-desc">Flying solo and want company</span></div>
         </button>
         <button class="msg-btn" onclick="toggleEl('companionBox')">
-          <span class="emoji">ð¥</span>
+          <span class="msg-icon">+</span>
           <div><span class="btn-label">Going with friends</span>
           <span class="btn-desc">Heading there with a crew</span></div>
         </button>
@@ -405,12 +523,12 @@
           </div>
         </div>
         <button class="msg-btn" onclick="sendMessage('who_wants')">
-          <span class="emoji">ð¤·</span>
+          <span class="msg-icon">?</span>
           <div><span class="btn-label">Who wants to go to Shays?</span>
           <span class="btn-desc">Rally the troops â see who's down</span></div>
         </button>
         <button class="msg-btn" onclick="toggleEl('customBox')">
-          <span class="emoji">âï¸</span>
+          <span class="msg-icon">...</span>
           <div><span class="btn-label">Custom message</span>
           <span class="btn-desc">Write your own Shays alert</span></div>
         </button>
@@ -421,10 +539,10 @@
       </div>
     </div>
 
-    <!-- âââ CALENDAR TAB âââ -->
+    <!-- CALENDAR TAB -->
     <div id="tab-calendar" class="tab-content">
       <div class="card">
-        <div class="card-title"><span>ð</span> April 2026 â Shays Tracker</div>
+        <div class="card-title"><span class="icon icon-brown">A</span> April 2026 â Attendance</div>
         <div id="calUserSelect" class="cal-user-select"></div>
         <div class="cal-grid">
           <div class="cal-header">Mon</div><div class="cal-header">Tue</div>
@@ -433,24 +551,36 @@
         </div>
         <div id="calGrid" class="cal-grid" style="margin-top:6px;"></div>
       </div>
+
+      <!-- Vouch Requests Section -->
+      <div id="vouchRequestsCard" class="card hidden">
+        <div class="card-title"><span class="icon icon-brown">V</span> Vouch Requests</div>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 12px;">
+          Someone needs a friend to confirm they were at Shays.
+        </p>
+        <div id="vouchRequestsList"></div>
+      </div>
     </div>
 
-    <!-- âââ LEADERBOARD TAB âââ -->
-    <div id="tab-leaderboard" class="tab-content">
+    <!-- ALBUM TAB -->
+    <div id="tab-album" class="tab-content">
       <div class="card">
-        <div class="card-title"><span>ð</span> Leaderboard</div>
-        <div id="leaderboardList">
-          <div class="empty-state">No check-ins yet. Be the first!</div>
+        <div class="card-title"><span class="icon icon-brick">P</span> Shayprils Photo Album</div>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 14px;">
+          Every check-in selfie from April, all in one place.
+        </p>
+        <div id="albumContent">
+          <div class="empty-state">No photos yet. Be the first to check in!</div>
         </div>
       </div>
     </div>
 
-    <!-- âââ HISTORY TAB âââ -->
-    <div id="tab-history" class="tab-content">
+    <!-- LEADERBOARD TAB -->
+    <div id="tab-leaderboard" class="tab-content">
       <div class="card">
-        <div class="card-title"><span>ð</span> Recent Alerts</div>
-        <div id="historyList">
-          <div class="empty-state">No alerts sent yet.</div>
+        <div class="card-title"><span class="icon icon-green">L</span> Leaderboard</div>
+        <div id="leaderboardList">
+          <div class="empty-state">No check-ins yet. Be the first!</div>
         </div>
       </div>
     </div>
@@ -459,19 +589,19 @@
   <!-- Bottom Nav -->
   <div class="bottom-nav">
     <button class="nav-btn active" data-tab="checkin">
-      <span class="nav-icon">ð¸</span>Check In
+      <span class="nav-icon">S</span>Shays
     </button>
     <button class="nav-btn" data-tab="rally">
-      <span class="nav-icon">ð£</span>Rally
+      <span class="nav-icon">R</span>Rally
     </button>
     <button class="nav-btn" data-tab="calendar">
-      <span class="nav-icon">ð</span>Calendar
+      <span class="nav-icon">A</span>Attend
+    </button>
+    <button class="nav-btn" data-tab="album">
+      <span class="nav-icon">P</span>Photos
     </button>
     <button class="nav-btn" data-tab="leaderboard">
-      <span class="nav-icon">ð</span>Board
-    </button>
-    <button class="nav-btn" data-tab="history">
-      <span class="nav-icon">ð</span>Log
+      <span class="nav-icon">B</span>Board
     </button>
   </div>
 </div>
@@ -479,16 +609,36 @@
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">X</button>
+  <img id="lightboxImg" src="" />
+  <div class="lightbox-info" id="lightboxInfo"></div>
+</div>
+
+<!-- Vouch Request Modal -->
+<div id="vouchModal" class="modal-overlay" onclick="if(event.target===this)closeVouchModal()">
+  <div class="modal">
+    <div class="modal-title">Request a Vouch</div>
+    <p id="vouchModalText">Were you at Shays on this day but forgot to check in? Ask someone who was there to vouch for you.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeVouchModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitVouchRequest()">Request Vouch</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = '';
 let currentUser = null;
 let cameraStream = null;
 let capturedImageData = null;
 let calendarSelectedUser = null;
+let vouchRequestDate = null;
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // AUTH
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 async function doLogin() {
   const name = document.getElementById('loginName').value.trim();
@@ -503,11 +653,11 @@ async function doLogin() {
     });
     const data = await res.json();
     if (data.success) {
-      localStorage.setItem('shaperils_token', data.token);
-      localStorage.setItem('shaperils_user', JSON.stringify(data.user));
+      localStorage.setItem('shayprils_token', data.token);
+      localStorage.setItem('shayprils_user', JSON.stringify(data.user));
       currentUser = data.user;
       showApp();
-      showToast(data.message);
+      showToast('Welcome to Shayprils, ' + data.user.name + '!');
     } else {
       showToast(data.error || 'Failed to sign in', 'error');
     }
@@ -517,14 +667,23 @@ async function doLogin() {
 }
 
 async function checkAuth() {
-  const token = localStorage.getItem('shaperils_token');
-  if (!token) return false;
+  const token = localStorage.getItem('shayprils_token');
+  if (!token) {
+    // Check for legacy token
+    const oldToken = localStorage.getItem('shaperils_token');
+    if (oldToken) {
+      localStorage.setItem('shayprils_token', oldToken);
+      localStorage.removeItem('shaperils_token');
+      return checkAuth();
+    }
+    return false;
+  }
   try {
     const res = await fetch(API + '/api/auth/me', { headers: { 'x-auth-token': token } });
     if (res.ok) {
       const data = await res.json();
       currentUser = data.user;
-      localStorage.setItem('shaperils_user', JSON.stringify(data.user));
+      localStorage.setItem('shayprils_user', JSON.stringify(data.user));
       return true;
     }
   } catch (e) {}
@@ -532,8 +691,8 @@ async function checkAuth() {
 }
 
 function doLogout() {
-  localStorage.removeItem('shaperils_token');
-  localStorage.removeItem('shaperils_user');
+  localStorage.removeItem('shayprils_token');
+  localStorage.removeItem('shayprils_user');
   currentUser = null;
   stopCamera();
   document.getElementById('loginScreen').classList.remove('hidden');
@@ -548,16 +707,16 @@ function showApp() {
 }
 
 function getToken() {
-  return localStorage.getItem('shaperils_token');
+  return localStorage.getItem('shayprils_token');
 }
 
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'x-auth-token': getToken() };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // NAVIGATION
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -568,14 +727,41 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
     if (btn.dataset.tab === 'calendar') loadCalendar();
     if (btn.dataset.tab === 'leaderboard') loadLeaderboard();
-    if (btn.dataset.tab === 'history') loadHistory();
+    if (btn.dataset.tab === 'album') loadAlbum();
     if (btn.dataset.tab === 'checkin') checkTodayCheckin();
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// "I'M HEADING TO SHAYS" button
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+async function sendHeading() {
+  const btn = document.querySelector('.heading-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Sending...<div class="btn-subtitle">Letting everyone know</div>';
+  try {
+    const res = await fetch(API + '/api/send', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ messageType: 'heading_now' }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(currentUser.name + ' is heading to Shays! Alert sent to ' + data.sent + ' people.');
+    } else {
+      showToast(data.error || 'Failed to send', 'error');
+    }
+  } catch (e) {
+    showToast('Server unavailable', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'I\'m heading to Shays!<div class="btn-subtitle">Tap to text everyone you\'re on your way</div>';
+}
+
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // CAMERA / SELFIE
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 async function startCamera() {
   try {
@@ -667,7 +853,7 @@ async function submitCheckin() {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(data.message);
+      showToast(data.duplicate ? 'Already checked in today!' : 'Checked in! Selfie saved.');
       capturedImageData = null;
       showCheckedInState();
     } else {
@@ -678,7 +864,7 @@ async function submitCheckin() {
   }
 
   document.getElementById('btnCheckin').disabled = false;
-  document.getElementById('btnCheckin').textContent = 'â Check In';
+  document.getElementById('btnCheckin').textContent = 'Check In';
 }
 
 async function checkTodayCheckin() {
@@ -703,9 +889,9 @@ function showCheckedInState() {
   stopCamera();
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // RALLY (SMS)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 async function sendMessage(type) {
   const companions = document.getElementById('companions')?.value.trim() || '';
@@ -720,7 +906,7 @@ async function sendMessage(type) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(`ðº ${data.message}`);
+      showToast('Alert sent to ' + data.sent + ' people!');
       document.getElementById('companions').value = '';
       document.getElementById('customMessage').value = '';
       document.querySelectorAll('.expandable').forEach(e => e.classList.remove('visible'));
@@ -733,17 +919,20 @@ async function sendMessage(type) {
   document.querySelectorAll('.msg-btn').forEach(b => b.disabled = false);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // CALENDAR
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+let calendarData = null;
 
 async function loadCalendar() {
   try {
     const res = await fetch(API + '/api/calendar');
-    const data = await res.json();
-    renderCalendarUsers(data.users);
+    calendarData = await res.json();
+    renderCalendarUsers(calendarData.users);
     const userId = calendarSelectedUser || (currentUser ? currentUser.id : null);
-    renderCalendar(data.calendar, userId);
+    renderCalendar(calendarData.calendar, userId);
+    loadVouchRequests();
   } catch (e) {}
 }
 
@@ -753,7 +942,7 @@ function renderCalendarUsers(users) {
 
   container.innerHTML = users.map(u =>
     `<button class="cal-user-btn ${u.id === calendarSelectedUser ? 'active' : ''}"
-      onclick="selectCalUser('${u.id}')">${u.name}</button>`
+      onclick="selectCalUser('${u.id}')">${escapeHtml(u.name)}</button>`
   ).join('');
 }
 
@@ -762,29 +951,50 @@ function selectCalUser(userId) {
   loadCalendar();
 }
 
-function renderCalendar(calendar, userId) {
+async function renderCalendar(calendar, userId) {
   const grid = document.getElementById('calGrid');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
+  // Fetch vouch data for the selected user
+  let vouches = [];
+  try {
+    const res = await fetch(API + '/api/vouch/list');
+    const data = await res.json();
+    vouches = data.vouches || [];
+  } catch(e) {}
+
   // April 2026 starts on Wednesday, so we need 2 empty slots (Mon, Tue)
-  const firstDayOffset = 2; // Wednesday = index 2 in Mon-Fri grid
+  const firstDayOffset = 2;
   let html = '';
   for (let i = 0; i < firstDayOffset; i++) html += '<div></div>';
 
+  const isMyCalendar = userId === (currentUser ? currentUser.id : null);
+
   for (const day of calendar) {
-    const userCheckedIn = userId ? day.checkins.some(c => c.user_id === userId) : false;
+    const userCheckedIn = userId? day.checkins.some(c => c.user_id === userId) : false;
     const isToday = day.date === today;
     const isFuture = day.date > today;
+
+    // Check vouch status for this day/user
+    const vouch = vouches.find(v => v.requester_id === userId && v.date === day.date);
+    const isVouched = vouch && vouch.status === 'approved';
+    const isPendingVouch = vouch && vouch.status === 'pending';
 
     let cls = 'cal-day';
     if (isToday) cls += ' today';
     if (isFuture) cls += ' future';
-    else if (userCheckedIn) cls += ' hit';
+    else if (userCheckedIn || isVouched) cls += (isVouched ? ' vouched' : ' hit');
+    else if (isPendingVouch) cls += ' pending-vouch';
     else if (!isFuture) cls += ' missed';
+
+    // Allow clicking missed days on own calendar to request vouch
+    const canRequestVouch = isMyCalendar && !userCheckedIn && !isVouched && !isPendingVouch && !isFuture && !isToday;
+    if (canRequestVouch) cls += ' clickable';
+    const clickHandler = canRequestVouch ? `onclick="openVouchModal('${day.date}')"` : '';
 
     const count = day.checkins.length;
     html += `
-      <div class="${cls}" title="${day.date}: ${count} check-in${count !== 1 ? 's' : ''}">
+      <div class="${cls}" title="${day.date}: ${count} check-in${count !== 1 ? 's' : ''}" ${clickHandler}>
         <span class="day-num">${day.dayNum}</span>
         <span class="day-indicator"></span>
       </div>
@@ -793,9 +1003,145 @@ function renderCalendar(calendar, userId) {
   grid.innerHTML = html;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// VOUCH SYSTEM
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+function openVouchModal(date) {
+  vouchRequestDate = date;
+  const formatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('vouchModalText').textContent =
+    'Were you at Shays on ' + formatted + ' but forgot to check in? Another Shayprils member will need to confirm you were there.';
+  document.getElementById('vouchModal').classList.add('visible');
+}
+
+function closeVouchModal() {
+  document.getElementById('vouchModal').classList.remove('visible');
+  vouchRequestDate = null;
+}
+
+async function submitVouchRequest() {
+  if (!vouchRequestDate) return;
+  try {
+    const res = await fetch(API + '/api/vouch/request', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ date: vouchRequestDate }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Vouch request submitted! Ask a friend to approve it.');
+      closeVouchModal();
+      loadCalendar();
+    } else {
+      showToast(data.error || 'Failed to request vouch', 'error');
+    }
+  } catch (e) {
+    showToast('Server error', 'error');
+  }
+}
+
+async function loadVouchRequests() {
+  try {
+    const res = await fetch(API + '/api/vouch/pending', { headers: authHeaders() });
+    const data = await res.json();
+    const list = document.getElementById('vouchRequestsList');
+    const card = document.getElementById('vouchRequestsCard');
+
+    if (data.vouches && data.vouches.length > 0) {
+      card.classList.remove('hidden');
+      list.innerHTML = data.vouches.map(v => {
+        const formatted = new Date(v.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        return `<div class="vouch-card">
+          <div class="vouch-header">${escapeHtml(v.requester_name)} needs a vouch</div>
+          <div class="vouch-detail">Claims they were at Shays on  ${formatted}</div>
+          <div class="vouch-actions">
+            <button class="btn btn-green" onclick="approveVouch('${v.id}')">I was there â vouch for them</button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      card.classList.add('hidden');
+    }
+  } catch (e) {}
+}
+
+async function approveVouch(vouchId) {
+  try {
+    const res = await fetch(API + '/api/vouch/approve', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ vouchId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Vouch approved!');
+      loadCalendar();
+    } else {
+      showToast(data.error || 'Failed to approve', 'error');
+    }
+  } catch (e) {
+    showToast('Server error', 'error');
+  }
+}
+
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ALBUM
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+async function loadAlbum() {
+  try {
+    const res = await fetch(API + '/api/album');
+    const data = await res.json();
+    const container = document.getElementById('albumContent');
+
+    if (!data.photos || data.photos.length === 0) {
+      container.innerHTML = '<div class="empty-state">No photos yet. Be the first to check in!</div>';
+      return;
+    }
+
+    // Group photos by date
+    const grouped = {};
+    data.photos.forEach(p => {
+      if (!grouped[p.date]) grouped[p.date] = [];
+      grouped[p.date].push(p);
+    });
+
+    let html = '';
+    const dates = Object.keys(grouped).sort().reverse();
+    for (const date of dates) {
+      const formatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric'
+      });
+      html += `<div class="album-date-header">${formatted}</div>`;
+      html += '<div class="album-grid">';
+      for (const photo of grouped[date]) {
+        html += `<div class="album-item" onclick="openLightbox('/uploads/${photo.selfie}', '${escapeHtml(photo.user_name)}', '${formatted}')">
+          <img src="/uploads/${photo.selfie}" alt="${escapeHtml(photo.user_name)}" loading="lazy" />
+          <div class="album-label">${escapeHtml(photo.user_name)}</div>
+        </div>`;
+      }
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  } catch (e) {
+    document.getElementById('albumContent').innerHTML = '<div class="empty-state">Could not load photos</div>';
+  }
+}
+
+function openLightbox(src, name, date) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxInfo').textContent = name + ' â ' + date;
+  document.getElementById('lightbox').classList.add('visible');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('visible');
+}
+
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // LEADERBOARD
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 async function loadLeaderboard() {
   try {
@@ -808,8 +1154,6 @@ async function loadLeaderboard() {
       return;
     }
 
-    // Total weekdays available so far
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     const maxDays = Math.max(1, ...data.map(d => d.weekdays_hit + d.weekdays_missed));
 
     list.innerHTML = data.map((entry, i) => {
@@ -821,8 +1165,8 @@ async function loadLeaderboard() {
           <div class="lb-info">
             <div class="lb-name">${escapeHtml(entry.name)}</div>
             <div class="lb-stats">
-              ${entry.weekdays_hit} days Â· ${entry.streak} streak
-              ${entry.weekdays_missed > 0 ? `Â· ${entry.weekdays_missed} missed` : ''}
+              ${entry.weekdays_hit} days &middot; ${entry.streak} streak
+              ${entry.weekdays_missed > 0 ? '&middot; ' + entry.weekdays_missed + ' missed' : ''}
             </div>
           </div>
           <div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct}%"></div></div>
@@ -834,33 +1178,9 @@ async function loadLeaderboard() {
   }
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// HISTORY
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-async function loadHistory() {
-  try {
-    const res = await fetch(API + '/api/history');
-    const messages = await res.json();
-    const list = document.getElementById('historyList');
-    if (messages.length === 0) {
-      list.innerHTML = '<div class="empty-state">No alerts sent yet.</div>';
-      return;
-    }
-    list.innerHTML = messages.map(m => {
-      const date = new Date(m.sent_at);
-      const ts = date.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-      return `<div class="history-item">
-        <div class="msg-text">${escapeHtml(m.message_text)}</div>
-        <div class="msg-meta">${ts} Â· Sent to ${m.recipients_count}</div>
-      </div>`;
-    }).join('');
-  } catch (e) {}
-}
-
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // UTILS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function toggleEl(id) {
   const el = document.getElementById(id);
@@ -882,9 +1202,9 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // INIT
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 (async function init() {
   if (await checkAuth()) {
