@@ -603,8 +603,12 @@
     <button class="nav-btn" data-tab="leaderboard">
       <span class="nav-icon">B</span>Board
     </button>
+    <button class="nav-btn" data-tab="admin" id="adminNavBtn" style="display:none"><span class="nav-icon">⚙</span>Admin</button>
   </div>
 </div>
+
+<!-- Admin Section -->
+<div id="adminSection" class="tab-content" style="display:none"></div>
 
 <!-- Toast -->
 <div id="toast" class="toast"></div>
@@ -657,7 +661,7 @@ async function doLogin() {
       localStorage.setItem('shayprils_user', JSON.stringify(data.user));
       currentUser = data.user;
       showApp();
-      showToast('Welcome to Shayprils, ' + data.user.name + '!');
+      // welcome toast removed
     } else {
       showToast(data.error || 'Failed to sign in', 'error');
     }
@@ -1193,7 +1197,7 @@ function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast ' + type + ' show';
-  setTimeout(() => t.classList.remove('show'), 3500);
+  setTimeout(() => { t.classList.remove('show'); t.style.display = 'none'; }, 2500);
 }
 
 function escapeHtml(str) {
@@ -1203,6 +1207,130 @@ function escapeHtml(str) {
 }
 
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+    // Delete own selfie
+    async function deleteSelfie(checkinId) {
+      if (!confirm('Delete this selfie?')) return;
+      try {
+        const res = await fetch('/api/checkin/' + checkinId, {
+          method: 'DELETE', headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Selfie deleted');
+          loadAlbum();
+          loadCalendar();
+        } else {
+          showToast(data.error || 'Failed', 'error');
+        }
+      } catch(e) { showToast('Error deleting', 'error'); }
+    }
+
+    // Admin functions
+    let adminPin = null;
+    function showAdminLogin() {
+      const section = document.getElementById('adminSection');
+      section.innerHTML = '<div style="max-width:400px;margin:20px auto;padding:20px;background:var(--cream);border-radius:12px;"><h2 style="color:var(--brown);margin-bottom:16px;">Admin Access</h2><input type="password" id="adminPinInput" placeholder="Enter admin PIN" style="width:100%;padding:12px;border:2px solid var(--tan);border-radius:8px;margin-bottom:12px;font-size:16px;"><button onclick="adminLogin()" style="width:100%;padding:12px;background:var(--brick);color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Login</button></div>';
+    }
+
+    async function adminLogin() {
+      const pin = document.getElementById('adminPinInput').value;
+      try {
+        const res = await fetch('/api/admin/users', { headers: { 'x-admin-pin': pin } });
+        if (res.ok) {
+          adminPin = pin;
+          showToast('Admin access granted');
+          loadAdminPanel();
+        } else {
+          showToast('Invalid PIN', 'error');
+        }
+      } catch(e) { showToast('Error', 'error'); }
+    }
+
+    async function loadAdminPanel() {
+      const section = document.getElementById('adminSection');
+      try {
+        const [usersRes, checkinsRes] = await Promise.all([
+          fetch('/api/admin/users', { headers: { 'x-admin-pin': adminPin } }),
+          fetch('/api/admin/checkins', { headers: { 'x-admin-pin': adminPin } })
+        ]);
+        const usersData = await usersRes.json();
+        const checkinsData = await checkinsRes.json();
+        let html = '<div style="max-width:800px;margin:0 auto;padding:16px;">';
+        html += '<h2 style="color:var(--brown);margin-bottom:16px;">Admin Panel</h2>';
+        
+        // Users table
+        html += '<h3 style="color:var(--brick);margin:16px 0 8px;">Users (' + usersData.users.length + ')</h3>';
+        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;background:var(--cream);border-radius:8px;overflow:hidden;">';
+        html += '<tr style="background:var(--brick);color:white;"><th style="padding:8px;text-align:left;">Name</th><th style="padding:8px;">Phone</th><th style="padding:8px;">Active</th><th style="padding:8px;">SMS</th><th style="padding:8px;">Actions</th></tr>';
+        usersData.users.forEach(function(u) {
+          html += '<tr style="border-bottom:1px solid var(--tan);">';
+          html += '<td style="padding:8px;">' + escapeHtml(u.name) + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + escapeHtml(u.phone) + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + (u.active ? 'Yes' : 'No') + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + (u.subscribed ? 'Yes' : 'No') + '</td>';
+          html += '<td style="padding:8px;text-align:center;">';
+          html += '<button onclick="adminEditUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',\'' + escapeHtml(u.phone) + '\')" style="padding:4px 8px;background:var(--brown);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Edit</button>';
+          if (u.active) html += '<button onclick="adminDeactivateUser(\'' + u.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Deactivate</button>';
+          html += '</td></tr>';
+        });
+        html += '</table></div>';
+
+        // Checkins table
+        html += '<h3 style="color:var(--brick);margin:16px 0 8px;">Check-ins (' + checkinsData.checkins.length + ')</h3>';
+        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;background:var(--cream);border-radius:8px;overflow:hidden;">';
+        html += '<tr style="background:var(--brick);color:white;"><th style="padding:8px;text-align:left;">User</th><th style="padding:8px;">Date</th><th style="padding:8px;">Selfie</th><th style="padding:8px;">Actions</th></tr>';
+        checkinsData.checkins.forEach(function(c) {
+          html += '<tr style="border-bottom:1px solid var(--tan);">';
+          html += '<td style="padding:8px;">' + escapeHtml(c.user_name) + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + c.date + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + (c.selfie ? 'Yes' : 'No') + '</td>';
+          html += '<td style="padding:8px;text-align:center;">';
+          html += '<button onclick="adminDeleteCheckin(\'' + c.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;">Delete</button>';
+          html += '</td></tr>';
+        });
+        html += '</table></div></div>';
+        section.innerHTML = html;
+      } catch(e) { section.innerHTML = '<p style="color:red;padding:20px;">Error loading admin data</p>'; }
+    }
+
+    function adminEditUser(userId, name, phone) {
+      const newName = prompt('Edit name:', name);
+      if (newName === null) return;
+      const newPhone = prompt('Edit phone:', phone);
+      if (newPhone === null) return;
+      fetch('/api/admin/users/' + userId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+        body: JSON.stringify({ name: newName, phone: newPhone })
+      }).then(r => r.json()).then(d => {
+        if (d.success) { showToast('User updated'); loadAdminPanel(); }
+        else showToast(d.error || 'Failed', 'error');
+      });
+    }
+
+    function adminDeactivateUser(userId) {
+      if (!confirm('Deactivate this user?')) return;
+      fetch('/api/admin/users/' + userId, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': adminPin }
+      }).then(r => r.json()).then(d => {
+        if (d.success) { showToast('User deactivated'); loadAdminPanel(); }
+        else showToast(d.error || 'Failed', 'error');
+      });
+    }
+
+    function adminDeleteCheckin(checkinId) {
+      if (!confirm('Delete this check-in?')) return;
+      fetch('/api/admin/checkins/' + checkinId, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': adminPin }
+      }).then(r => r.json()).then(d => {
+        if (d.success) { showToast('Check-in deleted'); loadAdminPanel(); }
+        else showToast(d.error || 'Failed', 'error');
+      });
+    }
+
 // INIT
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
@@ -1211,6 +1339,56 @@ function escapeHtml(str) {
     showApp();
   }
 })();
-</script>
+
+
+    // === ENHANCEMENTS: Admin tab, selfie delete ===
+    // Hook admin tab into existing nav
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.nav-btn');
+      if (!btn) return;
+      var tab = btn.getAttribute('data-tab');
+      if (tab === 'admin') {
+        // Hide all other sections
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.style.display = 'none'; });
+        document.getElementById('adminSection').style.display = 'block';
+        document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        if (adminPin) loadAdminPanel();
+        else showAdminLogin();
+      }
+    });
+
+    // Override loadAlbum to add delete buttons on own photos
+    var _origLoadAlbum = loadAlbum;
+    loadAlbum = async function() {
+      await _origLoadAlbum();
+      // After album renders, add delete buttons to own photos
+      try {
+        var meRes = await fetch('/api/auth/me', { headers: authHeaders() });
+        var meData = await meRes.json();
+        var myId = meData.user.id;
+        var checkinsRes = await fetch('/api/album');
+        var checkinsData = await checkinsRes.json();
+        var photos = checkinsData.photos || [];
+        // Find photo cards and add delete buttons
+        var cards = document.querySelectorAll('.photo-card, .album-card');
+        cards.forEach(function(card, i) {
+          if (i < photos.length && photos[i].user_id === myId) {
+            // Check if delete btn already exists
+            if (!card.querySelector('.delete-selfie-btn')) {
+              var btn = document.createElement('button');
+              btn.className = 'delete-selfie-btn';
+              btn.textContent = 'Delete';
+              btn.style.cssText = 'position:absolute;top:6px;right:6px;background:rgba(193,57,43,0.85);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;z-index:2;';
+              btn.onclick = function(e) { e.stopPropagation(); deleteSelfie(photos[i].id || photos[i].checkin_id); };
+              card.style.position = 'relative';
+              card.appendChild(btn);
+            }
+          }
+        });
+      } catch(e) { console.log('Album enhance error:', e); }
+    };
+
+  </script>
 </body>
 </html>
