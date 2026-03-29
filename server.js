@@ -11,21 +11,21 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb' })); // Allow large base64 selfies
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(store.SELFIES_DIR));
 
-// Twilio Client
+// âââ Twilio Client ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let twilioClient = null;
 if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
     process.env.TWILIO_ACCOUNT_SID !== 'your_account_sid_here') {
   twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   console.log('Twilio client initialized');
 } else {
-  console.warn('Twilio credentials not set - running in demo mode');
+  console.warn('Twilio credentials not set â running in demo mode (messages logged to console)');
 }
 
-// Auth middleware
+// âââ Auth middleware âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function authMiddleware(req, res, next) {
   const token = req.headers['x-auth-token'];
   if (!token) return res.status(401).json({ error: 'Not logged in' });
@@ -35,7 +35,7 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// Helper: Send SMS
+// âââ Helper: Send SMS âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function sendToSubscribers(senderName, messageText, excludeUserId = null) {
   const subscribers = store.getSubscribedUsers();
   const recipients = excludeUserId
@@ -67,8 +67,11 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null) 
   return { sent: sentCount, total: recipients.length };
 }
 
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // AUTH ROUTES
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
+// Register / Login (remembered by phone number)
 app.post('/api/auth/register', (req, res) => {
   const { name, phone } = req.body;
   if (!name || !phone) return res.status(400).json({ error: 'Name and phone required' });
@@ -79,7 +82,7 @@ app.post('/api/auth/register', (req, res) => {
       success: true,
       token: user.token,
       user: { id: user.id, name: user.name, phone: user.phone, subscribed: user.subscribed },
-      message: `Welcome to Shaperils, ${user.name}!`,
+      message: `Welcome to Shayprils, ${user.name}!`,
     });
   } catch (err) {
     console.error('Register error:', err);
@@ -87,19 +90,23 @@ app.post('/api/auth/register', (req, res) => {
   }
 });
 
+// Get current user from token
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   res.json({
     user: { id: req.user.id, name: req.user.name, phone: req.user.phone, subscribed: req.user.subscribed },
   });
 });
 
+// Toggle SMS subscription
 app.post('/api/auth/subscription', authMiddleware, (req, res) => {
   const { subscribed } = req.body;
   store.updateUserSubscription(req.user.id, !!subscribed);
   res.json({ success: true, subscribed: !!subscribed });
 });
 
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // RALLY ROUTES (send SMS)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 app.post('/api/send', authMiddleware, async (req, res) => {
   const { messageType, companions, customMessage } = req.body;
@@ -111,7 +118,7 @@ app.post('/api/send', authMiddleware, async (req, res) => {
       messageText = `${senderName} is heading to Shays right now! Come through!`;
       break;
     case 'solo_join':
-      messageText = `${senderName} is heading to Shays solo - come keep them company!`;
+      messageText = `${senderName} is heading to Shays solo â come keep them company!`;
       break;
     case 'with_friends':
       messageText = companions
@@ -139,17 +146,22 @@ app.post('/api/send', authMiddleware, async (req, res) => {
   }
 });
 
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // CHECK-IN ROUTES (selfie tracker)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
+// Upload selfie check-in (one per day)
 app.post('/api/checkin', authMiddleware, (req, res) => {
   const { selfie } = req.body;
   if (!selfie) return res.status(400).json({ error: 'Selfie required!' });
 
+  // Get today's date in ET (Shays is in Boston)
   const now = new Date();
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const dateStr = et.toISOString().split('T')[0];
 
-  const base64Data = selfie.replace(/^data:image\/\\w+;base64,/, '');
+  // Save the selfie image
+  const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
   const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
   const filename = `${req.user.id}_${dateStr}.${ext}`;
   const filepath = path.join(store.SELFIES_DIR, filename);
@@ -167,33 +179,114 @@ app.post('/api/checkin', authMiddleware, (req, res) => {
     return res.json({
       success: true,
       duplicate: true,
-      message: 'You already checked in today! Keep it up',
+      message: 'You already checked in today!',
       checkin: result.checkin,
     });
   }
 
+  // Send notification to the group
   const notifyText = `${req.user.name} just checked in at Shays! That's dedication.`;
   sendToSubscribers(req.user.name, notifyText, req.user.id).catch(console.error);
 
   res.json({
     success: true,
     duplicate: false,
-    message: `Checked in for ${dateStr}! Selfie saved`,
+    message: `Checked in for ${dateStr}! Selfie saved.`,
     checkin: result.checkin,
   });
 });
 
+// Get my check-ins
 app.get('/api/checkin/mine', authMiddleware, (req, res) => {
   const checkins = store.getCheckinsForUser(req.user.id);
   res.json({ checkins });
 });
 
+// Get check-ins for a specific date
 app.get('/api/checkin/date/:date', (req, res) => {
   const checkins = store.getCheckinsForDate(req.params.date);
   res.json({ checkins });
 });
 
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ALBUM ROUTES (communal photo gallery)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+app.get('/api/album', (req, res) => {
+  const photos = store.getAllPhotos();
+  res.json({ photos });
+});
+
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// VOUCH ROUTES (retroactive attendance)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+
+// Request a vouch for a missed day
+app.post('/api/vouch/request', authMiddleware, (req, res) => {
+  const { date } = req.body;
+  if (!date) return res.status(400).json({ error: 'Date required' });
+
+  // Validate the date is a valid April 2026 weekday in the past
+  const aprilWeekdays = store.getAprilWeekdays();
+  if (!aprilWeekdays.includes(date)) {
+    return res.status(400).json({ error: 'Not a valid April 2026 weekday' });
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  if (date >= today) {
+    return res.status(400).json({ error: 'Can only request vouches for past days' });
+  }
+
+  const result = store.createVouchRequest(req.user.id, req.user.name, date);
+
+  if (result.already_checked_in) {
+    return res.status(400).json({ error: 'You already checked in that day' });
+  }
+  if (result.duplicate) {
+    return res.json({ success: true, message: 'Vouch already requested for this day', vouch: result.vouch });
+  }
+  if (result.success) {
+    return res.json({ success: true, message: 'Vouch request submitted!', vouch: result.vouch });
+  }
+
+  res.status(500).json({ error: 'Failed to create vouch request' });
+});
+
+// Get pending vouch requests (that current user can approve)
+app.get('/api/vouch/pending', authMiddleware, (req, res) => {
+  const vouches = store.getPendingVouchRequests(req.user.id);
+  res.json({ vouches });
+});
+
+// Get all vouches (for calendar display)
+app.get('/api/vouch/list', (req, res) => {
+  const vouches = store.getAllVouches();
+  res.json({ vouches });
+});
+
+// Approve a vouch
+app.post('/api/vouch/approve', authMiddleware, (req, res) => {
+  const { vouchId } = req.body;
+  if (!vouchId) return res.status(400).json({ error: 'Vouch ID required' });
+
+  const result = store.approveVouch(vouchId, req.user.id, req.user.name);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  // Notify the requester
+  if (result.vouch) {
+    const notifyText = `${req.user.name} vouched for ${result.vouch.requester_name} being at Shays on ${result.vouch.date}!`;
+    sendToSubscribers(req.user.name, notifyText).catch(console.error);
+  }
+
+  res.json({ success: true, message: 'Vouch approved!' });
+});
+
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // LEADERBOARD & CALENDAR
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 app.get('/api/leaderboard', (req, res) => {
   res.json(store.getLeaderboard());
@@ -221,7 +314,9 @@ app.get('/api/calendar', (req, res) => {
   res.json({ calendar, users: users.map(u => ({ id: u.id, name: u.name })) });
 });
 
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // OTHER ROUTES
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 app.get('/api/subscribers/count', (req, res) => {
   res.json({ count: store.getSubscribedUsers().length });
@@ -240,14 +335,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Serve frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start
+// âââ Start ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 app.listen(PORT, () => {
-  console.log(`Shaperils is running at http://localhost:${PORT}`);
-  console.log(`Twilio: ${twilioClient ? 'Connected' : 'Demo Mode'}`);
-  console.log(`Users: ${store.getAllUsers().length}`);
-  console.log('April is Shays month!');
+  console.log(`\nShayprils is running at http://localhost:${PORT}`);
+  console.log(`   Twilio: ${twilioClient ? 'Connected' : 'Demo Mode'}`);
+  console.log(`   Users: ${store.getAllUsers().length}`);
+  console.log(`   April is Shays month!\n`);
 });
