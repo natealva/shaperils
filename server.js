@@ -1,0 +1,253 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const twilio = require('twilio');
+const store = require('./store');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(store.SELFIES_DIR));
+
+// Twilio Client
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_ACCOUNT_SID !== 'your_account_sid_here') {
+  twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  console.log('Twilio client initialized');
+} else {
+  console.warn('Twilio credentials not set - running in demo mode');
+}
+
+// Auth middleware
+function authMiddleware(req, res, next) {
+  const token = req.headers['x-auth-token'];
+  if (!token) return res.status(401).json({ error: 'Not logged in' });
+  const user = store.getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'Invalid session' });
+  req.user = user;
+  next();
+}
+
+// Helper: Send SMS
+async function sendToSubscribers(senderName, messageText, excludeUserId = null) {
+  const subscribers = store.getSubscribedUsers();
+  const recipients = excludeUserId
+    ? subscribers.filter(s => s.id !== excludeUserId)
+    : subscribers;
+
+  if (recipients.length === 0) return { sent: 0, total: 0 };
+
+  let sentCount = 0;
+  for (const sub of recipients) {
+    try {
+      if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
+        await twilioClient.messages.create({
+          body: messageText,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: sub.phone,
+        });
+        console.log(`Sent to ${sub.name} (${sub.phone})`);
+      } else {
+        console.log(`[DEMO] -> ${sub.name} (${sub.phone}): ${messageText}`);
+      }
+      sentCount++;
+    } catch (err) {
+      console.error(`Failed to send to ${sub.phone}:`, err.message);
+    }
+  }
+
+  store.logMessage(senderName, 'broadcast', messageText, sentCount);
+  return { sent: sentCount, total: recipients.length };
+}
+
+// AUTH ROUTES
+
+app.post('/api/auth/register', (req, res) => {
+  const { name, phone } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: 'Name and phone required' });
+
+  try {
+    const user = store.createUser(name.trim(), phone);
+    res.json({
+      success: true,
+      token: user.token,
+      user: { id: user.id, name: user.name, phone: user.phone, subscribed: user.subscribed },
+      message: `Welcome to Shaperils, ${user.name}!`,
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Failed to register' });
+  }
+});
+
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({
+    user: { id: req.user.id, name: req.user.name, phone: req.user.phone, subscribed: req.user.subscribed },
+  });
+});
+
+app.post('/api/auth/subscription', authMiddleware, (req, res) => {
+  const { subscribed } = req.body;
+  store.updateUserSubscription(req.user.id, !!subscribed);
+  res.json({ success: true, subscribed: !!subscribed });
+});
+
+// RALLY ROUTES (send SMS)
+
+app.post('/api/send', authMiddleware, async (req, res) => {
+  const { messageType, companions, customMessage } = req.body;
+  const senderName = req.user.name;
+  let messageText = '';
+
+  switch (messageType) {
+    case 'heading_now':
+      messageText = `${senderName} is heading to Shays right now! Come through!`;
+      break;
+    case 'solo_join':
+      messageText = `${senderName} is heading to Shays solo - come keep them company!`;
+      break;
+    case 'with_friends':
+      messageText = companions
+        ? `${senderName} is heading to Shays with ${companions}. Join the crew!`
+        : `${senderName} is heading to Shays with friends. Join the crew!`;
+      break;
+    case 'who_wants':
+      messageText = `Who wants to go to Shays? ${senderName} is trying to rally the troops!`;
+      break;
+    case 'custom':
+      messageText = customMessage
+        ? `Shays Alert from ${senderName}: ${customMessage}`
+        : `${senderName} sent a Shays alert!`;
+      break;
+    default:
+      messageText = `${senderName} is heading to Shays! Come through!`;
+  }
+
+  try {
+    const result = await sendToSubscribers(senderName, messageText, req.user.id);
+    res.json({ success: true, message: `Message sent to ${result.sent} people!`, sent: result.sent });
+  } catch (err) {
+    console.error('Send error:', err);
+    res.status(500).json({ error: 'Failed to send messages' });
+  }
+});
+
+// CHECK-IN ROUTES (selfie tracker)
+
+app.post('/api/checkin', authMiddleware, (req, res) => {
+  const { selfie } = req.body;
+  if (!selfie) return res.status(400).json({ error: 'Selfie required!' });
+
+  const now = new Date();
+  const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const dateStr = et.toISOString().split('T')[0];
+
+  const base64Data = selfie.replace(/^data:image\/\\w+;base64,/, '');
+  const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
+  const filename = `${req.user.id}_${dateStr}.${ext}`;
+  const filepath = path.join(store.SELFIES_DIR, filename);
+
+  try {
+    fs.writeFileSync(filepath, base64Data, 'base64');
+  } catch (err) {
+    console.error('Failed to save selfie:', err);
+    return res.status(500).json({ error: 'Failed to save selfie' });
+  }
+
+  const result = store.addCheckin(req.user.id, req.user.name, dateStr, filename);
+
+  if (result.duplicate) {
+    return res.json({
+      success: true,
+      duplicate: true,
+      message: 'You already checked in today! Keep it up',
+      checkin: result.checkin,
+    });
+  }
+
+  const notifyText = `${req.user.name} just checked in at Shays! That's dedication.`;
+  sendToSubscribers(req.user.name, notifyText, req.user.id).catch(console.error);
+
+  res.json({
+    success: true,
+    duplicate: false,
+    message: `Checked in for ${dateStr}! Selfie saved`,
+    checkin: result.checkin,
+  });
+});
+
+app.get('/api/checkin/mine', authMiddleware, (req, res) => {
+  const checkins = store.getCheckinsForUser(req.user.id);
+  res.json({ checkins });
+});
+
+app.get('/api/checkin/date/:date', (req, res) => {
+  const checkins = store.getCheckinsForDate(req.params.date);
+  res.json({ checkins });
+});
+
+// LEADERBOARD & CALENDAR
+
+app.get('/api/leaderboard', (req, res) => {
+  res.json(store.getLeaderboard());
+});
+
+app.get('/api/calendar', (req, res) => {
+  const weekdays = store.getAprilWeekdays();
+  const checkins = store.getAllCheckins();
+  const users = store.getAllUsers();
+
+  const calendar = weekdays.map(date => {
+    const dayCheckins = checkins.filter(c => c.date === date);
+    return {
+      date,
+      dayOfWeek: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+      dayNum: parseInt(date.split('-')[2]),
+      checkins: dayCheckins.map(c => ({
+        user_id: c.user_id,
+        user_name: c.user_name,
+        selfie: c.selfie,
+      })),
+    };
+  });
+
+  res.json({ calendar, users: users.map(u => ({ id: u.id, name: u.name })) });
+});
+
+// OTHER ROUTES
+
+app.get('/api/subscribers/count', (req, res) => {
+  res.json({ count: store.getSubscribedUsers().length });
+});
+
+app.get('/api/history', (req, res) => {
+  res.json(store.getRecentMessages());
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    twilio: !!twilioClient,
+    subscribers: store.getSubscribedUsers().length,
+    users: store.getAllUsers().length,
+  });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Start
+app.listen(PORT, () => {
+  console.log(`Shaperils is running at http://localhost:${PORT}`);
+  console.log(`Twilio: ${twilioClient ? 'Connected' : 'Demo Mode'}`);
+  console.log(`Users: ${store.getAllUsers().length}`);
+  console.log('April is Shays month!');
+});
