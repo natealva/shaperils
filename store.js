@@ -3,14 +3,18 @@ const path = require('path');
 
 const DB_PATH = path.join(__dirname, 'data.json');
 const SELFIES_DIR = path.join(__dirname, 'uploads');
+const TEST_DB_PATH = path.join(__dirname, 'data_test.json');
+const TEST_SELFIES_DIR = path.join(__dirname, 'uploads_test');
 
 // Ensure uploads directory exists
 if (!fs.existsSync(SELFIES_DIR)) fs.mkdirSync(SELFIES_DIR, { recursive: true });
+if (!fs.existsSync(TEST_SELFIES_DIR)) fs.mkdirSync(TEST_SELFIES_DIR, { recursive: true });
 
-function load() {
+function load(testMode) {
+  const dbPath = testMode ? TEST_DB_PATH : DB_PATH;
   try {
-    if (fs.existsSync(DB_PATH)) {
-      return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+    if (fs.existsSync(dbPath)) {
+      return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
     }
   } catch (e) {
     console.error('Error loading data:', e.message);
@@ -18,37 +22,38 @@ function load() {
   return { users: [], messages: [], checkins: [], vouches: [] };
 }
 
-function save(data) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+function save(data, testMode) {
+  const dbPath = testMode ? TEST_DB_PATH : DB_PATH;
+  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
 }
 
-// âââ Users ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Users Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
-function getUser(userId) {
-  const data = load();
+function getUser(userId, testMode) {
+  const data = load(testMode);
   return data.users.find(u => u.id === userId) || null;
 }
 
-function getUserByToken(token) {
-  const data = load();
+function getUserByToken(token, testMode) {
+  const data = load(testMode);
   return data.users.find(u => u.token === token) || null;
 }
 
-function getAllUsers() {
-  const data = load();
+function getAllUsers(testMode) {
+  const data = load(testMode);
   return data.users.filter(u => u.active);
 }
 
-function createUser(name, phone) {
-  const data = load();
-  // Check if phone already exists â remember by phone number
+function createUser(name, phone, testMode) {
+  const data = load(testMode);
+  // Check if phone already exists Ã¢ remember by phone number
   let normalizedPhone = normalizePhone(phone);
   const existing = data.users.find(u => u.phone === normalizedPhone);
   if (existing) {
     // Update name if they give a different one, keep the same account
     existing.name = name;
     existing.active = true;
-    save(data);
+    save(data, testMode);
     return existing;
   }
   const token = generateToken();
@@ -59,26 +64,27 @@ function createUser(name, phone) {
     phone: normalizedPhone,
     active: true,
     subscribed: true,
+    silenced_until: null,
     created_at: new Date().toISOString(),
   };
   data.users.push(user);
-  save(data);
+  save(data, testMode);
   return user;
 }
 
-function updateUserSubscription(userId, subscribed) {
-  const data = load();
+function updateUserSubscription(userId, subscribed, testMode) {
+  const data = load(testMode);
   const user = data.users.find(u => u.id === userId);
   if (user) {
     user.subscribed = subscribed;
-    save(data);
+    save(data, testMode);
   }
 }
 
-// âââ Check-ins (selfies) ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Check-ins (selfies) Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
-function addCheckin(userId, userName, dateStr, selfieFilename) {
-  const data = load();
+function addCheckin(userId, userName, dateStr, selfieFilename, testMode) {
+  const data = load(testMode);
   // One photo per day per user
   const existing = data.checkins.find(c => c.user_id === userId && c.date === dateStr);
   if (existing) {
@@ -93,29 +99,29 @@ function addCheckin(userId, userName, dateStr, selfieFilename) {
     created_at: new Date().toISOString(),
   };
   data.checkins.push(checkin);
-  save(data);
+  save(data, testMode);
   return { duplicate: false, checkin };
 }
 
-function getCheckinsForUser(userId) {
-  const data = load();
+function getCheckinsForUser(userId, testMode) {
+  const data = load(testMode);
   return data.checkins.filter(c => c.user_id === userId);
 }
 
-function getCheckinsForDate(dateStr) {
-  const data = load();
+function getCheckinsForDate(dateStr, testMode) {
+  const data = load(testMode);
   return data.checkins.filter(c => c.date === dateStr);
 }
 
-function getAllCheckins() {
-  const data = load();
+function getAllCheckins(testMode) {
+  const data = load(testMode);
   return data.checkins || [];
 }
 
-// âââ Album (all photos) ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Album (all photos) Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
-function getAllPhotos() {
-  const data = load();
+function getAllPhotos(testMode) {
+  const data = load(testMode);
   return (data.checkins || []).filter(c => c.selfie).map(c => ({
     id: c.id,
     user_id: c.user_id,
@@ -126,10 +132,10 @@ function getAllPhotos() {
   }));
 }
 
-// âââ Vouch System ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Vouch System Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
-function createVouchRequest(requesterId, requesterName, dateStr) {
-  const data = load();
+function createVouchRequest(requesterId, requesterName, dateStr, testMode) {
+  const data = load(testMode);
   if (!data.vouches) data.vouches = [];
 
   // Check if already requested
@@ -156,24 +162,24 @@ function createVouchRequest(requesterId, requesterName, dateStr) {
     approved_at: null,
   };
   data.vouches.push(vouch);
-  save(data);
+  save(data, testMode);
   return { success: true, vouch };
 }
 
-function getPendingVouchRequests(excludeUserId) {
-  const data = load();
+function getPendingVouchRequests(excludeUserId, testMode) {
+  const data = load(testMode);
   if (!data.vouches) return [];
   // Show pending vouches from OTHER users (you can't vouch for yourself)
   return data.vouches.filter(v => v.status === 'pending' && v.requester_id !== excludeUserId);
 }
 
-function getAllVouches() {
-  const data = load();
+function getAllVouches(testMode) {
+  const data = load(testMode);
   return data.vouches || [];
 }
 
-function approveVouch(vouchId, voucherId, voucherName) {
-  const data = load();
+function approveVouch(vouchId, voucherId, voucherName, testMode) {
+  const data = load(testMode);
   if (!data.vouches) return { error: 'No vouches found' };
 
   const vouch = data.vouches.find(v => v.id === vouchId);
@@ -185,19 +191,19 @@ function approveVouch(vouchId, voucherId, voucherName) {
   vouch.voucher_id = voucherId;
   vouch.voucher_name = voucherName;
   vouch.approved_at = new Date().toISOString();
-  save(data);
+  save(data, testMode);
   return { success: true, vouch };
 }
 
-// âââ Leaderboard ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Leaderboard Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
-function getLeaderboard() {
-  const data = load();
+function getLeaderboard(testMode) {
+  const data = load(testMode);
   const users = data.users.filter(u => u.active);
   const checkins = data.checkins || [];
   const vouches = (data.vouches || []).filter(v => v.status === 'approved');
 
-  const aprilWeekdays = getAprilWeekdays();
+  const allWeekdays = [...getMarchWeekdays(), ...getAprilWeekdays()];
   const today = new Date().toISOString().split('T')[0];
 
   return users.map(u => {
@@ -207,8 +213,8 @@ function getLeaderboard() {
       ...userCheckins.map(c => c.date),
       ...userVouches.map(v => v.date),
     ]);
-    const weekdaysHit = aprilWeekdays.filter(d => checkedDates.has(d));
-    const weekdaysMissed = aprilWeekdays.filter(d => d <= today && !checkedDates.has(d));
+    const weekdaysHit = allWeekdays.filter(d => checkedDates.has(d));
+    const weekdaysMissed = allWeekdays.filter(d => d <= today && !checkedDates.has(d));
 
     return {
       id: u.id,
@@ -216,16 +222,16 @@ function getLeaderboard() {
       total_checkins: checkedDates.size,
       weekdays_hit: weekdaysHit.length,
       weekdays_missed: weekdaysMissed.length,
-      streak: calculateStreak(aprilWeekdays, checkedDates, today),
+      streak: calculateStreak(allWeekdays, checkedDates, today),
       checked_dates: Array.from(checkedDates),
     };
   }).sort((a, b) => b.total_checkins - a.total_checkins);
 }
 
-// âââ Messages âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Messages Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
-function logMessage(senderName, messageType, messageText, recipientsCount) {
-  const data = load();
+function logMessage(senderName, messageType, messageText, recipientsCount, testMode) {
+  const data = load(testMode);
   data.messages.unshift({
     id: Date.now(),
     sender_name: senderName,
@@ -235,20 +241,62 @@ function logMessage(senderName, messageType, messageText, recipientsCount) {
     sent_at: new Date().toISOString(),
   });
   if (data.messages.length > 100) data.messages = data.messages.slice(0, 100);
-  save(data);
+  save(data, testMode);
 }
 
-function getRecentMessages(limit = 20) {
-  const data = load();
+function getRecentMessages(limit = 20, testMode) {
+  const data = load(testMode);
   return (data.messages || []).slice(0, limit);
 }
 
-function getSubscribedUsers() {
-  const data = load();
-  return data.users.filter(u => u.active && u.subscribed);
+function getSubscribedUsers(testMode) {
+  const data = load(testMode);
+  const now = new Date().toISOString();
+  return data.users.filter(u => {
+    if (!u.active || !u.subscribed) return false;
+    if (u.silenced_until === 'forever') return false;
+    if (u.silenced_until && u.silenced_until > now) return false;
+    // Auto-unsilence if time has passed
+    if (u.silenced_until && u.silenced_until <= now) {
+      u.silenced_until = null;
+      u.subscribed = true;
+      save(data, testMode);
+    }
+    return true;
+  });
 }
 
-// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Silence/Notification Support Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
+
+function silenceUser(userId, duration, testMode) {
+  const data = load(testMode);
+  const user = data.users.find(u => u.id === userId);
+  if (!user) return { error: 'Not found' };
+  if (duration === 'forever') {
+    user.silenced_until = 'forever';
+    user.subscribed = false;
+  } else if (duration === 'day') {
+    user.silenced_until = new Date(Date.now() + 86400000).toISOString();
+    user.subscribed = false;
+  } else if (duration === 'week') {
+    user.silenced_until = new Date(Date.now() + 7 * 86400000).toISOString();
+    user.subscribed = false;
+  }
+  save(data, testMode);
+  return { success: true, silenced_until: user.silenced_until };
+}
+
+function unsilenceUser(userId, testMode) {
+  const data = load(testMode);
+  const user = data.users.find(u => u.id === userId);
+  if (!user) return { error: 'Not found' };
+  user.silenced_until = null;
+  user.subscribed = true;
+  save(data, testMode);
+  return { success: true };
+}
+
+// Ã¢Ã¢Ã¢ Helpers Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 function normalizePhone(phone) {
   let cleaned = phone.replace(/[^0-9+]/g, '');
@@ -269,6 +317,19 @@ function generateToken() {
     token += chars[Math.floor(Math.random() * chars.length)];
   }
   return token;
+}
+
+function getMarchWeekdays() {
+  const days = [];
+  for (let d = 1; d <= 31; d++) {
+    const date = new Date(2026, 2, d); // Month is 0-indexed, 2 = March
+    const day = date.getDay();
+    if (day >= 1 && day <= 5) { // Monday-Friday
+      const dateStr = `2026-03-${String(d).padStart(2, '0')}`;
+      days.push(dateStr);
+    }
+  }
+  return days;
 }
 
 function getAprilWeekdays() {
@@ -299,58 +360,60 @@ function calculateStreak(weekdays, checkedDates, today) {
 
 
 // Delete a checkin (user can delete own)
-function deleteCheckin(checkinId, userId) {
-  const data = load();
+function deleteCheckin(checkinId, userId, testMode) {
+  const data = load(testMode);
   const idx = data.checkins.findIndex(c => c.id === checkinId && c.user_id === userId);
   if (idx === -1) return { error: 'Not found or not yours' };
   const checkin = data.checkins[idx];
   data.checkins.splice(idx, 1);
-  save(data);
+  save(data, testMode);
   if (checkin.selfie) {
-    try { fs.unlinkSync(path.join(SELFIES_DIR, checkin.selfie)); } catch(e) {}
+    const selfiePath = testMode ? TEST_SELFIES_DIR : SELFIES_DIR;
+    try { fs.unlinkSync(path.join(selfiePath, checkin.selfie)); } catch(e) {}
   }
   return { success: true };
 }
 
 // Admin: delete any checkin
-function adminDeleteCheckin(checkinId) {
-  const data = load();
+function adminDeleteCheckin(checkinId, testMode) {
+  const data = load(testMode);
   const idx = data.checkins.findIndex(c => c.id === checkinId);
   if (idx === -1) return { error: 'Not found' };
   const checkin = data.checkins[idx];
   data.checkins.splice(idx, 1);
-  save(data);
+  save(data, testMode);
   if (checkin.selfie) {
-    try { fs.unlinkSync(path.join(SELFIES_DIR, checkin.selfie)); } catch(e) {}
+    const selfiePath = testMode ? TEST_SELFIES_DIR : SELFIES_DIR;
+    try { fs.unlinkSync(path.join(selfiePath, checkin.selfie)); } catch(e) {}
   }
   return { success: true };
 }
 
 // Admin: deactivate user
-function adminDeleteUser(userId) {
-  const data = load();
+function adminDeleteUser(userId, testMode) {
+  const data = load(testMode);
   const user = data.users.find(u => u.id === userId);
   if (!user) return { error: 'Not found' };
   user.active = false;
-  save(data);
+  save(data, testMode);
   return { success: true };
 }
 
 // Admin: update user info
-function adminUpdateUser(userId, updates) {
-  const data = load();
+function adminUpdateUser(userId, updates, testMode) {
+  const data = load(testMode);
   const user = data.users.find(u => u.id === userId);
   if (!user) return { error: 'Not found' };
   if (updates.name) user.name = updates.name;
   if (updates.phone) user.phone = normalizePhone(updates.phone);
   if (typeof updates.active === 'boolean') user.active = updates.active;
-  save(data);
+  save(data, testMode);
   return { success: true, user };
 }
 
 // Admin: get all users including inactive
-function adminGetAllUsers() {
-  const data = load();
+function adminGetAllUsers(testMode) {
+  const data = load(testMode);
   return data.users;
 }
 
@@ -373,7 +436,10 @@ module.exports = {
   getLeaderboard,
   logMessage,
   getRecentMessages,
+  silenceUser,
+  unsilenceUser,
   normalizePhone,
+  getMarchWeekdays,
   getAprilWeekdays,
   deleteCheckin,
   adminDeleteCheckin,
@@ -381,4 +447,5 @@ module.exports = {
   adminUpdateUser,
   adminGetAllUsers,
   SELFIES_DIR,
+  TEST_SELFIES_DIR,
 };
