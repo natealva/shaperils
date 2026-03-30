@@ -15,24 +15,33 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Allow large base64 selfies
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(store.SELFIES_DIR));
+app.use('/uploads_test', express.static(store.TEST_SELFIES_DIR));
 
-// âââ Twilio Client ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Test mode middleware
+app.use((req, res, next) => {
+  req.testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  next();
+});
+
+// Ã¢Ã¢Ã¢ Twilio Client Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 let twilioClient = null;
 if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
     process.env.TWILIO_ACCOUNT_SID !== 'your_account_sid_here') {
   twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   console.log('Twilio client initialized');
 } else {
-  console.warn('Twilio credentials not set â running in demo mode (messages logged to console)');
+  console.warn('Twilio credentials not set Ã¢ running in demo mode (messages logged to console)');
 }
 
-// âââ Auth middleware âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Auth middleware Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 function authMiddleware(req, res, next) {
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
   const token = req.headers['x-auth-token'];
   if (!token) return res.status(401).json({ error: 'Not logged in' });
-  const user = store.getUserByToken(token);
+  const user = store.getUserByToken(token, testMode);
   if (!user) return res.status(401).json({ error: 'Invalid session' });
   req.user = user;
+  req.testMode = testMode;
   next();
 }
 
@@ -42,9 +51,9 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// âââ Helper: Send SMS âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-async function sendToSubscribers(senderName, messageText, excludeUserId = null) {
-  const subscribers = store.getSubscribedUsers();
+// Ã¢Ã¢Ã¢ Helper: Send SMS Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
+async function sendToSubscribers(senderName, messageText, excludeUserId = null, testMode = false) {
+  const subscribers = store.getSubscribedUsers(testMode);
   const recipients = excludeUserId
     ? subscribers.filter(s => s.id !== excludeUserId)
     : subscribers;
@@ -70,13 +79,13 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null) 
     }
   }
 
-  store.logMessage(senderName, 'broadcast', messageText, sentCount);
+  store.logMessage(senderName, 'broadcast', messageText, sentCount, testMode);
   return { sent: sentCount, total: recipients.length };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 // AUTH ROUTES
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 // Register / Login (remembered by phone number)
 app.post('/api/auth/register', (req, res) => {
@@ -84,11 +93,11 @@ app.post('/api/auth/register', (req, res) => {
   if (!name || !phone) return res.status(400).json({ error: 'Name and phone required' });
 
   try {
-    const user = store.createUser(name.trim(), phone);
+    const user = store.createUser(name.trim(), phone, req.testMode);
     res.json({
       success: true,
       token: user.token,
-      user: { id: user.id, name: user.name, phone: user.phone, subscribed: user.subscribed },
+      user: { id: user.id, name: user.name, phone: user.phone, subscribed: user.subscribed, silenced_until: user.silenced_until || null },
       message: `Welcome to Shayprils, ${user.name}!`,
     });
   } catch (err) {
@@ -100,20 +109,38 @@ app.post('/api/auth/register', (req, res) => {
 // Get current user from token
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   res.json({
-    user: { id: req.user.id, name: req.user.name, phone: req.user.phone, subscribed: req.user.subscribed },
+    user: { id: req.user.id, name: req.user.name, phone: req.user.phone, subscribed: req.user.subscribed, silenced_until: req.user.silenced_until || null },
   });
 });
 
 // Toggle SMS subscription
 app.post('/api/auth/subscription', authMiddleware, (req, res) => {
   const { subscribed } = req.body;
-  store.updateUserSubscription(req.user.id, !!subscribed);
+  store.updateUserSubscription(req.user.id, !!subscribed, req.testMode);
   res.json({ success: true, subscribed: !!subscribed });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Silence notifications
+app.post('/api/auth/silence', authMiddleware, (req, res) => {
+  const { duration } = req.body; // 'day', 'week', 'forever'
+  if (!['day', 'week', 'forever'].includes(duration)) {
+    return res.status(400).json({ error: 'Invalid duration' });
+  }
+  const result = store.silenceUser(req.user.id, duration, req.testMode);
+  if (result.error) return res.status(400).json(result);
+  res.json({ success: true, silenced_until: result.silenced_until });
+});
+
+// Unsilence (re-subscribe)
+app.post('/api/auth/unsilence', authMiddleware, (req, res) => {
+  const result = store.unsilenceUser(req.user.id, req.testMode);
+  if (result.error) return res.status(400).json(result);
+  res.json({ success: true });
+});
+
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 // RALLY ROUTES (send SMS)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 app.post('/api/send', authMiddleware, async (req, res) => {
   const { messageType, companions, customMessage } = req.body;
@@ -125,7 +152,7 @@ app.post('/api/send', authMiddleware, async (req, res) => {
       messageText = `${senderName} is heading to Shays right now! Come through!`;
       break;
     case 'solo_join':
-      messageText = `${senderName} is heading to Shays solo â come keep them company!`;
+      messageText = `${senderName} is heading to Shays solo Ã¢ come keep them company!`;
       break;
     case 'with_friends':
       messageText = companions
@@ -145,7 +172,7 @@ app.post('/api/send', authMiddleware, async (req, res) => {
   }
 
   try {
-    const result = await sendToSubscribers(senderName, messageText, req.user.id);
+    const result = await sendToSubscribers(senderName, messageText, req.user.id, req.testMode);
     res.json({ success: true, message: `Message sent to ${result.sent} people!`, sent: result.sent });
   } catch (err) {
     console.error('Send error:', err);
@@ -153,9 +180,9 @@ app.post('/api/send', authMiddleware, async (req, res) => {
   }
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 // CHECK-IN ROUTES (selfie tracker)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 // Upload selfie check-in (one per day)
 app.post('/api/checkin', authMiddleware, (req, res) => {
@@ -171,7 +198,7 @@ app.post('/api/checkin', authMiddleware, (req, res) => {
   const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
   const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
   const filename = `${req.user.id}_${dateStr}.${ext}`;
-  const filepath = path.join(store.SELFIES_DIR, filename);
+  const filepath = path.join(req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR, filename);
 
   try {
     fs.writeFileSync(filepath, base64Data, 'base64');
@@ -180,7 +207,7 @@ app.post('/api/checkin', authMiddleware, (req, res) => {
     return res.status(500).json({ error: 'Failed to save selfie' });
   }
 
-  const result = store.addCheckin(req.user.id, req.user.name, dateStr, filename);
+  const result = store.addCheckin(req.user.id, req.user.name, dateStr, filename, req.testMode);
 
   if (result.duplicate) {
     return res.json({
@@ -193,7 +220,7 @@ app.post('/api/checkin', authMiddleware, (req, res) => {
 
   // Send notification to the group
   const notifyText = `${req.user.name} just checked in at Shays! That's dedication.`;
-  sendToSubscribers(req.user.name, notifyText, req.user.id).catch(console.error);
+  sendToSubscribers(req.user.name, notifyText, req.user.id, req.testMode).catch(console.error);
 
   res.json({
     success: true,
@@ -205,36 +232,38 @@ app.post('/api/checkin', authMiddleware, (req, res) => {
 
 // Get my check-ins
 app.get('/api/checkin/mine', authMiddleware, (req, res) => {
-  const checkins = store.getCheckinsForUser(req.user.id);
+  const checkins = store.getCheckinsForUser(req.user.id, req.testMode);
   res.json({ checkins });
 });
 
 
 // Delete own checkin/selfie
 app.delete('/api/checkin/:id', authMiddleware, (req, res) => {
-  const result = store.deleteCheckin(req.params.id, req.user.id);
+  const result = store.deleteCheckin(req.params.id, req.user.id, req.testMode);
   if (result.error) return res.status(400).json(result);
   res.json({ success: true, message: 'Selfie deleted' });
 });
 
 // Get check-ins for a specific date
 app.get('/api/checkin/date/:date', (req, res) => {
-  const checkins = store.getCheckinsForDate(req.params.date);
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const checkins = store.getCheckinsForDate(req.params.date, testMode);
   res.json({ checkins });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 // ALBUM ROUTES (communal photo gallery)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 app.get('/api/album', (req, res) => {
-  const photos = store.getAllPhotos();
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const photos = store.getAllPhotos(testMode);
   res.json({ photos });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 // VOUCH ROUTES (retroactive attendance)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 // Request a vouch for a missed day
 app.post('/api/vouch/request', authMiddleware, (req, res) => {
@@ -252,7 +281,7 @@ app.post('/api/vouch/request', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Can only request vouches for past days' });
   }
 
-  const result = store.createVouchRequest(req.user.id, req.user.name, date);
+  const result = store.createVouchRequest(req.user.id, req.user.name, date, req.testMode);
 
   if (result.already_checked_in) {
     return res.status(400).json({ error: 'You already checked in that day' });
@@ -269,13 +298,14 @@ app.post('/api/vouch/request', authMiddleware, (req, res) => {
 
 // Get pending vouch requests (that current user can approve)
 app.get('/api/vouch/pending', authMiddleware, (req, res) => {
-  const vouches = store.getPendingVouchRequests(req.user.id);
+  const vouches = store.getPendingVouchRequests(req.user.id, req.testMode);
   res.json({ vouches });
 });
 
 // Get all vouches (for calendar display)
 app.get('/api/vouch/list', (req, res) => {
-  const vouches = store.getAllVouches();
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const vouches = store.getAllVouches(testMode);
   res.json({ vouches });
 });
 
@@ -284,7 +314,7 @@ app.post('/api/vouch/approve', authMiddleware, (req, res) => {
   const { vouchId } = req.body;
   if (!vouchId) return res.status(400).json({ error: 'Vouch ID required' });
 
-  const result = store.approveVouch(vouchId, req.user.id, req.user.name);
+  const result = store.approveVouch(vouchId, req.user.id, req.user.name, req.testMode);
 
   if (result.error) {
     return res.status(400).json({ error: result.error });
@@ -293,24 +323,27 @@ app.post('/api/vouch/approve', authMiddleware, (req, res) => {
   // Notify the requester
   if (result.vouch) {
     const notifyText = `${req.user.name} vouched for ${result.vouch.requester_name} being at Shays on ${result.vouch.date}!`;
-    sendToSubscribers(req.user.name, notifyText).catch(console.error);
+    sendToSubscribers(req.user.name, notifyText, null, req.testMode).catch(console.error);
   }
 
   res.json({ success: true, message: 'Vouch approved!' });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 // LEADERBOARD & CALENDAR
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 app.get('/api/leaderboard', (req, res) => {
-  res.json(store.getLeaderboard());
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  res.json(store.getLeaderboard(testMode));
 });
 
 app.get('/api/calendar', (req, res) => {
-  const weekdays = store.getAprilWeekdays();
-  const checkins = store.getAllCheckins();
-  const users = store.getAllUsers();
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const month = req.query.month || 'april'; // 'march' or 'april'
+  const weekdays = month === 'march' ? store.getMarchWeekdays() : store.getAprilWeekdays();
+  const checkins = store.getAllCheckins(testMode);
+  const users = store.getAllUsers(testMode);
 
   const calendar = weekdays.map(date => {
     const dayCheckins = checkins.filter(c => c.date === date);
@@ -326,55 +359,63 @@ app.get('/api/calendar', (req, res) => {
     };
   });
 
-  res.json({ calendar, users: users.map(u => ({ id: u.id, name: u.name })) });
+  res.json({ calendar, month, users: users.map(u => ({ id: u.id, name: u.name })) });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 // ADMIN ROUTES
 app.get('/api/admin/users', adminAuth, (req, res) => {
-  res.json({ users: store.adminGetAllUsers() });
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  res.json({ users: store.adminGetAllUsers(testMode) });
 });
 
 app.put('/api/admin/users/:id', adminAuth, (req, res) => {
-  const result = store.adminUpdateUser(req.params.id, req.body);
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const result = store.adminUpdateUser(req.params.id, req.body, testMode);
   if (result.error) return res.status(400).json(result);
   res.json(result);
 });
 
 app.delete('/api/admin/users/:id', adminAuth, (req, res) => {
-  const result = store.adminDeleteUser(req.params.id);
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const result = store.adminDeleteUser(req.params.id, testMode);
   if (result.error) return res.status(400).json(result);
   res.json({ success: true });
 });
 
 app.get('/api/admin/checkins', adminAuth, (req, res) => {
-  res.json({ checkins: store.getAllCheckins() });
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  res.json({ checkins: store.getAllCheckins(testMode) });
 });
 
 app.delete('/api/admin/checkins/:id', adminAuth, (req, res) => {
-  const result = store.adminDeleteCheckin(req.params.id);
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const result = store.adminDeleteCheckin(req.params.id, testMode);
   if (result.error) return res.status(400).json(result);
   res.json({ success: true });
 });
 
 // OTHER ROUTES
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 
 app.get('/api/subscribers/count', (req, res) => {
-  res.json({ count: store.getSubscribedUsers().length });
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  res.json({ count: store.getSubscribedUsers(testMode).length });
 });
 
 app.get('/api/history', (req, res) => {
-  res.json(store.getRecentMessages());
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  res.json(store.getRecentMessages(testMode));
 });
 
 app.get('/api/health', (req, res) => {
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
   res.json({
     status: 'ok',
     twilio: !!twilioClient,
-    subscribers: store.getSubscribedUsers().length,
-    users: store.getAllUsers().length,
+    subscribers: store.getSubscribedUsers(testMode).length,
+    users: store.getAllUsers(testMode).length,
   });
 });
 
@@ -383,7 +424,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// âââ Start ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢Ã¢Ã¢ Start Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢Ã¢
 app.listen(PORT, () => {
   console.log(`\nShayprils is running at http://localhost:${PORT}`);
   console.log(`   Twilio: ${twilioClient ? 'Connected' : 'Demo Mode'}`);
