@@ -334,11 +334,10 @@
       align-items: center; justify-content: center; padding: 20px;
     }
     .lightbox.visible { display: flex; }
-    .lightbox img { max-width: 100%; max-height: 80vh; border-radius: 12px; }
+    .lightbox img { max-width: 100%; max-height: 70vh; border-radius: 12px; }
     .lightbox-info {
-      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-      color: white; text-align: center; font-size: 0.9rem;
-    }
+  color: white; text-align: center; font-size: 0.9rem;
+}
     .lightbox-close {
       position: absolute; top: 20px; right: 20px; background: none; border: none;
       color: white; font-size: 1.5rem; cursor: pointer; padding: 8px;
@@ -396,6 +395,25 @@
       align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.visible { display: flex; }
+
+.cal-nav-btn {
+  background: var(--cream); border: 1px solid var(--border); border-radius: 8px;
+  padding: 4px 12px; cursor: pointer; font-size: 1rem; color: var(--brown);
+  transition: all 0.2s;
+}
+.cal-nav-btn:hover { background: var(--brick); color: white; border-color: var(--brick); }
+.cal-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.cal-day.has-selfie { cursor: pointer; border-color: var(--green); }
+.cal-day.has-selfie:hover { transform: scale(1.05); z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+.delete-selfie-btn {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(193,57,43,0.85); color: white; border: none;
+  border-radius: 6px; padding: 4px 10px; font-size: 0.7rem;
+  cursor: pointer; z-index: 2; font-weight: 600;
+}
+.delete-selfie-btn:hover { background: rgba(193,57,43,1); }
     .modal {
       background: var(--surface); border-radius: 16px; padding: 24px;
       max-width: 360px; width: 100%; box-shadow: 0 12px 40px rgba(44,24,16,0.2);
@@ -494,6 +512,11 @@
           </div>
         </div>
       </div>
+
+      <div id="notificationSettings" class="card" style="margin-top:14px;">
+        <div class="card-title"><span class="icon icon-brown">N</span> Notifications</div>
+        <div id="notifStatus"></div>
+      </div>
     </div>
 
     <!-- RALLY TAB -->
@@ -542,7 +565,13 @@
     <!-- CALENDAR TAB -->
     <div id="tab-calendar" class="tab-content">
       <div class="card">
-        <div class="card-title"><span class="icon icon-brown">A</span> April 2026 &mdash; Attendance</div>
+        <div class="card-title" style="justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;"><span class="icon icon-brown">A</span> <span id="calMonthTitle">April 2026</span></div>
+          <div style="display:flex;gap:8px;">
+            <button id="calPrevMonth" class="cal-nav-btn" onclick="changeCalMonth(-1)">&larr;</button>
+            <button id="calNextMonth" class="cal-nav-btn" onclick="changeCalMonth(1)">&rarr;</button>
+          </div>
+        </div>
         <div id="calUserSelect" class="cal-user-select"></div>
         <div class="cal-grid">
           <div class="cal-header">Mon</div><div class="cal-header">Tue</div>
@@ -634,11 +663,15 @@
 
 <script>
 const API = '';
+const TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1';
+function testParam() { return TEST_MODE ? '?test=1' : ''; }
+function testHeader() { return TEST_MODE ? { 'x-test-mode': '1' } : {}; }
 let currentUser = null;
 let cameraStream = null;
 let capturedImageData = null;
 let calendarSelectedUser = null;
 let vouchRequestDate = null;
+let calendarMonth = 'april';
 
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // AUTH
@@ -650,16 +683,17 @@ async function doLogin() {
   if (!name || !phone) return showToast('Enter your name and phone number', 'error');
 
   try {
-    const res = await fetch(API + '/api/auth/register', {
+    const res = await fetch(API + '/api/auth/register' + testParam(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, phone }),
     });
     const data = await res.json();
     if (data.success) {
-      localStorage.setItem('shayprils_token', data.token);
+      localStorage.setItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token', data.token);
       localStorage.setItem('shayprils_user', JSON.stringify(data.user));
       currentUser = data.user;
+    currentUser.silenced_until = data.user.silenced_until;
       showApp();
       // welcome toast removed
     } else {
@@ -671,7 +705,7 @@ async function doLogin() {
 }
 
 async function checkAuth() {
-  const token = localStorage.getItem('shayprils_token');
+  const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
   if (!token) {
     // Check for legacy token
     const oldToken = localStorage.getItem('shaperils_token');
@@ -695,7 +729,7 @@ async function checkAuth() {
 }
 
 function doLogout() {
-  localStorage.removeItem('shayprils_token');
+  localStorage.removeItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
   localStorage.removeItem('shayprils_user');
   currentUser = null;
   stopCamera();
@@ -707,16 +741,17 @@ function showApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('userNameDisplay').textContent = currentUser.name;
-    document.getElementById("adminNavBtn").style.display = "";
+  document.getElementById('adminNavBtn').style.display = '';
   checkTodayCheckin();
+  renderNotificationSettings();
 }
 
 function getToken() {
-  return localStorage.getItem('shayprils_token');
+  return localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
 }
 
 function authHeaders() {
-  return { 'Content-Type': 'application/json', 'x-auth-token': getToken() };
+  return { 'Content-Type': 'application/json', 'x-auth-token': getToken(), ...testHeader() };
 }
 
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -728,12 +763,21 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
 
-    if (btn.dataset.tab === 'calendar') loadCalendar();
-    if (btn.dataset.tab === 'leaderboard') loadLeaderboard();
-    if (btn.dataset.tab === 'album') loadAlbum();
-    if (btn.dataset.tab === 'checkin') checkTodayCheckin();
+    const tab = btn.dataset.tab;
+    if (tab === 'admin') {
+      document.getElementById('adminSection').style.display = 'block';
+      if (adminPin) loadAdminPanel();
+      else showAdminLogin();
+    } else {
+      document.getElementById('adminSection').style.display = 'none';
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    if (tab === 'calendar') loadCalendar();
+    if (tab === 'leaderboard') loadLeaderboard();
+    if (tab === 'album') loadAlbum();
+    if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); }
   });
 });
 
@@ -930,9 +974,15 @@ async function sendMessage(type) {
 
 let calendarData = null;
 
+async function changeCalMonth(dir) {
+  if (dir === -1 && calendarMonth === 'april') calendarMonth = 'march';
+  else if (dir === 1 && calendarMonth === 'march') calendarMonth = 'april';
+  loadCalendar();
+}
+
 async function loadCalendar() {
   try {
-    const res = await fetch(API + '/api/calendar');
+    const res = await fetch(API + '/api/calendar' + testParam());
     calendarData = await res.json();
     renderCalendarUsers(calendarData.users);
     const userId = calendarSelectedUser || (currentUser ? currentUser.id : null);
@@ -960,27 +1010,34 @@ async function renderCalendar(calendar, userId) {
   const grid = document.getElementById('calGrid');
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
-  // Fetch vouch data for the selected user
   let vouches = [];
   try {
-    const res = await fetch(API + '/api/vouch/list');
+    const res = await fetch(API + '/api/vouch/list' + testParam());
     const data = await res.json();
     vouches = data.vouches || [];
   } catch(e) {}
 
-  // April 2026 starts on Wednesday, so we need 2 empty slots (Mon, Tue)
-  const firstDayOffset = 2;
+  // Calculate first day offset based on month
+  // March 2026 starts on Sunday, so first weekday (Mon) is March 2 → offset 0 since March 2 is the first weekday
+  // Actually: March 1 2026 is a Sunday. First Mon is March 2. So day 2 starts at position 0 (Mon).
+  // But getDay() for 2026-03-02 = 1 (Monday). We want 0 offset for Mon.
+  // For first weekday in the month, figure out what day of week it falls on:
+  const firstDate = calendar.length > 0 ? new Date(calendar[0].date + 'T12:00:00') : null;
+  const firstDayOfWeek = firstDate ? firstDate.getDay() : 1; // 1=Mon, ..., 5=Fri
+  const firstDayOffset = firstDayOfWeek - 1; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4
+
+  const isMyCalendar = userId === (currentUser ? currentUser.id : null);
+  const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
+
   let html = '';
   for (let i = 0; i < firstDayOffset; i++) html += '<div></div>';
 
-  const isMyCalendar = userId === (currentUser ? currentUser.id : null);
-
   for (const day of calendar) {
-    const userCheckedIn = userId? day.checkins.some(c => c.user_id === userId) : false;
+    const userCheckin = userId ? day.checkins.find(c => c.user_id === userId) : null;
+    const userCheckedIn = !!userCheckin;
     const isToday = day.date === today;
     const isFuture = day.date > today;
 
-    // Check vouch status for this day/user
     const vouch = vouches.find(v => v.requester_id === userId && v.date === day.date);
     const isVouched = vouch && vouch.status === 'approved';
     const isPendingVouch = vouch && vouch.status === 'pending';
@@ -992,25 +1049,90 @@ async function renderCalendar(calendar, userId) {
     else if (isPendingVouch) cls += ' pending-vouch';
     else if (!isFuture) cls += ' missed';
 
-    // Allow clicking missed days on own calendar to request vouch
     const canRequestVouch = isMyCalendar && !userCheckedIn && !isVouched && !isPendingVouch && !isFuture && !isToday;
     if (canRequestVouch) cls += ' clickable';
-    const clickHandler = canRequestVouch ? `onclick="openVouchModal('${day.date}')"` : '';
+
+    // Selfie thumbnail
+    const hasSelfie = userCheckin && userCheckin.selfie;
+    const selfieUrl = hasSelfie ? uploadPrefix + userCheckin.selfie : '';
+    const bgStyle = hasSelfie ? 'background-image:url(' + selfieUrl + ');background-size:cover;background-position:center;' : '';
+    const textColor = hasSelfie ? 'color:white;text-shadow:0 1px 3px rgba(0,0,0,0.8);' : '';
+
+    let clickHandler = '';
+    if (hasSelfie) {
+      clickHandler = 'onclick="openLightbox(\'' + selfieUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\')"';
+      cls += ' has-selfie';
+    } else if (canRequestVouch) {
+      clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
+    }
 
     const count = day.checkins.length;
-    html += `
-      <div class="${cls}" title="${day.date}: ${count} check-in${count !== 1 ? 's' : ''}" ${clickHandler}>
-        <span class="day-num">${day.dayNum}</span>
-        <span class="day-indicator"></span>
-      </div>
-    `;
+    html += '<div class="' + cls + '" title="' + day.date + ': ' + count + ' check-in' + (count !== 1 ? 's' : '') + '" style="' + bgStyle + textColor + '" ' + clickHandler + '>';
+    html += '<span class="day-num">' + day.dayNum + '</span>';
+    if (!hasSelfie) html += '<span class="day-indicator"></span>';
+    html += '</div>';
   }
   grid.innerHTML = html;
 }
+function renderNotificationSettings() {
+  const container = document.getElementById('notifStatus');
+  if (!currentUser) return;
+  
+  const silenced = currentUser.silenced_until;
+  const subscribed = currentUser.subscribed;
+  
+  let html = '';
+  if (silenced === 'forever') {
+    html += '<p style="color:var(--red-accent);font-size:0.88rem;margin-bottom:12px;">Notifications are permanently silenced.</p>';
+    html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Notifications</button>';
+  } else if (silenced && new Date(silenced) > new Date()) {
+    const until = new Date(silenced).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications silenced until ' + until + '</p>';
+    html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Now</button>';
+  } else if (subscribed) {
+    html += '<p style="color:var(--green);font-size:0.88rem;margin-bottom:12px;">Notifications are ON — you get texts when someone heads to Shays.</p>';
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'day\')">Mute 1 Day</button>';
+    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'week\')">Mute 1 Week</button>';
+    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'forever\')">Unsubscribe</button>';
+    html += '</div>';
+  } else {
+    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications are OFF.</p>';
+    html += '<button class="btn btn-green" onclick="unsilenceNotifs()">Re-enable Notifications</button>';
+  }
+  container.innerHTML = html;
+}
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// VOUCH SYSTEM
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+async function silenceNotifs(duration) {
+  try {
+    const res = await fetch(API + '/api/auth/silence', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ duration })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser.silenced_until = data.silenced_until;
+      currentUser.subscribed = false;
+      renderNotificationSettings();
+      showToast(duration === 'forever' ? 'Notifications permanently silenced' : 'Notifications muted');
+    }
+  } catch(e) { showToast('Error', 'error'); }
+}
+
+async function unsilenceNotifs() {
+  try {
+    const res = await fetch(API + '/api/auth/unsilence', {
+      method: 'POST', headers: authHeaders()
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser.silenced_until = null;
+      currentUser.subscribed = true;
+      renderNotificationSettings();
+      showToast('Notifications re-enabled!');
+    }
+  } catch(e) { showToast('Error', 'error'); }
+}
 
 function openVouchModal(date) {
   vouchRequestDate = date;
@@ -1096,7 +1218,7 @@ async function approveVouch(vouchId) {
 
 async function loadAlbum() {
   try {
-    const res = await fetch(API + '/api/album');
+    const res = await fetch(API + '/api/album' + testParam());
     const data = await res.json();
     const container = document.getElementById('albumContent');
 
@@ -1105,7 +1227,7 @@ async function loadAlbum() {
       return;
     }
 
-    // Group photos by date
+    const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
     const grouped = {};
     data.photos.forEach(p => {
       if (!grouped[p.date]) grouped[p.date] = [];
@@ -1118,13 +1240,17 @@ async function loadAlbum() {
       const formatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
         weekday: 'long', month: 'long', day: 'numeric'
       });
-      html += `<div class="album-date-header">${formatted}</div>`;
+      html += '<div class="album-date-header">' + formatted + '</div>';
       html += '<div class="album-grid">';
       for (const photo of grouped[date]) {
-        html += `<div class="album-item" onclick="openLightbox('/uploads/${photo.selfie}', '${escapeHtml(photo.user_name)}', '${formatted}')">
-          <img src="/uploads/${photo.selfie}" alt="${escapeHtml(photo.user_name)}" loading="lazy" />
-          <div class="album-label">${escapeHtml(photo.user_name)}</div>
-        </div>`;
+        const isOwn = currentUser && photo.user_id === currentUser.id;
+        html += '<div class="album-item" onclick="openLightbox(\'' + uploadPrefix + photo.selfie + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\')">';
+        html += '<img src="' + uploadPrefix + photo.selfie + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" />';
+        html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
+        if (isOwn) {
+          html += '<button class="delete-selfie-btn" onclick="event.stopPropagation();deleteSelfie(\'' + photo.id + '\')">Delete</button>';
+        }
+        html += '</div>';
       }
       html += '</div>';
     }
@@ -1133,11 +1259,33 @@ async function loadAlbum() {
     document.getElementById('albumContent').innerHTML = '<div class="empty-state">Could not load photos</div>';
   }
 }
-
 function openLightbox(src, name, date) {
   document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightboxInfo').textContent = name + ' &mdash; ' + date;
+  document.getElementById('lightboxInfo').textContent = name + ' — ' + date;
+  document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
+  document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
   document.getElementById('lightbox').classList.add('visible');
+}
+
+async function saveLightboxPhoto(e) {
+  e.stopPropagation();
+  const src = document.getElementById('lightboxSaveBtn').getAttribute('data-src');
+  const name = document.getElementById('lightboxSaveBtn').getAttribute('data-name');
+  try {
+    const response = await fetch(src);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'shayprils_' + name.replace(/[^a-zA-Z0-9]/g, '_') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Photo saved!');
+  } catch(e) {
+    showToast('Could not save photo', 'error');
+  }
 }
 
 function closeLightbox() {
@@ -1150,7 +1298,7 @@ function closeLightbox() {
 
 async function loadLeaderboard() {
   try {
-    const res = await fetch(API + '/api/leaderboard');
+    const res = await fetch(API + '/api/leaderboard' + testParam());
     const data = await res.json();
     const list = document.getElementById('leaderboardList');
 
@@ -1211,21 +1359,22 @@ function escapeHtml(str) {
 
     // Delete own selfie
     async function deleteSelfie(checkinId) {
-      if (!confirm('Delete this selfie?')) return;
-      try {
-        const res = await fetch('/api/checkin/' + checkinId, {
-          method: 'DELETE', headers: authHeaders()
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast('Selfie deleted');
-          loadAlbum();
-          loadCalendar();
-        } else {
-          showToast(data.error || 'Failed', 'error');
-        }
-      } catch(e) { showToast('Error deleting', 'error'); }
+  if (!confirm('Delete this selfie?')) return;
+  try {
+    const res = await fetch(API + '/api/checkin/' + checkinId, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Selfie deleted');
+      loadAlbum();
+      loadCalendar();
+      checkTodayCheckin();
+    } else {
+      showToast(data.error || 'Failed', 'error');
     }
+  } catch(e) { showToast('Error deleting', 'error'); }
+}
 
     // Admin functions
     let adminPin = null;
@@ -1336,59 +1485,17 @@ function escapeHtml(str) {
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 (async function init() {
+  if (TEST_MODE) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#FF6B35;color:white;text-align:center;padding:8px;font-weight:600;font-size:0.85rem;position:fixed;top:0;left:0;right:0;z-index:999;';
+    banner.textContent = 'TEST MODE — Data is isolated from production';
+    document.body.prepend(banner);
+    document.body.style.paddingTop = '36px';
+  }
   if (await checkAuth()) {
     showApp();
   }
 })();
-
-
-    // === ENHANCEMENTS: Admin tab, selfie delete ===
-    // Hook admin tab into existing nav
-    document.addEventListener('click', function(e) {
-      var btn = e.target.closest('.nav-btn');
-      if (!btn) return;
-      var tab = btn.getAttribute('data-tab');
-      if (tab === 'admin') {
-        // Hide all other sections
-        document.querySelectorAll('.tab-content').forEach(function(el) { el.style.display = 'none'; });
-        document.getElementById('adminSection').style.display = 'block';
-        document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        if (adminPin) loadAdminPanel();
-        else showAdminLogin();
-      }
-    });
-
-    // Override loadAlbum to add delete buttons on own photos
-    var _origLoadAlbum = loadAlbum;
-    loadAlbum = async function() {
-      await _origLoadAlbum();
-      // After album renders, add delete buttons to own photos
-      try {
-        var meRes = await fetch('/api/auth/me', { headers: authHeaders() });
-        var meData = await meRes.json();
-        var myId = meData.user.id;
-        var checkinsRes = await fetch('/api/album');
-        var checkinsData = await checkinsRes.json();
-        var photos = checkinsData.photos || [];
-        // Find photo cards and add delete buttons
-        var cards = document.querySelectorAll('.photo-card, .album-card');
-        cards.forEach(function(card, i) {
-          if (i < photos.length && photos[i].user_id === myId) {
-            // Check if delete btn already exists
-            if (!card.querySelector('.delete-selfie-btn')) {
-              var btn = document.createElement('button');
-              btn.className = 'delete-selfie-btn';
-              btn.textContent = 'Delete';
-              btn.style.cssText = 'position:absolute;top:6px;right:6px;background:rgba(193,57,43,0.85);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;z-index:2;';
-              btn.onclick = function(e) { e.stopPropagation(); deleteSelfie(photos[i].id || photos[i].checkin_id); };
-              card.style.position = 'relative';
-              card.appendChild(btn);
-            }
-          }
-        });
-      } catch(e) { console.log('Album enhance error:', e); }
-    };
 
   </script>
 </body>
