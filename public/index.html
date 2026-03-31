@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shayprils &mdash; Every. Single. Weekday.</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂº</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
@@ -607,6 +607,14 @@
       </div>
     </div>
 
+    <!-- FEED TAB -->
+    <div id="tab-feed" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="icon icon-green">F</span> Activity Feed</div>
+        <div id="feedContent"><div class="empty-state">Loading feed...</div></div>
+      </div>
+    </div>
+
     <!-- LEADERBOARD TAB -->
     <div id="tab-leaderboard" class="tab-content">
       <div class="card">
@@ -623,19 +631,22 @@
     <button class="nav-btn active" data-tab="checkin">
       <span class="nav-icon">S</span>Shays
     </button>
-    <button class="nav-btn" data-tab="rally">
-      <span class="nav-icon">R</span>Rally
-    </button>
     <button class="nav-btn" data-tab="calendar">
       <span class="nav-icon">A</span>Attend
     </button>
     <button class="nav-btn" data-tab="album">
       <span class="nav-icon">P</span>Photos
     </button>
+    <button class="nav-btn" data-tab="feed">
+      <span class="nav-icon">F</span>Feed
+    </button>
     <button class="nav-btn" data-tab="leaderboard">
       <span class="nav-icon">B</span>Board
     </button>
-    <button class="nav-btn" data-tab="admin" id="adminNavBtn" style="display:none"><span class="nav-icon">ÃÂ¢ÃÂÃÂ</span>Admin</button>
+    <button class="nav-btn" data-tab="rally">
+      <span class="nav-icon">R</span>Rally
+    </button>
+    <button class="nav-btn" data-tab="admin" id="adminNavBtn" style="display:none"><span class="nav-icon">⚙</span>Admin</button>
   </div>
 </div>
 
@@ -647,10 +658,12 @@
 
 <!-- Lightbox -->
 <div id="lightbox" class="lightbox" onclick="closeLightbox()">
-  <button class="lightbox-close" onclick="closeLightbox()">X</button>
-  <img id="lightboxImg" src="" />
-  <a id="lightboxDownload" class="lightbox-download" download onclick="event.stopPropagation()">Save Photo</a>
-        <button id="lightboxDelete" class="lightbox-download" style="background:#e74c3c;margin-top:8px;" onclick="event.stopPropagation();deleteLightboxPhoto()">Delete Photo</button>
+  <button class="lightbox-close" onclick="event.stopPropagation();closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" onclick="event.stopPropagation()" />
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;">
+    <button id="lightboxSaveBtn" class="lightbox-download" onclick="event.stopPropagation();saveLightboxPhoto(event)">Save Photo</button>
+    <button id="lightboxDelete" class="lightbox-download" style="background:#e74c3c;" onclick="event.stopPropagation();deleteLightboxPhoto()">Delete Photo</button>
+  </div>
   <div class="lightbox-info" id="lightboxInfo"></div>
 </div>
 
@@ -782,6 +795,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (tab === 'calendar') loadCalendar();
     if (tab === 'leaderboard') loadLeaderboard();
     if (tab === 'album') loadAlbum();
+    if (tab === 'feed') loadFeed();
     if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); }
   });
 });
@@ -1033,7 +1047,7 @@ async function renderCalendar(calendar, userId) {
   } catch(e) {}
 
   // Calculate first day offset based on month
-  // March 2026 starts on Sunday, so first weekday (Mon) is March 2 ÃÂ¢ÃÂÃÂ offset 0 since March 2 is the first weekday
+  // March 2026 starts on Sunday, so first weekday (Mon) is March 2 —ÃÂ offset 0 since March 2 is the first weekday
   // Actually: March 1 2026 is a Sunday. First Mon is March 2. So day 2 starts at position 0 (Mon).
   // But getDay() for 2026-03-02 = 1 (Monday). We want 0 offset for Mon.
   // For first weekday in the month, figure out what day of week it falls on:
@@ -1105,7 +1119,7 @@ function renderNotificationSettings() {
     html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications silenced until ' + until + '</p>';
     html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Now</button>';
   } else if (subscribed) {
-    html += '<p style="color:var(--green);font-size:0.88rem;margin-bottom:12px;">Notifications are ON ÃÂ¢ÃÂÃÂ you get texts when someone heads to Shays.</p>';
+    html += '<p style="color:var(--green);font-size:0.88rem;margin-bottom:12px;">Notifications are ON — you get texts when someone heads to Shays.</p>';
     html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
     html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'day\')">Mute 1 Day</button>';
     html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'week\')">Mute 1 Week</button>';
@@ -1274,11 +1288,80 @@ async function loadAlbum() {
     document.getElementById('albumContent').innerHTML = '<div class="empty-state">Could not load photos</div>';
   }
 }
+
+async function loadFeed() {
+  try {
+    const [msgRes, checkinRes] = await Promise.all([
+      fetch(API + '/api/history' + testParam()),
+      fetch(API + '/api/album' + testParam())
+    ]);
+    const messages = await msgRes.json();
+    const checkins = await checkinRes.json();
+
+    // Combine into unified feed
+    const feed = [];
+    messages.forEach(m => {
+      feed.push({
+        type: 'alert',
+        name: m.sender_name,
+        text: m.message_text,
+        time: new Date(m.sent_at),
+        recipients: m.recipients_count
+      });
+    });
+    checkins.slice(0, 20).forEach(c => {
+      feed.push({
+        type: 'checkin',
+        name: c.user_name,
+        text: c.user_name + ' checked in at Shays!',
+        time: new Date(c.created_at),
+        selfie: c.selfie
+      });
+    });
+
+    feed.sort((a, b) => b.time - a.time);
+
+    const container = document.getElementById('feedContent');
+    if (feed.length === 0) {
+      container.innerHTML = '<div class="empty-state">No activity yet. Be the first!</div>';
+      return;
+    }
+
+    let html = '';
+    feed.slice(0, 30).forEach(item => {
+      const timeAgo = getTimeAgo(item.time);
+      const icon = item.type === 'alert' ? '📢' : '📸';
+      const thumb = item.type === 'checkin' && item.selfie
+        ? '<img src="/uploads/' + item.selfie + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;" />'
+        : '';
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">';
+      html += thumb || '<span style="font-size:1.2rem;width:36px;text-align:center;flex-shrink:0;">' + icon + '</span>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-size:0.85rem;color:var(--text);">' + escapeHtml(item.text) + '</div>';
+      html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px;">' + timeAgo + '</div>';
+      html += '</div></div>';
+    });
+    container.innerHTML = html;
+  } catch (e) {
+    document.getElementById('feedContent').innerHTML = '<div class="empty-state">Could not load feed</div>';
+  }
+}
+
+function getTimeAgo(date) {
+  const seconds = Math.floor((new Date() - date) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + 'm ago';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + 'h ago';
+  const days = Math.floor(hours / 24);
+  return days + 'd ago';
+}
+
 function openLightbox(src, name, date, checkinId) {
   document.getElementById('lightboxImg').src = src;
-    window._currentCheckinId = checkinId || null;
-      document.getElementById('lightboxDownload').href = src;
-  document.getElementById('lightboxInfo').textContent = name + ' ÃÂ¢ÃÂÃÂ ' + date;
+  window._currentCheckinId = checkinId || null;
+  document.getElementById('lightboxInfo').textContent = name + ' — ' + date;
   document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
   document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
   document.getElementById('lightbox').classList.add('visible');
@@ -1523,7 +1606,7 @@ function escapeHtml(str) {
   if (TEST_MODE) {
     const banner = document.createElement('div');
     banner.style.cssText = 'background:#FF6B35;color:white;text-align:center;padding:8px;font-weight:600;font-size:0.85rem;position:fixed;top:0;left:0;right:0;z-index:999;';
-    banner.textContent = 'TEST MODE ÃÂ¢ÃÂÃÂ Data is isolated from production';
+    banner.textContent = 'TEST MODE — Data is isolated from production';
     document.body.prepend(banner);
     document.body.style.paddingTop = '36px';
   }
