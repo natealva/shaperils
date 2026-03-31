@@ -1089,7 +1089,7 @@ async function renderCalendar(calendar, userId) {
 
     let clickHandler = '';
     if (hasSelfie) {
-      clickHandler = 'onclick="openLightbox(\'' + selfieUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ')"';
+      clickHandler = 'onclick="openLightbox(\'' + selfieUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ', \'' + userCheckin.user_id + '\')"';
       cls += ' has-selfie';
     } else if (canRequestVouch) {
       clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
@@ -1113,11 +1113,11 @@ function renderNotificationSettings() {
   let html = '';
   if (silenced === 'forever') {
     html += '<p style="color:var(--red-accent);font-size:0.88rem;margin-bottom:12px;">Notifications are permanently silenced.</p>';
-    html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Notifications</button>';
+    html += '<button class="btn btn-green" onclick="resubscribeNotifs()" style="margin-bottom:8px;">Re-subscribe to Texts</button>';
   } else if (silenced && new Date(silenced) > new Date()) {
     const until = new Date(silenced).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications silenced until ' + until + '</p>';
-    html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Now</button>';
+    html += '<button class="btn btn-green" onclick="resubscribeNotifs()" style="margin-bottom:8px;">Re-subscribe Now</button>';
   } else if (subscribed) {
     html += '<p style="color:var(--green);font-size:0.88rem;margin-bottom:12px;">Notifications are ON — you get texts when someone heads to Shays.</p>';
     html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
@@ -1126,8 +1126,8 @@ function renderNotificationSettings() {
     html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'forever\')">Unsubscribe</button>';
     html += '</div>';
   } else {
-    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications are OFF.</p>';
-    html += '<button class="btn btn-green" onclick="unsilenceNotifs()">Re-enable Notifications</button>';
+    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications are OFF. Subscribe to get texts when someone heads to Shays.</p>';
+    html += '<button class="btn btn-green" onclick="resubscribeNotifs()">Subscribe to Texts</button>';
   }
   container.innerHTML = html;
 }
@@ -1159,6 +1159,21 @@ async function unsilenceNotifs() {
       currentUser.subscribed = true;
       renderNotificationSettings();
       showToast('Notifications re-enabled!');
+    }
+  } catch(e) { showToast('Error', 'error'); }
+}
+
+async function resubscribeNotifs() {
+  try {
+    const res = await fetch(API + '/api/auth/unsilence', {
+      method: 'POST', headers: authHeaders()
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser.silenced_until = null;
+      currentUser.subscribed = true;
+      renderNotificationSettings();
+      showToast('Subscribed! You\'ll get texts when someone heads to Shays.');
     }
   } catch(e) { showToast('Error', 'error'); }
 }
@@ -1273,7 +1288,7 @@ async function loadAlbum() {
       html += '<div class="album-grid">';
       for (const photo of grouped[date]) {
         const isOwn = currentUser && photo.user_id === currentUser.id;
-        html += '<div class="album-item" onclick="openLightbox(\'' + uploadPrefix + photo.selfie + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ')">';
+        html += '<div class="album-item" onclick="openLightbox(\'' + uploadPrefix + photo.selfie + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\')">';
         html += '<img src="' + uploadPrefix + photo.selfie + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" />';
         html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
         if (isOwn) {
@@ -1358,12 +1373,16 @@ function getTimeAgo(date) {
   return days + 'd ago';
 }
 
-function openLightbox(src, name, date, checkinId) {
+function openLightbox(src, name, date, checkinId, ownerId) {
   document.getElementById('lightboxImg').src = src;
   window._currentCheckinId = checkinId || null;
   document.getElementById('lightboxInfo').textContent = name + ' — ' + date;
   document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
   document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
+  // Only show delete if this is the user's own photo or they're admin
+  const isOwner = currentUser && ownerId && currentUser.id === ownerId;
+  const isAdmin = !!adminPin;
+  document.getElementById('lightboxDelete').style.display = (isOwner || isAdmin) ? 'block' : 'none';
   document.getElementById('lightbox').classList.add('visible');
 }
 
