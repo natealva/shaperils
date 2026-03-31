@@ -526,6 +526,7 @@
     <div id="tab-rally" class="tab-content">
       <div class="card">
         <div class="card-title"><span class="icon icon-brick">R</span> Send a Shays Alert</div>
+        <div id="subscriberCount" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;padding:8px 12px;background:var(--green-bg);border-radius:8px;text-align:center;"></div>
         <button class="msg-btn" onclick="sendMessage('heading_now')">
           <span class="msg-icon">Go</span>
           <div><span class="btn-label">I'm heading to Shays now!</span>
@@ -796,6 +797,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (tab === 'leaderboard') loadLeaderboard();
     if (tab === 'album') loadAlbum();
     if (tab === 'feed') loadFeed();
+    if (tab === 'rally') loadSubscriberCount();
     if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); }
   });
 });
@@ -816,15 +818,28 @@ async function sendHeading() {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(currentUser.name + ' is heading to Shays! Alert sent to ' + data.sent + ' people.');
+      btn.innerHTML = 'Alert Sent!<div class="btn-subtitle">Everyone knows you\'re on the way</div>';
+      btn.style.background = 'var(--green)';
+      if (data.sent === 0) {
+        showToast('Alert logged! No subscribers to text yet.');
+      } else {
+        showToast('Texted ' + data.sent + ' ' + (data.sent === 1 ? 'person' : 'people') + ' that you\'re heading to Shays!');
+      }
+      setTimeout(() => {
+        btn.innerHTML = 'I\'m heading to Shays!<div class="btn-subtitle">Tap to text everyone you\'re on your way</div>';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 3000);
     } else {
       showToast(data.error || 'Failed to send', 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'I\'m heading to Shays!<div class="btn-subtitle">Tap to text everyone you\'re on your way</div>';
     }
   } catch (e) {
-    showToast('Server unavailable', 'error');
+    showToast('Could not reach server. Try again in a moment.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'I\'m heading to Shays!<div class="btn-subtitle">Tap to text everyone you\'re on your way</div>';
   }
-  btn.disabled = false;
-  btn.innerHTML = 'I\'m heading to Shays!<div class="btn-subtitle">Tap to text everyone you\'re on your way</div>';
 }
 
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
@@ -961,6 +976,24 @@ function showCheckedInState() {
 // RALLY (SMS)
 // ÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂ
 
+async function loadSubscriberCount() {
+  try {
+    const res = await fetch(API + '/api/subscribers/count' + testParam());
+    const data = await res.json();
+    const el = document.getElementById('subscriberCount');
+    if (data.count > 0) {
+      el.innerHTML = '📱 <strong>' + data.count + ' ' + (data.count === 1 ? 'person' : 'people') + '</strong> subscribed — they\'ll get your text';
+      el.style.display = 'block';
+    } else {
+      el.innerHTML = 'No subscribers yet. Invite friends to sign up!';
+      el.style.background = 'var(--red-bg)';
+      el.style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('subscriberCount').style.display = 'none';
+  }
+}
+
 async function sendMessage(type) {
   const companions = document.getElementById('companions')?.value.trim() || '';
   const customMessage = document.getElementById('customMessage')?.value.trim() || '';
@@ -974,7 +1007,11 @@ async function sendMessage(type) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast('Alert sent to ' + data.sent + ' people!');
+      if (data.sent === 0) {
+        showToast('Alert logged! No subscribers to text yet — invite friends to sign up.');
+      } else {
+        showToast('Alert sent to ' + data.sent + ' ' + (data.sent === 1 ? 'person' : 'people') + '!');
+      }
       document.getElementById('companions').value = '';
       document.getElementById('customMessage').value = '';
       document.querySelectorAll('.expandable').forEach(e => e.classList.remove('visible'));
@@ -982,7 +1019,7 @@ async function sendMessage(type) {
       showToast(data.error || 'Failed to send', 'error');
     }
   } catch (e) {
-    showToast('Server unavailable', 'error');
+    showToast('Could not reach server. Try again in a moment.', 'error');
   }
   document.querySelectorAll('.msg-btn').forEach(b => b.disabled = false);
 }
@@ -1311,7 +1348,8 @@ async function loadFeed() {
       fetch(API + '/api/album' + testParam())
     ]);
     const messages = await msgRes.json();
-    const checkins = await checkinRes.json();
+    const checkinsData = await checkinRes.json();
+    const checkins = checkinsData.photos || checkinsData || [];
 
     // Combine into unified feed
     const feed = [];
@@ -1324,12 +1362,12 @@ async function loadFeed() {
         recipients: m.recipients_count
       });
     });
-    checkins.slice(0, 20).forEach(c => {
+    (Array.isArray(checkins) ? checkins : []).slice(0, 20).forEach(c => {
       feed.push({
         type: 'checkin',
         name: c.user_name,
         text: c.user_name + ' checked in at Shays!',
-        time: new Date(c.created_at),
+        time: new Date(c.created_at || c.date),
         selfie: c.selfie
       });
     });
@@ -1338,22 +1376,26 @@ async function loadFeed() {
 
     const container = document.getElementById('feedContent');
     if (feed.length === 0) {
-      container.innerHTML = '<div class="empty-state">No activity yet. Be the first!</div>';
+      container.innerHTML = '<div class="empty-state">No activity yet. Send an alert or check in to get started!</div>';
       return;
     }
 
     let html = '';
-    feed.slice(0, 30).forEach(item => {
+    feed.slice(0, 40).forEach(item => {
       const timeAgo = getTimeAgo(item.time);
       const icon = item.type === 'alert' ? '📢' : '📸';
       const thumb = item.type === 'checkin' && item.selfie
-        ? '<img src="/uploads/' + item.selfie + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;" />'
+        ? '<img src="/uploads/' + item.selfie + '" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;border:2px solid var(--border);" />'
         : '';
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">';
-      html += thumb || '<span style="font-size:1.2rem;width:36px;text-align:center;flex-shrink:0;">' + icon + '</span>';
+      const recipientsBadge = item.type === 'alert' && item.recipients > 0
+        ? '<span style="font-size:0.7rem;color:var(--green);margin-left:6px;">Sent to ' + item.recipients + '</span>'
+        : '';
+      html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">';
+      html += thumb || '<span style="font-size:1.3rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + (item.type === 'alert' ? 'var(--red-bg)' : 'var(--green-bg)') + ';border-radius:10px;">' + icon + '</span>';
       html += '<div style="flex:1;min-width:0;">';
-      html += '<div style="font-size:0.85rem;color:var(--text);">' + escapeHtml(item.text) + '</div>';
-      html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px;">' + timeAgo + '</div>';
+      html += '<div style="font-size:0.82rem;font-weight:500;color:var(--brown);">' + escapeHtml(item.name) + recipientsBadge + '</div>';
+      html += '<div style="font-size:0.82rem;color:var(--text);margin-top:2px;line-height:1.3;">' + escapeHtml(item.text) + '</div>';
+      html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">' + timeAgo + '</div>';
       html += '</div></div>';
     });
     container.innerHTML = html;
@@ -1482,8 +1524,16 @@ function toggleEl(id) {
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast ' + type + ' show';
-  setTimeout(() => { t.classList.remove('show'); t.style.display = 'none'; }, 2500);
+  t.style.display = 'block';
+  t.className = 'toast ' + type;
+  // Force reflow then animate in
+  void t.offsetHeight;
+  t.classList.add('show');
+  clearTimeout(window._toastTimeout);
+  window._toastTimeout = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { t.style.display = 'none'; }, 300);
+  }, 3000);
 }
 
 function escapeHtml(str) {
