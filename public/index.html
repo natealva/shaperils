@@ -4,6 +4,1518 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shayprils &mdash; Every. Single. Weekday.</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>Ã°ÂÂÂº</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+      --cream: #FFF8EE;
+      --cream-dark: #F0E4D0;
+      --tan: #E8D5B7;
+      --brick: #9B3B3B;
+      --brick-dark: #6B2D2D;
+      --brick-light: #C15A5A;
+      --brown: #3E2723;
+      --brown-medium: #5D4037;
+      --brown-light: #8D6E63;
+      --wood: #D7B98E;
+      --red-accent: #C1392B;
+      --green: #4A7C59;
+      --green-light: #E8F5E9;
+      --green-bg: rgba(74,124,89,0.1);
+      --red-bg: rgba(193,57,43,0.08);
+      --text: #2C1810;
+      --text-muted: #6D5D53;
+      --text-dim: #9E8E84;
+      --border: #DDD0C0;
+      --surface: #FFFFFF;
+      --shadow: 0 2px 12px rgba(44,24,16,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container { max-width: 520px; margin: 0 auto; padding: 20px 16px 100px; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Header Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .header { text-align: center; padding: 24px 0 16px; }
+    .logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.8rem; font-weight: 800; letter-spacing: -0.5px;
+      color: var(--brick-dark);
+    }
+    .tagline { color: var(--text-muted); font-size: 0.9rem; margin-top: 2px; }
+    .month-badge {
+      display: inline-block; margin-top: 10px; padding: 5px 14px;
+      background: var(--brick); color: var(--cream);
+      border-radius: 20px; font-size: 0.75rem;
+      font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ User bar Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .user-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 16px; margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .user-bar .greeting { font-size: 0.85rem; color: var(--text-muted); }
+    .user-bar .greeting strong { color: var(--brick); }
+    .user-bar .logout-btn {
+      background: none; border: none; color: var(--text-dim); cursor: pointer;
+      font-size: 0.8rem; padding: 4px 8px;
+    }
+    .user-bar .logout-btn:hover { color: var(--red-accent); }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Cards Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif; font-size: 1.15rem;
+      font-weight: 700; margin-bottom: 14px; color: var(--brown);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .icon-brick { background: var(--brick); }
+    .icon-green { background: var(--green); }
+    .icon-brown { background: var(--brown-medium); }
+    .icon-red { background: var(--red-accent); }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Bottom Nav Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; justify-content: center; gap: 0;
+      padding: 0; z-index: 100;
+      max-width: 520px; margin: 0 auto;
+      box-shadow: 0 -2px 12px rgba(44,24,16,0.06);
+    }
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+    }
+    .nav-btn {
+      flex: 1; padding: 10px 4px 8px; border: none; background: none;
+      color: var(--text-dim); cursor: pointer; display: flex;
+      flex-direction: column; align-items: center; gap: 2px;
+      font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-btn .nav-icon {
+      font-size: 0.75rem; font-weight: 700; width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; background: transparent; transition: all 0.2s;
+    }
+    .nav-btn.active { color: var(--brick); font-weight: 600; }
+    .nav-btn.active .nav-icon { background: var(--brick); color: white; }
+    .nav-btn:hover { color: var(--brown); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Forms Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+      display: block; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 5px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    input[type="text"], input[type="tel"] {
+      width: 100%; padding: 11px 14px; background: var(--cream);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--brick); box-shadow: 0 0 0 3px rgba(155,59,59,0.12); }
+    input::placeholder { color: var(--text-dim); }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Buttons Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .btn {
+      width: 100%; padding: 13px 18px; border: none; border-radius: 12px;
+      font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--brick); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--brick-dark); box-shadow: 0 4px 16px rgba(155,59,59,0.25); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover:not(:disabled) { box-shadow: 0 4px 16px rgba(74,124,89,0.25); }
+    .btn-outline {
+      background: transparent; color: var(--brick); border: 2px solid var(--brick);
+    }
+    .btn-outline:hover:not(:disabled) { background: var(--brick); color: white; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Big Heading-to-Shays button Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .heading-btn {
+      width: 100%; padding: 20px; border: none; border-radius: 16px;
+      background: var(--brick); color: white; cursor: pointer;
+      font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700;
+      transition: all 0.2s; margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(155,59,59,0.25);
+    }
+    .heading-btn:hover { background: var(--brick-dark); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(155,59,59,0.35); }
+    .heading-btn:active { transform: scale(0.98) translateY(0); }
+    .heading-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .heading-btn .btn-subtitle {
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 400;
+      opacity: 0.85; margin-top: 4px;
+    }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Rally option buttons Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .msg-btn {
+      width: 100%; padding: 14px 16px; border: 1px solid var(--border);
+      border-radius: 12px; background: var(--cream); color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; text-align: left;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+    }
+    .msg-btn:hover { background: var(--cream-dark); border-color: var(--brick); }
+    .msg-btn:active { transform: scale(0.98); }
+    .msg-btn .msg-icon {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--brick);
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
+    .msg-btn .btn-label { font-weight: 600; display: block; }
+    .msg-btn .btn-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
+
+    .expandable { display: none; margin-top: 8px; margin-bottom: 8px; padding: 14px;
+      background: var(--cream); border: 1px solid var(--border); border-radius: 12px;
+      animation: slideDown 0.2s ease; }
+    .expandable.visible { display: block; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .expandable .row { display: flex; gap: 8px; }
+    .expandable input, .expandable textarea { flex: 1; }
+    .expandable textarea {
+      width: 100%; padding: 10px 14px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; resize: vertical; min-height: 70px; outline: none;
+      margin-bottom: 8px;
+    }
+    .expandable .btn { width: auto; padding: 11px 18px; flex-shrink: 0; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Selfie / Camera Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .camera-area {
+      position: relative; width: 100%; aspect-ratio: 1;
+      background: var(--cream-dark); border-radius: 16px; overflow: hidden;
+      margin-bottom: 14px; display: flex; align-items: center;
+      justify-content: center; border: 2px dashed var(--border);
+    }
+    .camera-area video, .camera-area img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .camera-area canvas { display: none; }
+    .camera-placeholder {
+      color: var(--text-dim); text-align: center; padding: 40px;
+    }
+    .camera-placeholder .cam-icon { font-size: 2rem; margin-bottom: 8px; color: var(--brown-light); }
+    .camera-controls { display: flex; gap: 8px; }
+    .camera-controls .btn { flex: 1; }
+
+    .checkin-status {
+      text-align: center; padding: 20px; background: var(--green-bg);
+      border: 1px solid rgba(74,124,89,0.25); border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    .checkin-status .big-check { font-size: 2rem; color: var(--green); font-weight: 700; }
+    .checkin-status .status-text { color: var(--green); font-weight: 600; margin-top: 4px; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Calendar Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+    }
+    .cal-header {
+      font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
+      text-align: center; padding: 4px 0; text-transform: uppercase;
+    }
+    .cal-day {
+      aspect-ratio: 1; border-radius: 10px; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border);
+      background: var(--cream); position: relative; cursor: default;
+      transition: all 0.2s;
+    }
+    .cal-day.future { opacity: 0.35; }
+    .cal-day.today { border-color: var(--brick); box-shadow: 0 0 0 2px rgba(155,59,59,0.15); }
+    .cal-day.hit { background: var(--green-light); border-color: rgba(74,124,89,0.4); color: var(--green); }
+    .cal-day.missed { background: var(--red-bg); border-color: rgba(193,57,43,0.3); color: var(--red-accent); }
+    .cal-day.vouched { background: #FFF3E0; border-color: rgba(210,150,60,0.5); color: #B81Â¶0B; }
+    .cal-day.pending-vouch { background: #FFF8E1; border-color: rgba(210,150,60,0.3); color: #D2960C; border-style: dashed; }
+    .cal-day .day-num { font-size: 0.95rem; }
+    .cal-day .day-indicator { font-size: 0.65rem; margin-top: 1px; }
+    .cal-day.hit .day-indicator::after { content: 'Yes'; }
+    .cal-day.missed .day-indicator::after { content: 'No'; }
+    .cal-day.vouched .day-indicator::after { content: 'Vouched'; font-size: 0.55rem; }
+    .cal-day.pending-vouch .day-indicator::after { content: 'Pending'; font-size: 0.55rem; }
+    .cal-day.missed.clickable { cursor: pointer; }
+    .cal-day.missed.clickable:hover { border-color: var(--brick); background: var(--cream-dark); }
+
+    .cal-user-select {
+      margin-bottom: 14px; display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .cal-user-btn {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--cream); color: var(--text-muted); cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 500;
+      transition: all 0.2s;
+    }
+    .cal-user-btn.active { background: var(--brick); border-color: var(--brick); color: white; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Leaderboard Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .lb-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .lb-item:last-child { border-bottom: none; }
+    .lb-rank {
+      font-family: 'Playfair Display', serif; font-size: 1.3rem;
+      font-weight: 700; width: 36px; text-align: center; flex-shrink: 0;
+    }
+    .lb-rank.gold { color: #D4A017; }
+    .lb-rank.silver { color: #8E8E8E; }
+    .lb-rank.bronze { color: #A0522D; }
+    .lb-info { flex: 1; }
+    .lb-name { font-weight: 600; font-size: 0.95rem; }
+    .lb-stats { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+    .lb-bar-wrap {
+      width: 60px; height: 6px; background: var(--cream-dark);
+      border-radius: 3px; overflow: hidden; flex-shrink: 0;
+    }
+    .lb-bar {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--green), var(--brick));
+    }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Album Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .album-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+    }
+    .album-item {
+      aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+      position: relative; cursor: pointer; background: var(--cream-dark);
+    }
+    .album-item img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.2s;
+    }
+    .album-item:hover img { transform: scale(1.05); }
+    .album-item .album-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(44,24,16,0.8));
+      color: white; padding: 20px 6px 6px; font-size: 0.7rem; font-weight: 500;
+    }
+    .album-date-header {
+      font-family: 'Playfair Display', serif; font-weight: 600;
+      font-size: 0.95rem; color: var(--brown); padding: 14px 0 8px;
+      border-bottom: 1px solid var(--border); margin-bottom: 8px;
+    }
+    .album-date-header:first-child { padding-top: 0; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Lightbox Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .lightbox {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(44,24,16,0.9); z-index: 300;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .lightbox.visible { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 70vh; border-radius: 12px; }
+    .lightbox-info {
+  color: white; text-align: center; font-size: 0.9rem;
+}
+    .lightbox-close {
+      position: absolute; top: 20px; right: 20px; background: none; border: none;
+      color: white; font-size: 1.5rem; cursor: pointer; padding: 8px;
+    }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Vouch system Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .vouch-card {
+      background: #FFF8E1; border: 1px solid rgba(210,150,60,0.3);
+      border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    }
+    .vouch-card .vouch-header {
+      font-weight: 600; font-size: 0.9rem; color: var(--brown); margin-bottom: 4px;
+    }
+    .vouch-card .vouch-detail {
+      font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .vouch-actions { display: flex; gap: 8px; }
+    .vouch-actions .btn { width: auto; padding: 8px 16px; font-size: 0.82rem; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ History Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .history-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: none; }
+    .history-item .msg-text { font-size: 0.88rem; margin-bottom: 3px; }
+    .history-item .msg-meta { font-size: 0.73rem; color: var(--text-dim); }
+    .empty-state { text-align: center; padding: 24px; color: var(--text-dim); font-size: 0.88rem; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Toast Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 20px; font-size: 0.88rem;
+      color: var(--text); box-shadow: 0 8px 32px rgba(44,24,16,0.15);
+      transition: transform 0.3s ease; z-index: 200;
+      max-width: 90vw; text-align: center;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--green); }
+    .toast.error { border-color: var(--red-accent); }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Login screen Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .login-screen {
+      min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 20px;
+      background: linear-gradient(165deg, var(--cream) 0%, var(--cream-dark) 100%);
+    }
+    .login-card { width: 100%; max-width: 380px; }
+
+    .hidden { display: none !important; }
+
+    /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Vouch modal Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(44,24,16,0.5); z-index: 250;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.visible { display: flex; }
+
+.cal-nav-btn {
+  background: var(--cream); border: 1px solid var(--border); border-radius: 8px;
+  padding: 4px 12px; cursor: pointer; font-size: 1rem; color: var(--brown);
+  transition: all 0.2s;
+}
+.cal-nav-btn:hover { background: var(--brick); color: white; border-color: var(--brick); }
+.cal-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.cal-day.has-selfie { cursor: pointer; border-color: var(--green); }
+.cal-day.has-selfie:hover { transform: scale(1.05); z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+.delete-selfie-btn {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(193,57,43,0.85); color: white; border: none;
+  border-radius: 6px; padding: 4px 10px; font-size: 0.7rem;
+  cursor: pointer; z-index: 2; font-weight: 600;
+}
+.delete-selfie-btn:hover { background: rgba(193,57,43,1); }
+    .modal {
+      background: var(--surface); border-radius: 16px; padding: 24px;
+      max-width: 360px; width: 100%; box-shadow: 0 12px 40px rgba(44,24,16,0.2);
+    }
+    .modal-title {
+      font-family: 'Playfair Display', serif; font-size: 1.1rem;
+      font-weight: 700; color: var(--brown); margin-bottom: 12px;
+    }
+    .modal p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-actions .btn { flex: 1; padding: 11px; font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="header">
+      <div class="logo">Shayprils</div>
+      <div class="tagline">Rally the crew to Shays</div>
+      <div class="month-badge">April 2026 &mdash; Every. Single. Weekday.</div>
+    </div>
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-title"><span class="icon icon-brick">S</span> Sign In</div>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
+        Enter your name and phone number. We'll remember you next time.
+      </p>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="loginName" placeholder="e.g. Nate" />
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="loginPhone" placeholder="(555) 123-4567" />
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Join Shayprils</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden">
+  <div class="container">
+    <div class="header">
+      <div class="logo">Shayprils</div>
+      <div class="tagline">Rally the crew to Shays</div>
+    </div>
+
+    <div class="user-bar">
+      <div class="greeting">Hey, <strong id="userNameDisplay"></strong></div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+
+    <!-- CHECK-IN TAB -->
+    <div id="tab-checkin" class="tab-content active">
+      <!-- Big "I'm heading to Shays" button -->
+      <button class="heading-btn" onclick="sendHeading()">
+        I'm heading to Shays!
+        <div class="btn-subtitle">Tap to text everyone you're on your way</div>
+      </button>
+
+      <div id="alreadyCheckedIn" class="checkin-status hidden">
+        <div class="big-check">Checked In</div>
+        <div class="status-text">You already checked in today!</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+          Come back tomorrow. Streak alive!
+        </p>
+      </div>
+      <div id="checkinForm">
+        <div class="card">
+          <div class="card-title"><span class="icon icon-green">C</span> Check In at Shays</div>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">
+            Upload a selfie at Shays to log today's check-in. One photo per day.
+          </p>
+          <div class="camera-area" id="cameraArea">
+            <video id="cameraVideo" autoplay playsinline style="display:none;"></video>
+            <img id="selfiePreview" style="display:none;" />
+            <canvas id="selfieCanvas"></canvas>
+            <div id="cameraPlaceholder" class="camera-placeholder">
+              <div class="cam-icon">[ Camera ]</div>
+              <div>Tap below to open camera or upload a photo</div>
+            </div>
+          </div>
+          <div class="camera-controls">
+            <button id="btnStartCamera" class="btn btn-primary" onclick="startCamera()">Open Camera</button>
+            <button id="btnCapture" class="btn btn-primary hidden" onclick="capturePhoto()">Snap</button>
+            <button id="btnRetake" class="btn btn-outline hidden" onclick="retakePhoto()">Retake</button>
+            <button id="btnCheckin" class="btn btn-green hidden" onclick="submitCheckin()">Check In</button>
+          </div>
+          <div style="text-align:center; margin-top:10px;">
+            <label style="color: var(--text-dim); font-size: 0.8rem; cursor: pointer;">
+              Or <u>upload a photo</u>
+              <input type="file" accept="image/*" id="fileUpload" style="display:none;" onchange="handleFileUpload(event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="notificationSettings" class="card" style="margin-top:14px;">
+        <div class="card-title"><span class="icon icon-brown">N</span> Notifications</div>
+        <div id="notifStatus"></div>
+      </div>
+    </div>
+
+    <!-- RALLY TAB -->
+    <div id="tab-rally" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="icon icon-brick">R</span> Send a Shays Alert</div>
+        <button class="msg-btn" onclick="sendMessage('heading_now')">
+          <span class="msg-icon">Go</span>
+          <div><span class="btn-label">I'm heading to Shays now!</span>
+          <span class="btn-desc">Let everyone know you're on the way</span></div>
+        </button>
+        <button class="msg-btn" onclick="sendMessage('solo_join')">
+          <span class="msg-icon">1</span>
+          <div><span class="btn-label">Going solo &mdash; please join!</span>
+          <span class="btn-desc">Flying solo and want company</span></div>
+        </button>
+        <button class="msg-btn" onclick="toggleEl('companionBox')">
+          <span class="msg-icon">+</span>
+          <div><span class="btn-label">Going with friends</span>
+          <span class="btn-desc">Heading there with a crew</span></div>
+        </button>
+        <div id="companionBox" class="expandable">
+          <div class="form-group"><label>Who are you going with?</label></div>
+          <div class="row">
+            <input type="text" id="companions" placeholder="e.g. Jake and Mike" />
+            <button class="btn btn-primary" onclick="sendMessage('with_friends')">Send</button>
+          </div>
+        </div>
+        <button class="msg-btn" onclick="sendMessage('who_wants')">
+          <span class="msg-icon">?</span>
+          <div><span class="btn-label">Who wants to go to Shays?</span>
+          <span class="btn-desc">Rally the troops &mdash; see who's down</span></div>
+        </button>
+        <button class="msg-btn" onclick="toggleEl('customBox')">
+          <span class="msg-icon">...</span>
+          <div><span class="btn-label">Custom message</span>
+          <span class="btn-desc">Write your own Shays alert</span></div>
+        </button>
+        <div id="customBox" class="expandable">
+          <textarea id="customMessage" placeholder="e.g. Dollar beers at Shays tonight..."></textarea>
+          <button class="btn btn-primary" onclick="sendMessage('custom')">Send Alert</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR TAB -->
+    <div id="tab-calendar" class="tab-content">
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;"><span class="icon icon-brown">A</span> <span id="calMonthTitle">April 2026</span></div>
+          <div style="display:flex;gap:8px;">
+            <button id="calPrevMonth" class="cal-nav-btn" onclick="changeCalMonth(-1)">&larr;</button>
+            <button id="calNextMonth" class="cal-nav-btn" onclick="changeCalMonth(1)">&rarr;</button>
+          </div>
+        </div>
+        <div id="calUserSelect" class="cal-user-select"></div>
+        <div class="cal-grid">
+          <div class="cal-header">Mon</div><div class="cal-header">Tue</div>
+          <div class="cal-header">Wed</div><div class="cal-header">Thu</div>
+          <div class="cal-header">Fri</div>
+        </div>
+        <div id="calGrid" class="cal-grid" style="margin-top:6px;"></div>
+      </div>
+
+      <!-- Vouch Requests Section -->
+      <div id="vouchRequestsCard" class="card hidden">
+        <div class="card-title"><span class="icon icon-brown">V</span> Vouch Requests</div>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 12px;">
+          Someone needs a friend to confirm they were at Shays.
+        </p>
+        <div id="vouchRequestsList"></div>
+      </div>
+    </div>
+
+    <!-- ALBUM TAB -->
+    <div id="tab-album" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="icon icon-brick">P</span> Shayprils Photo Album</div>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 14px;">
+          Every check-in selfie from April, all in one place.
+        </p>
+        <div id="albumContent">
+          <div class="empty-state">No photos yet. Be the first to check in!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD TAB -->
+    <div id="tab-leaderboard" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="icon icon-green">L</span> Leaderboard</div>
+        <div id="leaderboardList">
+          <div class="empty-state">No check-ins yet. Be the first!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" data-tab="checkin">
+      <span class="nav-icon">S</span>Shays
+    </button>
+    <button class="nav-btn" data-tab="rally">
+      <span class="nav-icon">R</span>Rally
+    </button>
+    <button class="nav-btn" data-tab="calendar">
+      <span class="nav-icon">A</span>Attend
+    </button>
+    <button class="nav-btn" data-tab="album">
+      <span class="nav-icon">P</span>Photos
+    </button>
+    <button class="nav-btn" data-tab="leaderboard">
+      <span class="nav-icon">B</span>Board
+    </button>
+    <button class="nav-btn" data-tab="admin" id="adminNavBtn" style="display:none"><span class="nav-icon">â</span>Admin</button>
+  </div>
+</div>
+
+<!-- Admin Section -->
+<div id="adminSection" class="tab-content" style="display:none"></div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">X</button>
+  <img id="lightboxImg" src="" />
+  <div class="lightbox-info" id="lightboxInfo"></div>
+</div>
+
+<!-- Vouch Request Modal -->
+<div id="vouchModal" class="modal-overlay" onclick="if(event.target===this)closeVouchModal()">
+  <div class="modal">
+    <div class="modal-title">Request a Vouch</div>
+    <p id="vouchModalText">Were you at Shays on this day but forgot to check in? Ask someone who was there to vouch for you.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeVouchModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitVouchRequest()">Request Vouch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1';
+function testParam() { return TEST_MODE ? '?test=1' : ''; }
+function testHeader() { return TEST_MODE ? { 'x-test-mode': '1' } : {}; }
+let currentUser = null;
+let cameraStream = null;
+let capturedImageData = null;
+let calendarSelectedUser = null;
+let vouchRequestDate = null;
+let calendarMonth = 'april';
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// AUTH
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+async function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  const phone = document.getElementById('loginPhone').value.trim();
+  if (!name || !phone) return showToast('Enter your name and phone number', 'error');
+
+  try {
+    const res = await fetch(API + '/api/auth/register' + testParam(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token', data.token);
+      localStorage.setItem('shayprils_user', JSON.stringify(data.user));
+      currentUser = data.user;
+    currentUser.silenced_until = data.user.silenced_until;
+      showApp();
+      // welcome toast removed
+    } else {
+      showToast(data.error || 'Failed to sign in', 'error');
+    }
+  } catch (e) {
+    showToast('Server unavailable', 'error');
+  }
+}
+
+async function checkAuth() {
+  const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+  if (!token) {
+    // Check for legacy token
+    const oldToken = localStorage.getItem('shaperils_token');
+    if (oldToken) {
+      localStorage.setItem('shayprils_token', oldToken);
+      localStorage.removeItem('shaperils_token');
+      return checkAuth();
+    }
+    return false;
+  }
+  try {
+    const res = await fetch(API + '/api/auth/me', { headers: { 'x-auth-token': token } });
+    if (res.ok) {
+      const data = await res.json();
+      currentUser = data.user;
+      localStorage.setItem('shayprils_user', JSON.stringify(data.user));
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function doLogout() {
+  localStorage.removeItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+  localStorage.removeItem('shayprils_user');
+  currentUser = null;
+  stopCamera();
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+}
+
+function showApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('userNameDisplay').textContent = currentUser.name;
+  document.getElementById('adminNavBtn').style.display = '';
+  checkTodayCheckin();
+  renderNotificationSettings();
+}
+
+function getToken() {
+  return localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+}
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'x-auth-token': getToken(), ...testHeader() };
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// NAVIGATION
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+
+    const tab = btn.dataset.tab;
+    if (tab === 'admin') {
+      document.getElementById('adminSection').style.display = 'block';
+      if (adminPin) loadAdminPanel();
+      else showAdminLogin();
+    } else {
+      document.getElementById('adminSection').style.display = 'none';
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    if (tab === 'calendar') loadCalendar();
+    if (tab === 'leaderboard') loadLeaderboard();
+    if (tab === 'album') loadAlbum();
+    if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); }
+  });
+});
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// "I'M HEADING TO SHAYS" button
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+async function sendHeading() {
+  const btn = document.querySelector('.heading-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Sending...<div class="btn-subtitle">Letting everyone know</div>';
+  try {
+    const res = await fetch(API + '/api/send', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ messageType: 'heading_now' }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(currentUser.name + ' is heading to Shays! Alert sent to ' + data.sent + ' people.');
+    } else {
+      showToast(data.error || 'Failed to send', 'error');
+    }
+  } catch (e) {
+    showToast('Server unavailable', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'I\'m heading to Shays!<div class="btn-subtitle">Tap to text everyone you\'re on your way</div>';
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// CAMERA / SELFIE
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    const video = document.getElementById('cameraVideo');
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    document.getElementById('selfiePreview').style.display = 'none';
+    document.getElementById('btnStartCamera').classList.add('hidden');
+    document.getElementById('btnCapture').classList.remove('hidden');
+    document.getElementById('btnRetake').classList.add('hidden');
+    document.getElementById('btnCheckin').classList.add('hidden');
+  } catch (e) {
+    showToast('Could not access camera. Try uploading a photo instead.', 'error');
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('selfieCanvas');
+  const size = Math.min(video.videoWidth, video.videoHeight);
+  canvas.width = 640; canvas.height = 640;
+  const ctx = canvas.getContext('2d');
+  const sx = (video.videoWidth - size) / 2;
+  const sy = (video.videoHeight - size) / 2;
+  ctx.drawImage(video, sx, sy, size, size, 0, 0, 640, 640);
+  capturedImageData = canvas.toDataURL('image/jpeg', 0.8);
+
+  const preview = document.getElementById('selfiePreview');
+  preview.src = capturedImageData;
+  preview.style.display = 'block';
+  video.style.display = 'none';
+  stopCamera();
+
+  document.getElementById('btnCapture').classList.add('hidden');
+  document.getElementById('btnRetake').classList.remove('hidden');
+  document.getElementById('btnCheckin').classList.remove('hidden');
+}
+
+function retakePhoto() {
+  capturedImageData = null;
+  document.getElementById('selfiePreview').style.display = 'none';
+  document.getElementById('btnRetake').classList.add('hidden');
+  document.getElementById('btnCheckin').classList.add('hidden');
+  startCamera();
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    capturedImageData = e.target.result;
+    const preview = document.getElementById('selfiePreview');
+    preview.src = capturedImageData;
+    preview.style.display = 'block';
+    document.getElementById('cameraVideo').style.display = 'none';
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    stopCamera();
+    document.getElementById('btnStartCamera').classList.add('hidden');
+    document.getElementById('btnCapture').classList.add('hidden');
+    document.getElementById('btnRetake').classList.remove('hidden');
+    document.getElementById('btnCheckin').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+async function submitCheckin() {
+  if (!capturedImageData) return showToast('Take a selfie first!', 'error');
+
+  document.getElementById('btnCheckin').disabled = true;
+  document.getElementById('btnCheckin').textContent = 'Uploading...';
+
+  try {
+    const res = await fetch(API + '/api/checkin', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ selfie: capturedImageData }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.duplicate ? 'Already checked in today!' : 'Checked in! Selfie saved.');
+      capturedImageData = null;
+      showCheckedInState();
+    } else {
+      showToast(data.error || 'Check-in failed', 'error');
+    }
+  } catch (e) {
+    showToast('Server error', 'error');
+  }
+
+  document.getElementById('btnCheckin').disabled = false;
+  document.getElementById('btnCheckin').textContent = 'Check In';
+}
+
+async function checkTodayCheckin() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(API + '/api/checkin/mine', { headers: authHeaders() });
+    const data = await res.json();
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const todayCheckin = data.checkins.find(c => c.date === today);
+    if (todayCheckin) {
+      showCheckedInState();
+    } else {
+      document.getElementById('alreadyCheckedIn').classList.add('hidden');
+      document.getElementById('checkinForm').classList.remove('hidden');
+    }
+  } catch (e) {}
+}
+
+function showCheckedInState() {
+  document.getElementById('alreadyCheckedIn').classList.remove('hidden');
+  document.getElementById('checkinForm').classList.add('hidden');
+  stopCamera();
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// RALLY (SMS)
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+async function sendMessage(type) {
+  const companions = document.getElementById('companions')?.value.trim() || '';
+  const customMessage = document.getElementById('customMessage')?.value.trim() || '';
+
+  document.querySelectorAll('.msg-btn').forEach(b => b.disabled = true);
+  try {
+    const res = await fetch(API + '/api/send', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ messageType: type, companions, customMessage }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Alert sent to ' + data.sent + ' people!');
+      document.getElementById('companions').value = '';
+      document.getElementById('customMessage').value = '';
+      document.querySelectorAll('.expandable').forEach(e => e.classList.remove('visible'));
+    } else {
+      showToast(data.error || 'Failed to send', 'error');
+    }
+  } catch (e) {
+    showToast('Server unavailable', 'error');
+  }
+  document.querySelectorAll('.msg-btn').forEach(b => b.disabled = false);
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// CALENDAR
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+let calendarData = null;
+
+async function changeCalMonth(dir) {
+  if (dir === -1 && calendarMonth === 'april') calendarMonth = 'march';
+  else if (dir === 1 && calendarMonth === 'march') calendarMonth = 'april';
+  loadCalendar();
+}
+
+async function loadCalendar() {
+  try {
+    const params = new URLSearchParams();
+    if (TEST_MODE) params.set('test', '1');
+    params.set('month', calendarMonth);
+    const res = await fetch(API + '/api/calendar?' + params.toString());
+    calendarData = await res.json();
+    renderCalendarUsers(calendarData.users);
+    const userId = calendarSelectedUser || (currentUser ? currentUser.id : null);
+    renderCalendar(calendarData.calendar, userId);
+    loadVouchRequests();
+    // Update month title and nav button states
+    const titleEl = document.getElementById('calMonthTitle');
+    if (titleEl) titleEl.textContent = calendarMonth === 'march' ? 'March 2026' : 'April 2026';
+    const prevBtn = document.getElementById('calPrevMonth');
+    const nextBtn = document.getElementById('calNextMonth');
+    if (prevBtn) prevBtn.disabled = (calendarMonth === 'march');
+    if (nextBtn) nextBtn.disabled = (calendarMonth === 'april');
+  } catch (e) {}
+}
+
+function renderCalendarUsers(users) {
+  const container = document.getElementById('calUserSelect');
+  if (!calendarSelectedUser && currentUser) calendarSelectedUser = currentUser.id;
+
+  container.innerHTML = users.map(u =>
+    `<button class="cal-user-btn ${u.id === calendarSelectedUser ? 'active' : ''}"
+      onclick="selectCalUser('${u.id}')">${escapeHtml(u.name)}</button>`
+  ).join('');
+}
+
+function selectCalUser(userId) {
+  calendarSelectedUser = userId;
+  loadCalendar();
+}
+
+async function renderCalendar(calendar, userId) {
+  const grid = document.getElementById('calGrid');
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+  let vouches = [];
+  try {
+    const res = await fetch(API + '/api/vouch/list' + testParam());
+    const data = await res.json();
+    vouches = data.vouches || [];
+  } catch(e) {}
+
+  // Calculate first day offset based on month
+  // March 2026 starts on Sunday, so first weekday (Mon) is March 2 â offset 0 since March 2 is the first weekday
+  // Actually: March 1 2026 is a Sunday. First Mon is March 2. So day 2 starts at position 0 (Mon).
+  // But getDay() for 2026-03-02 = 1 (Monday). We want 0 offset for Mon.
+  // For first weekday in the month, figure out what day of week it falls on:
+  const firstDate = calendar.length > 0 ? new Date(calendar[0].date + 'T12:00:00') : null;
+  const firstDayOfWeek = firstDate ? firstDate.getDay() : 1; // 1=Mon, ..., 5=Fri
+  const firstDayOffset = firstDayOfWeek - 1; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4
+
+  const isMyCalendar = userId === (currentUser ? currentUser.id : null);
+  const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
+
+  let html = '';
+  for (let i = 0; i < firstDayOffset; i++) html += '<div></div>';
+
+  for (const day of calendar) {
+    const userCheckin = userId ? day.checkins.find(c => c.user_id === userId) : null;
+    const userCheckedIn = !!userCheckin;
+    const isToday = day.date === today;
+    const isFuture = day.date > today;
+
+    const vouch = vouches.find(v => v.requester_id === userId && v.date === day.date);
+    const isVouched = vouch && vouch.status === 'approved';
+    const isPendingVouch = vouch && vouch.status === 'pending';
+
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (isFuture) cls += ' future';
+    else if (userCheckedIn || isVouched) cls += (isVouched ? ' vouched' : ' hit');
+    else if (isPendingVouch) cls += ' pending-vouch';
+    else if (!isFuture) cls += ' missed';
+
+    const canRequestVouch = isMyCalendar && !userCheckedIn && !isVouched && !isPendingVouch && !isFuture && !isToday;
+    if (canRequestVouch) cls += ' clickable';
+
+    // Selfie thumbnail
+    const hasSelfie = userCheckin && userCheckin.selfie;
+    const selfieUrl = hasSelfie ? uploadPrefix + userCheckin.selfie : '';
+    const bgStyle = hasSelfie ? 'background-image:url(' + selfieUrl + ');background-size:cover;background-position:center;' : '';
+    const textColor = hasSelfie ? 'color:white;text-shadow:0 1px 3px rgba(0,0,0,0.8);' : '';
+
+    let clickHandler = '';
+    if (hasSelfie) {
+      clickHandler = 'onclick="openLightbox(\'' + selfieUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\')"';
+      cls += ' has-selfie';
+    } else if (canRequestVouch) {
+      clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
+    }
+
+    const count = day.checkins.length;
+    html += '<div class="' + cls + '" title="' + day.date + ': ' + count + ' check-in' + (count !== 1 ? 's' : '') + '" style="' + bgStyle + textColor + '" ' + clickHandler + '>';
+    html += '<span class="day-num">' + day.dayNum + '</span>';
+    if (!hasSelfie) html += '<span class="day-indicator"></span>';
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+}
+function renderNotificationSettings() {
+  const container = document.getElementById('notifStatus');
+  if (!currentUser) return;
+  
+  const silenced = currentUser.silenced_until;
+  const subscribed = currentUser.subscribed;
+  
+  let html = '';
+  if (silenced === 'forever') {
+    html += '<p style="color:var(--red-accent);font-size:0.88rem;margin-bottom:12px;">Notifications are permanently silenced.</p>';
+    html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Notifications</button>';
+  } else if (silenced && new Date(silenced) > new Date()) {
+    const until = new Date(silenced).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications silenced until ' + until + '</p>';
+    html += '<button class="btn btn-green" onclick="unsilenceNotifs()" style="margin-bottom:8px;">Re-enable Now</button>';
+  } else if (subscribed) {
+    html += '<p style="color:var(--green);font-size:0.88rem;margin-bottom:12px;">Notifications are ON â you get texts when someone heads to Shays.</p>';
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'day\')">Mute 1 Day</button>';
+    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'week\')">Mute 1 Week</button>';
+    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'forever\')">Unsubscribe</button>';
+    html += '</div>';
+  } else {
+    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications are OFF.</p>';
+    html += '<button class="btn btn-green" onclick="unsilenceNotifs()">Re-enable Notifications</button>';
+  }
+  container.innerHTML = html;
+}
+
+async function silenceNotifs(duration) {
+  try {
+    const res = await fetch(API + '/api/auth/silence', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ duration })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser.silenced_until = data.silenced_until;
+      currentUser.subscribed = false;
+      renderNotificationSettings();
+      showToast(duration === 'forever' ? 'Notifications permanently silenced' : 'Notifications muted');
+    }
+  } catch(e) { showToast('Error', 'error'); }
+}
+
+async function unsilenceNotifs() {
+  try {
+    const res = await fetch(API + '/api/auth/unsilence', {
+      method: 'POST', headers: authHeaders()
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser.silenced_until = null;
+      currentUser.subscribed = true;
+      renderNotificationSettings();
+      showToast('Notifications re-enabled!');
+    }
+  } catch(e) { showToast('Error', 'error'); }
+}
+
+function openVouchModal(date) {
+  vouchRequestDate = date;
+  const formatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('vouchModalText').textContent =
+    'Were you at Shays on ' + formatted + ' but forgot to check in? Another Shayprils member will need to confirm you were there.';
+  document.getElementById('vouchModal').classList.add('visible');
+}
+
+function closeVouchModal() {
+  document.getElementById('vouchModal').classList.remove('visible');
+  vouchRequestDate = null;
+}
+
+async function submitVouchRequest() {
+  if (!vouchRequestDate) return;
+  try {
+    const res = await fetch(API + '/api/vouch/request', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ date: vouchRequestDate }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Vouch request submitted! Ask a friend to approve it.');
+      closeVouchModal();
+      loadCalendar();
+    } else {
+      showToast(data.error || 'Failed to request vouch', 'error');
+    }
+  } catch (e) {
+    showToast('Server error', 'error');
+  }
+}
+
+async function loadVouchRequests() {
+  try {
+    const res = await fetch(API + '/api/vouch/pending', { headers: authHeaders() });
+    const data = await res.json();
+    const list = document.getElementById('vouchRequestsList');
+    const card = document.getElementById('vouchRequestsCard');
+
+    if (data.vouches && data.vouches.length > 0) {
+      card.classList.remove('hidden');
+      list.innerHTML = data.vouches.map(v => {
+        const formatted = new Date(v.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        return `<div class="vouch-card">
+          <div class="vouch-header">${escapeHtml(v.requester_name)} needs a vouch</div>
+          <div class="vouch-detail">Claims they were at Shays on  ${formatted}</div>
+          <div class="vouch-actions">
+            <button class="btn btn-green" onclick="approveVouch('${v.id}')">I was there &mdash; vouch for them</button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      card.classList.add('hidden');
+    }
+  } catch (e) {}
+}
+
+async function approveVouch(vouchId) {
+  try {
+    const res = await fetch(API + '/api/vouch/approve', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ vouchId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Vouch approved!');
+      loadCalendar();
+    } else {
+      showToast(data.error || 'Failed to approve', 'error');
+    }
+  } catch (e) {
+    showToast('Server error', 'error');
+  }
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// ALBUM
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+async function loadAlbum() {
+  try {
+    const res = await fetch(API + '/api/album' + testParam());
+    const data = await res.json();
+    const container = document.getElementById('albumContent');
+
+    if (!data.photos || data.photos.length === 0) {
+      container.innerHTML = '<div class="empty-state">No photos yet. Be the first to check in!</div>';
+      return;
+    }
+
+    const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
+    const grouped = {};
+    data.photos.forEach(p => {
+      if (!grouped[p.date]) grouped[p.date] = [];
+      grouped[p.date].push(p);
+    });
+
+    let html = '';
+    const dates = Object.keys(grouped).sort().reverse();
+    for (const date of dates) {
+      const formatted = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric'
+      });
+      html += '<div class="album-date-header">' + formatted + '</div>';
+      html += '<div class="album-grid">';
+      for (const photo of grouped[date]) {
+        const isOwn = currentUser && photo.user_id === currentUser.id;
+        html += '<div class="album-item" onclick="openLightbox(\'' + uploadPrefix + photo.selfie + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\')">';
+        html += '<img src="' + uploadPrefix + photo.selfie + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" />';
+        html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
+        if (isOwn) {
+          html += '<button class="delete-selfie-btn" onclick="event.stopPropagation();deleteSelfie(\'' + photo.id + '\')">Delete</button>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  } catch (e) {
+    document.getElementById('albumContent').innerHTML = '<div class="empty-state">Could not load photos</div>';
+  }
+}
+function openLightbox(src, name, date) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxInfo').textContent = name + ' â ' + date;
+  document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
+  document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
+  document.getElementById('lightbox').classList.add('visible');
+}
+
+async function saveLightboxPhoto(e) {
+  e.stopPropagation();
+  const src = document.getElementById('lightboxSaveBtn').getAttribute('data-src');
+  const name = document.getElementById('lightboxSaveBtn').getAttribute('data-name');
+  try {
+    const response = await fetch(src);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'shayprils_' + name.replace(/[^a-zA-Z0-9]/g, '_') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Photo saved!');
+  } catch(e) {
+    showToast('Could not save photo', 'error');
+  }
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('visible');
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// LEADERBOARD
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+async function loadLeaderboard() {
+  try {
+    const res = await fetch(API + '/api/leaderboard' + testParam());
+    const data = await res.json();
+    const list = document.getElementById('leaderboardList');
+
+    if (data.length === 0) {
+      list.innerHTML = '<div class="empty-state">No check-ins yet. Be the first!</div>';
+      return;
+    }
+
+    const maxDays = Math.max(1, ...data.map(d => d.weekdays_hit + d.weekdays_missed));
+
+    list.innerHTML = data.map((entry, i) => {
+      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const pct = maxDays > 0 ? Math.round((entry.weekdays_hit / maxDays) * 100) : 0;
+      return `
+        <div class="lb-item">
+          <div class="lb-rank ${rankClass}">${i + 1}</div>
+          <div class="lb-info">
+            <div class="lb-name">${escapeHtml(entry.name)}</div>
+            <div class="lb-stats">
+              ${entry.weekdays_hit} days &middot; ${entry.streak} streak
+              ${entry.weekdays_missed > 0 ? '&middot; ' + entry.weekdays_missed + ' missed' : ''}
+            </div>
+          </div>
+          <div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct}%"></div></div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    document.getElementById('leaderboardList').innerHTML = '<div class="empty-state">Could not load</div>';
+  }
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// UTILS
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+function toggleEl(id) {
+  const el = document.getElementById(id);
+  const isVisible = el.classList.contains('visible');
+  document.querySelectorAll('.expandable').forEach(e => e.classList.remove('visible'));
+  if (!isVisible) el.classList.add('visible');
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => { t.classList.remove('show'); t.style.display = 'none'; }, 2500);
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+    // Delete own selfie
+    async function deleteSelfie(checkinId) {
+  if (!confirm('Delete this selfie?')) return;
+  try {
+    const res = await fetch(API + '/api/checkin/' + checkinId, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Selfie deleted');
+      loadAlbum();
+      loadCalendar();
+      checkTodayCheckin();
+    } else {
+      showToast(data.error || 'Failed', 'error');
+    }
+  } catch(e) { showToast('Error deleting', 'error'); }
+}
+
+    // Admin functions
+    let adminPin = null;
+    function showAdminLogin() {
+      const section = document.getElementById('adminSection');
+      section.innerHTML = '<div style="max-width:400px;margin:20px auto;padding:20px;background:var(--cream);border-radius:12px;"><h2 style="color:var(--brown);margin-bottom:16px;">Admin Access</h2><input type="password" id="adminPinInput" placeholder="Enter admin PIN" style="width:100%;padding:12px;border:2px solid var(--tan);border-radius:8px;margin-bottom:12px;font-size:16px;"><button onclick="adminLogin()" style="width:100%;padding:12px;background:var(--brick);color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Login</button></div>';
+    }
+
+    async function adminLogin() {
+      const pin = document.getElementById('adminPinInput').value;
+      try {
+        const res = await fetch('/api/admin/users', { headers: { 'x-admin-pin': pin } });
+        if (res.ok) {
+          adminPin = pin;
+          showToast('Admin access granted');
+          loadAdminPanel();
+        } else {
+          showToast('Invalid PIN', 'error');
+        }
+      } catch(e) { showToast('Error', 'error'); }
+    }
+
+    async function loadAdminPanel() {
+      const section = document.getElementById('adminSection');
+      try {
+        const [usersRes, checkinsRes] = await Promise.all([
+          fetch('/api/admin/users', { headers: { 'x-admin-pin': adminPin } }),
+          fetch('/api/admin/checkins', { headers: { 'x-admin-pin': adminPin } })
+        ]);
+        const usersData = await usersRes.json();
+        const checkinsData = await checkinsRes.json();
+        let html = '<div style="max-width:800px;margin:0 auto;padding:16px;">';
+        html += '<h2 style="color:var(--brown);margin-bottom:16px;">Admin Panel</h2>';
+        
+        // Users table
+        html += '<h3 style="color:var(--brick);margin:16px 0 8px;">Users (' + usersData.users.length + ')</h3>';
+        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;background:var(--cream);border-radius:8px;overflow:hidden;">';
+        html += '<tr style="background:var(--brick);color:white;"><th style="padding:8px;text-align:left;">Name</th><th style="padding:8px;">Phone</th><th style="padding:8px;">Active</th><th style="padding:8px;">SMS</th><th style="padding:8px;">Actions</th></tr>';
+        usersData.users.forEach(function(u) {
+          html += '<tr style="border-bottom:1px solid var(--tan);">';
+          html += '<td style="padding:8px;">' + escapeHtml(u.name) + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + escapeHtml(u.phone) + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + (u.active ? 'Yes' : 'No') + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + (u.subscribed ? 'Yes' : 'No') + '</td>';
+          html += '<td style="padding:8px;text-align:center;">';
+          html += '<button onclick="adminEditUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',\'' + escapeHtml(u.phone) + '\')" style="padding:4px 8px;background:var(--brown);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Edit</button>';
+          if (u.active) html += '<button onclick="adminDeactivateUser(\'' + u.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Deactivate</button>';
+          html += '</td></tr>';
+        });
+        html += '</table></div>';
+
+        // Checkins table
+        html += '<h3 style="color:var(--brick);margin:16px 0 8px;">Check-ins (' + checkinsData.checkins.length + ')</h3>';
+        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;background:var(--cream);border-radius:8px;overflow:hidden;">';
+        html += '<tr style="background:var(--brick);color:white;"><th style="padding:8px;text-align:left;">User</th><th style="padding:8px;">Date</th><th style="padding:8px;">Selfie</th><th style="padding:8px;">Actions</th></tr>';
+        checkinsData.checkins.forEach(function(c) {
+          html += '<tr style="border-bottom:1px solid var(--tan);">';
+          html += '<td style="padding:8px;">' + escapeHtml(c.user_name) + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + c.date + '</td>';
+          html += '<td style="padding:8px;text-align:center;">' + (c.selfie ? 'Yes' : 'No') + '</td>';
+          html += '<td style="padding:8px;text-align:center;">';
+          html += '<button onclick="adminDeleteCheckin(\'' + c.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;">Delete</button>';
+          html += '</td></tr>';
+        });
+        html += '</table></div></div>';
+        section.innerHTML = html;
+      } catch(e) { section.innerHTML = '<p style="color:red;padding:20px;">Error loading admin data</p>'; }
+    }
+
+    function adminEditUser(userId, name, phone) {
+      const newName = prompt('Edit name:', name);
+      if (newName === null) return;
+      const newPhone = prompt('Edit phone:', phone);
+      if (newPhone === null) return;
+      fetch('/api/admin/users/' + userId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+        body: JSON.stringify({ name: newName, phone: newPhone })
+      }).then(r => r.json()).then(d => {
+        if (d.success) { showToast('User updated'); loadAdminPanel(); }
+        else showToast(d.error || 'Failed', 'error');
+      });
+    }
+
+    function adminDeactivateUser(userId) {
+      if (!confirm('Deactivate this user?')) return;
+      fetch('/api/admin/users/' + userId, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': adminPin }
+      }).then(r => r.json()).then(d => {
+        if (d.success) { showToast('User deactivated'); loadAdminPanel(); }
+        else showToast(d.error || 'Failed', 'error');
+      });
+    }
+
+    function adminDeleteCheckin(checkinId) {
+      if (!confirm('Delete this check-in?')) return;
+      fetch('/api/admin/checkins/' + checkinId, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': adminPin }
+      }).then(r => r.json()).then(d => {
+        if (d.success) { showToast('Check-in deleted'); loadAdminPanel(); }
+        else showToast(d.error || 'Failed', 'error');
+      });
+    }
+
+// INIT
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+
+(async function init() {
+  if (TEST_MODE) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#FF6B35;color:white;text-align:center;padding:8px;font-weight:600;font-size:0.85rem;position:fixed;top:0;left:0;right:0;z-index:999;';
+    banner.textContent = 'TEST MODE â Data is isolated from production';
+    document.body.prepend(banner);
+    document.body.style.paddingTop = '36px';
+  }
+  if (await checkAuth()) {
+    showApp();
+  }
+})();
+
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shayprils &mdash; Every. Single. Weekday.</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>ðº</text></svg>">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
