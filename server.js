@@ -307,6 +307,11 @@ app.get('/api/checkin/mine', authMiddleware, async (req, res) => {
 app.delete('/api/checkin/:id', authMiddleware, async (req, res) => {
   const result = await store.deleteCheckin(req.params.id, req.user.id, req.testMode);
   if (result.error) return res.status(400).json(result);
+
+  // Log the deletion to the activity feed
+  const deleteMsg = `${req.user.name} deleted their check-in${result.date ? ' for ' + result.date : ''}`;
+  await store.logMessage(req.user.name, 'system', deleteMsg, 0, req.testMode).catch(console.error);
+
   res.json({ success: true, message: 'Selfie deleted' });
 });
 

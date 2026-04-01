@@ -954,6 +954,8 @@ async function submitCheckin() {
       showToast(data.duplicate ? 'Already checked in today!' : 'Checked in! Selfie saved.');
       capturedImageData = null;
       showCheckedInState();
+      loadLeaderboard();
+      loadFeed();
     } else {
       showToast(data.error || 'Check-in failed', 'error');
     }
@@ -1604,6 +1606,8 @@ async function deleteSelfie(checkinId) {
       showToast('Selfie deleted');
       loadAlbum();
       loadCalendar();
+      loadLeaderboard();
+      loadFeed();
       checkTodayCheckin();
     } else {
       showToast(data.error || 'Failed', 'error');
