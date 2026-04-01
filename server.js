@@ -122,6 +122,94 @@ app.get('/api/health', async (req, res) => {
   res.json(health);
 });
 
+// Diagnostic: inspect stored selfie values (admin only)
+app.get('/api/admin/photo-debug', adminAuth, async (req, res) => {
+  const testMode = req.query.test === '1';
+  const checkins = await store.getAllCheckins(testMode);
+  const summary = checkins.map(c => ({
+    id: c.id,
+    user_name: c.user_name,
+    date: c.date,
+    selfie_type: !c.selfie ? 'NONE'
+      : c.selfie.startsWith('http') ? 'cloudinary_url'
+      : 'local_filename',
+    selfie_value: c.selfie || '(none)',
+  }));
+  res.json({ total: summary.length, checkins: summary });
+});
+
+// Recovery: list all images in Cloudinary folder and try to match to checkins with broken/local refs
+app.post('/api/admin/photo-recover', adminAuth, async (req, res) => {
+  if (!cloudinary.config().cloud_name) {
+    return res.status(400).json({ error: 'Cloudinary not configured' });
+  }
+  const testMode = req.query.test === '1';
+  const folder = testMode ? 'shayprils_test' : 'shayprils';
+
+  try {
+    // List all resources in the Cloudinary folder
+    let allResources = [];
+    let nextCursor = null;
+    do {
+      const result = await cloudinary.api.resources({
+        type: 'upload',
+        prefix: folder + '/',
+        max_results: 500,
+        ...(nextCursor ? { next_cursor: nextCursor } : {}),
+      });
+      allResources = allResources.concat(result.resources || []);
+      nextCursor = result.next_cursor;
+    } while (nextCursor);
+
+    // Build a map: public_id => secure_url
+    const cloudMap = {};
+    for (const r of allResources) {
+      // public_id is like "shayprils/userid_2026-04-01"
+      const key = r.public_id.replace(folder + '/', '');
+      cloudMap[key] = r.secure_url;
+    }
+
+    // Get all checkins and try to fix any with local filenames
+    const checkins = await store.getAllCheckins(testMode);
+    let recovered = 0;
+    let alreadyOk = 0;
+    let notFound = 0;
+    const details = [];
+
+    for (const c of checkins) {
+      if (!c.selfie) continue;
+      if (c.selfie.startsWith('http')) {
+        alreadyOk++;
+        continue;
+      }
+      // This is a local filename — try to find matching Cloudinary image
+      // Expected key format: userId_date
+      const expectedKey = `${c.user_id}_${c.date}`;
+      if (cloudMap[expectedKey]) {
+        // Found it! Update the DB
+        await store.updateCheckinSelfie(c.id, cloudMap[expectedKey], testMode);
+        details.push({ user: c.user_name, date: c.date, status: 'RECOVERED', url: cloudMap[expectedKey] });
+        recovered++;
+      } else {
+        details.push({ user: c.user_name, date: c.date, status: 'NOT_FOUND_IN_CLOUDINARY', local_file: c.selfie });
+        notFound++;
+      }
+    }
+
+    res.json({
+      cloudinary_images: allResources.length,
+      checkins_total: checkins.length,
+      already_ok: alreadyOk,
+      recovered,
+      not_found: notFound,
+      details,
+    });
+  } catch (err) {
+    console.error('Photo recovery error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════
 // AUTH ROUTES
 // ═══════════════════════════════════════════════════════════════
@@ -211,6 +299,7 @@ app.post('/api/send', authMiddleware, async (req, res) => {
 // CHECK-IN ROUTES
 // ═══════════════════════════════════════════════════════════════
 // Helper: upload to Cloudinary with retry
+// Upload to Cloudinary with retry — NO server-side transformation (already 640x640 from client)
 async function uploadToCloudinary(dataUrl, folder, publicId, retries = 2) {
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -219,14 +308,15 @@ async function uploadToCloudinary(dataUrl, folder, publicId, retries = 2) {
         folder,
         public_id: publicId,
         overwrite: true,
-        transformation: [{ width: 640, height: 640, crop: 'fill', gravity: 'face' }],
+        // No transformation — image is already 640x640 from the client canvas.
+        // Removing server-side transforms saves Cloudinary credits.
       });
       return result;
     } catch (err) {
       lastErr = err;
       console.error(`Cloudinary upload attempt ${attempt + 1} failed:`, err.message || err);
       if (attempt < retries) {
-        await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); // back off 1s, 2s
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
       }
     }
   }
@@ -246,10 +336,10 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const dateStr = et.toISOString().split('T')[0];
 
-  let selfieValue; // Will be either a Cloudinary URL or a local filename
+  let selfieValue; // Will be a Cloudinary URL
 
   if (cloudinary.config().cloud_name) {
-    // Upload to Cloudinary (with retry)
+    // Upload to Cloudinary (with retry) — no local fallback to avoid data loss on redeploy
     try {
       const folder = req.testMode ? 'shayprils_test' : 'shayprils';
       const publicId = `${req.user.id}_${dateStr}`;
@@ -258,25 +348,13 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
       console.log('Uploaded to Cloudinary:', selfieValue);
     } catch (err) {
       console.error('Cloudinary upload failed after retries:', err.message || err);
-      const detail = err.message || 'Unknown error';
-      // Fallback: try saving locally if Cloudinary fails
-      try {
-        console.log('Falling back to local storage...');
-        const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
-        const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
-        const filename = `${req.user.id}_${dateStr}.${ext}`;
-        const dir = req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR;
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(path.join(dir, filename), base64Data, 'base64');
-        selfieValue = filename;
-        console.log('Saved locally as fallback:', filename);
-      } catch (fallbackErr) {
-        console.error('Local fallback also failed:', fallbackErr.message);
-        return res.status(500).json({ error: `Upload failed: ${detail}` });
-      }
+      return res.status(500).json({
+        error: 'Photo upload failed — please try again in a moment. (' + (err.message || 'unknown') + ')'
+      });
     }
   } else {
-    // No Cloudinary configured: save to local disk (ephemeral on Render)
+    // No Cloudinary configured: save to local disk (WARNING: ephemeral on Render)
+    console.warn('WARNING: Saving photo locally — will be lost on next deploy!');
     const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
     const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
     const filename = `${req.user.id}_${dateStr}.${ext}`;

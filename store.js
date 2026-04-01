@@ -272,6 +272,14 @@ async function deleteCheckin(checkinId, userId, testMode = false) {
   return { success: true, date: checkin.date };
 }
 
+// Update a checkin's selfie value (used for photo recovery)
+async function updateCheckinSelfie(checkinId, newSelfieValue, testMode = false) {
+  await pool.query(
+    'UPDATE checkins SET selfie=$1 WHERE id=$2 AND test_mode=$3',
+    [newSelfieValue, checkinId, !!testMode]
+  );
+}
+
 // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Album Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function getAllPhotos(testMode = false) {
   const r = await pool.query(
@@ -469,7 +477,7 @@ module.exports = {
   getAllCheckins, getAllPhotos, createVouchRequest, getPendingVouchRequests,
   getAllVouches, approveVouch, getLeaderboard, logMessage, getRecentMessages,
   silenceUser, unsilenceUser, normalizePhone, getMarchWeekdays, getAprilWeekdays,
-  deleteCheckin, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
+  deleteCheckin, updateCheckinSelfie, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
   adminClearMessages, adminEraseUser,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };
