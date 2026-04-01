@@ -1196,7 +1196,7 @@ async function renderCalendar(calendar, userId) {
     let clickHandler = '';
     if (hasSelfie) {
       const calDrinkVal = userCheckin.drinks != null ? userCheckin.drinks : '';
-      clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ', \'' + userCheckin.user_id + '\', \'' + calDrinkVal + '\')"';
+      clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', \'' + userCheckin.id + '\', \'' + userCheckin.user_id + '\', \'' + calDrinkVal + '\')"';
       cls += ' has-selfie';
     } else if (canRequestVouch) {
       clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
@@ -1397,7 +1397,7 @@ async function loadAlbum() {
         const photoSrc = selfieUrl(photo.selfie);
         const isBroken = !photo.selfie || !photo.selfie.startsWith('http');
         const drinkVal = photo.drinks != null ? photo.drinks : '';
-        html += '<div class="album-item' + (isBroken ? ' photo-missing' : '') + '" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\', \'' + drinkVal + '\')">';
+        html += '<div class="album-item' + (isBroken ? ' photo-missing' : '') + '" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', \'' + photo.id + '\', \'' + photo.user_id + '\', \'' + drinkVal + '\')">';
         if (isBroken) {
           html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
           if (isOwn) {
