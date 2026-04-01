@@ -1117,7 +1117,6 @@ async function renderCalendar(calendar, userId) {
   const firstDayOffset = firstDayOfWeek - 1; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4
 
   const isMyCalendar = userId === (currentUser ? currentUser.id : null);
-  const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
 
   let html = '';
   for (let i = 0; i < firstDayOffset; i++) html += '<div></div>';
@@ -1144,13 +1143,13 @@ async function renderCalendar(calendar, userId) {
 
     // Selfie thumbnail
     const hasSelfie = userCheckin && userCheckin.selfie;
-    const selfieUrl = hasSelfie ? uploadPrefix + userCheckin.selfie : '';
-    const bgStyle = hasSelfie ? 'background-image:url(' + selfieUrl + ');background-size:cover;background-position:center;cursor:pointer;' : '';
+    const selfieImgUrl = hasSelfie ? selfieUrl(userCheckin.selfie) : '';
+    const bgStyle = hasSelfie ? 'background-image:url(' + selfieImgUrl + ');background-size:cover;background-position:center;cursor:pointer;' : '';
     const textColor = hasSelfie ? 'color:white;text-shadow:0 1px 3px rgba(0,0,0,0.8);' : '';
 
     let clickHandler = '';
     if (hasSelfie) {
-      clickHandler = 'onclick="openLightbox(\'' + selfieUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ', \'' + userCheckin.user_id + '\')"';
+      clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ', \'' + userCheckin.user_id + '\')"';
       cls += ' has-selfie';
     } else if (canRequestVouch) {
       clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
@@ -1332,7 +1331,6 @@ async function loadAlbum() {
       return;
     }
 
-    const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
     const grouped = {};
     data.photos.forEach(p => {
       if (!grouped[p.date]) grouped[p.date] = [];
@@ -1349,8 +1347,9 @@ async function loadAlbum() {
       html += '<div class="album-grid">';
       for (const photo of grouped[date]) {
         const isOwn = currentUser && photo.user_id === currentUser.id;
-        html += '<div class="album-item" onclick="openLightbox(\'' + uploadPrefix + photo.selfie + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\')">';
-        html += '<img src="' + uploadPrefix + photo.selfie + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" />';
+        const photoSrc = selfieUrl(photo.selfie);
+        html += '<div class="album-item" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\')">';
+        html += '<img src="' + photoSrc + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" />';
         html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
         if (isOwn) {
           html += '<button class="delete-selfie-btn" onclick="event.stopPropagation();deleteSelfie(\'' + photo.id + '\')">Delete</button>';
@@ -1404,13 +1403,12 @@ async function loadFeed() {
       return;
     }
 
-    const uploadPrefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
     let html = '';
     feed.slice(0, 40).forEach(item => {
       const timeAgo = getTimeAgo(item.time);
       const icon = item.type === 'alert' ? '📢' : '📸';
       const thumb = item.type === 'checkin' && item.selfie
-        ? '<img src="' + uploadPrefix + item.selfie + '" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;border:2px solid var(--border);" />'
+        ? '<img src="' + selfieUrl(item.selfie) + '" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;border:2px solid var(--border);" />'
         : '';
       const recipientsBadge = item.type === 'alert' && item.recipients > 0
         ? '<span style="font-size:0.7rem;color:var(--green);margin-left:6px;">Sent to ' + item.recipients + '</span>'
@@ -1542,6 +1540,16 @@ async function loadLeaderboard() {
 /* =============================== */
 // UTILS
 /* =============================== */
+
+// Returns the correct image URL for a selfie value.
+// Cloudinary URLs start with http and are used directly.
+// Local filenames get the /uploads/ or /uploads_test/ prefix.
+function selfieUrl(selfieValue) {
+  if (!selfieValue) return '';
+  if (selfieValue.startsWith('http')) return selfieValue;
+  const prefix = TEST_MODE ? '/uploads_test/' : '/uploads/';
+  return prefix + selfieValue;
+}
 
 function toggleEl(id) {
   const el = document.getElementById(id);

@@ -262,10 +262,13 @@ async function deleteCheckin(checkinId, userId, testMode = false) {
   );
   if (r.rows.length === 0) return { error: 'Not found or not yours' };
   const checkin = r.rows[0];
-  if (checkin.selfie) {
+  if (checkin.selfie && !checkin.selfie.startsWith('http')) {
+    // Only delete local files, not Cloudinary URLs
     const dir = testMode ? TEST_SELFIES_DIR : SELFIES_DIR;
     try { fs.unlinkSync(path.join(dir, checkin.selfie)); } catch(e) {}
   }
+  // Note: Cloudinary images are not deleted here to keep it simple.
+  // They can be cleaned up manually via the Cloudinary dashboard.
   return { success: true };
 }
 
@@ -418,7 +421,7 @@ async function adminDeleteCheckin(checkinId, testMode = false) {
   );
   if (r.rows.length === 0) return { error: 'Not found' };
   const checkin = r.rows[0];
-  if (checkin.selfie) {
+  if (checkin.selfie && !checkin.selfie.startsWith('http')) {
     const dir = testMode ? TEST_SELFIES_DIR : SELFIES_DIR;
     try { fs.unlinkSync(path.join(dir, checkin.selfie)); } catch(e) {}
   }

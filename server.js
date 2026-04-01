@@ -4,7 +4,25 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const twilio = require('twilio');
+const cloudinary = require('cloudinary').v2;
 const store = require('./store');
+
+// Configure Cloudinary
+if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
+  if (process.env.CLOUDINARY_URL) {
+    // CLOUDINARY_URL format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    // cloudinary SDK auto-parses CLOUDINARY_URL from env
+  } else {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
+  console.log('Cloudinary configured (cloud: ' + cloudinary.config().cloud_name + ')');
+} else {
+  console.warn('Cloudinary not configured — photos will be stored locally (ephemeral!)');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -178,23 +196,45 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const dateStr = et.toISOString().split('T')[0];
 
-  const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
-  const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
-  const filename = `${req.user.id}_${dateStr}.${ext}`;
-  const filepath = path.join(req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR, filename);
+  let selfieValue; // Will be either a Cloudinary URL or a local filename
 
-  try { fs.writeFileSync(filepath, base64Data, 'base64'); }
-  catch (err) { console.error('Failed to save selfie:', err); return res.status(500).json({ error: 'Failed to save selfie' }); }
+  if (cloudinary.config().cloud_name) {
+    // Upload to Cloudinary
+    try {
+      const folder = req.testMode ? 'shayprils_test' : 'shayprils';
+      const publicId = `${req.user.id}_${dateStr}`;
+      const result = await cloudinary.uploader.upload(selfie, {
+        folder,
+        public_id: publicId,
+        overwrite: true,
+        transformation: [{ width: 640, height: 640, crop: 'fill', gravity: 'face' }],
+      });
+      selfieValue = result.secure_url;
+      console.log('Uploaded to Cloudinary:', selfieValue);
+    } catch (err) {
+      console.error('Cloudinary upload failed:', err);
+      return res.status(500).json({ error: 'Failed to upload selfie' });
+    }
+  } else {
+    // Fallback: save to local disk (ephemeral on Render)
+    const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
+    const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
+    const filename = `${req.user.id}_${dateStr}.${ext}`;
+    const filepath = path.join(req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR, filename);
+    try { fs.writeFileSync(filepath, base64Data, 'base64'); }
+    catch (err) { console.error('Failed to save selfie:', err); return res.status(500).json({ error: 'Failed to save selfie' }); }
+    selfieValue = filename;
+  }
 
-  const result = await store.addCheckin(req.user.id, req.user.name, dateStr, filename, req.testMode);
-  if (result.duplicate) {
-    return res.json({ success: true, duplicate: true, message: 'You already checked in today!', checkin: result.checkin });
+  const checkinResult = await store.addCheckin(req.user.id, req.user.name, dateStr, selfieValue, req.testMode);
+  if (checkinResult.duplicate) {
+    return res.json({ success: true, duplicate: true, message: 'You already checked in today!', checkin: checkinResult.checkin });
   }
 
   const notifyText = `${req.user.name} just checked in at Shays! That's dedication.`;
   sendToSubscribers(req.user.name, notifyText, req.user.id, req.testMode).catch(console.error);
 
-  res.json({ success: true, duplicate: false, message: `Checked in for ${dateStr}! Selfie saved.`, checkin: result.checkin });
+  res.json({ success: true, duplicate: false, message: `Checked in for ${dateStr}! Selfie saved.`, checkin: checkinResult.checkin });
 });
 
 app.get('/api/checkin/mine', authMiddleware, async (req, res) => {
