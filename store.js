@@ -66,6 +66,10 @@ async function initDb() {
         sent_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    // Add drinks column if it doesn't exist
+    await client.query(`
+      ALTER TABLE checkins ADD COLUMN IF NOT EXISTS drinks INTEGER
+    `).catch(() => {}); // ignore if already exists
     console.log('Database tables initialized');
   } finally {
     client.release();
@@ -273,6 +277,13 @@ async function deleteCheckin(checkinId, userId, testMode = false) {
 }
 
 // Update a checkin's selfie value (used for photo recovery)
+async function updateCheckinDrinks(checkinId, drinks, testMode = false) {
+  await pool.query(
+    'UPDATE checkins SET drinks=$1 WHERE id=$2 AND test_mode=$3',
+    [drinks, checkinId, !!testMode]
+  );
+}
+
 async function updateCheckinSelfie(checkinId, newSelfieValue, testMode = false) {
   await pool.query(
     'UPDATE checkins SET selfie=$1 WHERE id=$2 AND test_mode=$3',
@@ -288,7 +299,7 @@ async function getAllPhotos(testMode = false) {
   );
   return r.rows.map(c => ({
     id: c.id, user_id: c.user_id, user_name: c.user_name,
-    date: c.date, selfie: c.selfie, created_at: c.created_at,
+    date: c.date, selfie: c.selfie, drinks: c.drinks, created_at: c.created_at,
   }));
 }
 
@@ -366,6 +377,9 @@ async function getLeaderboard(testMode = false) {
     // Only count missed days in APRIL (not March)
     const weekdaysMissed = aprilWeekdays.filter(d => d <= today && !checkedDates.has(d));
 
+    // Sum drinks from check-ins
+    const totalDrinks = userCheckins.reduce((sum, c) => sum + (c.drinks || 0), 0);
+
     return {
       id: u.id, name: u.name,
       total_checkins: checkedDates.size,
@@ -373,8 +387,14 @@ async function getLeaderboard(testMode = false) {
       weekdays_missed: weekdaysMissed.length,
       streak: calculateStreak(allWeekdays, checkedDates, today),
       checked_dates: Array.from(checkedDates),
+      total_drinks: totalDrinks,
     };
-  }).sort((a, b) => b.total_checkins - a.total_checkins);
+  }).sort((a, b) => {
+    // Primary: days checked in (desc)
+    if (b.total_checkins !== a.total_checkins) return b.total_checkins - a.total_checkins;
+    // Tiebreak: alphabetical by name (asc)
+    return a.name.localeCompare(b.name);
+  });
 }
 
 // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Messages Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
@@ -477,7 +497,7 @@ module.exports = {
   getAllCheckins, getAllPhotos, createVouchRequest, getPendingVouchRequests,
   getAllVouches, approveVouch, getLeaderboard, logMessage, getRecentMessages,
   silenceUser, unsilenceUser, normalizePhone, getMarchWeekdays, getAprilWeekdays,
-  deleteCheckin, updateCheckinSelfie, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
+  deleteCheckin, updateCheckinSelfie, updateCheckinDrinks, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
   adminClearMessages, adminEraseUser,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };

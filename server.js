@@ -410,6 +410,22 @@ app.put('/api/checkin/:id/selfie', authMiddleware, async (req, res) => {
   }
 });
 
+// Update drink count for a check-in
+app.put('/api/checkin/:id/drinks', authMiddleware, async (req, res) => {
+  const { drinks } = req.body;
+  if (drinks === undefined || drinks === null) return res.status(400).json({ error: 'Drinks count required' });
+  const count = parseInt(drinks, 10);
+  if (isNaN(count) || count < 0) return res.status(400).json({ error: 'Invalid drinks count' });
+
+  // Verify this check-in belongs to the user
+  const checkins = await store.getCheckinsForUser(req.user.id, req.testMode);
+  const checkin = checkins.find(c => c.id === req.params.id);
+  if (!checkin) return res.status(404).json({ error: 'Check-in not found or not yours' });
+
+  await store.updateCheckinDrinks(checkin.id, count, req.testMode);
+  res.json({ success: true, drinks: count });
+});
+
 app.delete('/api/checkin/:id', authMiddleware, async (req, res) => {
   const result = await store.deleteCheckin(req.params.id, req.user.id, req.testMode);
   if (result.error) return res.status(400).json(result);
@@ -503,7 +519,7 @@ app.get('/api/calendar', async (req, res) => {
       date,
       dayOfWeek: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
       dayNum: parseInt(date.split('-')[2]),
-      checkins: dayCheckins.map(c => ({ user_id: c.user_id, user_name: c.user_name, selfie: c.selfie })),
+      checkins: dayCheckins.map(c => ({ id: c.id, user_id: c.user_id, user_name: c.user_name, selfie: c.selfie, drinks: c.drinks })),
     };
   });
 

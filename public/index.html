@@ -652,7 +652,7 @@
       <span class="nav-icon">S</span>Shays
     </button>
     <button class="nav-btn" data-tab="calendar">
-      <span class="nav-icon">A</span>Attend
+      <span class="nav-icon">A</span>Calendar
     </button>
     <button class="nav-btn" data-tab="album">
       <span class="nav-icon">P</span>Photos
@@ -683,6 +683,25 @@
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;">
     <button id="lightboxSaveBtn" class="lightbox-download" onclick="event.stopPropagation();saveLightboxPhoto(event)">Save Photo</button>
     <button id="lightboxDelete" class="lightbox-download" style="background:#e74c3c;" onclick="event.stopPropagation();deleteLightboxPhoto()">Delete Photo</button>
+    <div id="lightboxDrinks" onclick="event.stopPropagation()" style="display:none;background:rgba(0,0,0,0.6);border-radius:12px;padding:10px 16px;margin-top:4px;">
+      <label style="color:white;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:8px;">
+        How many drinks?
+        <select id="drinksSelect" onchange="saveDrinks()" style="padding:6px 10px;border-radius:8px;border:none;font-size:0.9rem;background:white;color:var(--brown);min-width:55px;">
+          <option value="">--</option>
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10+</option>
+        </select>
+      </label>
+    </div>
   </div>
   <div class="lightbox-info" id="lightboxInfo"></div>
 </div>
@@ -1176,7 +1195,8 @@ async function renderCalendar(calendar, userId) {
 
     let clickHandler = '';
     if (hasSelfie) {
-      clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ', \'' + userCheckin.user_id + '\')"';
+      const calDrinkVal = userCheckin.drinks != null ? userCheckin.drinks : '';
+      clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', ' + userCheckin.id + ', \'' + userCheckin.user_id + '\', \'' + calDrinkVal + '\')"';
       cls += ' has-selfie';
     } else if (canRequestVouch) {
       clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
@@ -1376,7 +1396,8 @@ async function loadAlbum() {
         const isOwn = currentUser && photo.user_id === currentUser.id;
         const photoSrc = selfieUrl(photo.selfie);
         const isBroken = !photo.selfie || !photo.selfie.startsWith('http');
-        html += '<div class="album-item' + (isBroken ? ' photo-missing' : '') + '" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\')">';
+        const drinkVal = photo.drinks != null ? photo.drinks : '';
+        html += '<div class="album-item' + (isBroken ? ' photo-missing' : '') + '" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\', \'' + drinkVal + '\')">';
         if (isBroken) {
           html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
           if (isOwn) {
@@ -1474,7 +1495,7 @@ function getTimeAgo(date) {
   return days + 'd ago';
 }
 
-function openLightbox(src, name, date, checkinId, ownerId) {
+function openLightbox(src, name, date, checkinId, ownerId, drinks) {
   document.getElementById('lightboxImg').src = src;
   window._currentCheckinId = checkinId || null;
   document.getElementById('lightboxInfo').textContent = name + ' — ' + date;
@@ -1484,7 +1505,37 @@ function openLightbox(src, name, date, checkinId, ownerId) {
   const isOwner = currentUser && ownerId && currentUser.id === ownerId;
   const isAdmin = !!adminPin;
   document.getElementById('lightboxDelete').style.display = (isOwner || isAdmin) ? 'block' : 'none';
+  // Drinks input — only show for the photo owner
+  const drinksSection = document.getElementById('lightboxDrinks');
+  const drinksSelect = document.getElementById('drinksSelect');
+  if (isOwner) {
+    drinksSection.style.display = 'block';
+    drinksSelect.value = (drinks !== undefined && drinks !== '' && drinks !== 'undefined') ? drinks : '';
+  } else {
+    drinksSection.style.display = 'none';
+  }
   document.getElementById('lightbox').classList.add('visible');
+}
+
+async function saveDrinks() {
+  const drinks = document.getElementById('drinksSelect').value;
+  if (!window._currentCheckinId || drinks === '') return;
+  try {
+    const res = await fetch(API + '/api/checkin/' + window._currentCheckinId + '/drinks', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ drinks: parseInt(drinks) }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Drinks updated!');
+      loadLeaderboard();
+    } else {
+      showToast(data.error || 'Failed to save', 'error');
+    }
+  } catch (e) {
+    showToast('Error saving drinks', 'error');
+  }
 }
 
 async function saveLightboxPhoto(e) {
@@ -1554,11 +1605,12 @@ async function loadLeaderboard() {
     list.innerHTML = data.map((entry, i) => {
       const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
       const pct = maxDays > 0 ? Math.round((entry.weekdays_hit / maxDays) * 100) : 0;
+      const drinksLabel = entry.total_drinks > 0 ? entry.total_drinks + ' drink' + (entry.total_drinks !== 1 ? 's' : '') : '';
       return `
         <div class="lb-item">
           <div class="lb-rank ${rankClass}">${i + 1}</div>
           <div class="lb-info">
-            <div class="lb-name">${escapeHtml(entry.name)}</div>
+            <div class="lb-name">${escapeHtml(entry.name)}${drinksLabel ? '<span style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-left:6px;">' + drinksLabel + '</span>' : ''}</div>
             <div class="lb-stats">
               ${entry.weekdays_hit} days &middot; ${entry.streak} streak
               ${entry.weekdays_missed > 0 ? '&middot; ' + entry.weekdays_missed + ' missed' : ''}
