@@ -878,7 +878,11 @@ function capturePhoto() {
   const ctx = canvas.getContext('2d');
   const sx = (video.videoWidth - size) / 2;
   const sy = (video.videoHeight - size) / 2;
+  // Flip horizontally so the saved photo isn't mirrored
+  ctx.translate(640, 0);
+  ctx.scale(-1, 1);
   ctx.drawImage(video, sx, sy, size, size, 0, 0, 640, 640);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   capturedImageData = canvas.toDataURL('image/jpeg', 0.8);
 
   const preview = document.getElementById('selfiePreview');
