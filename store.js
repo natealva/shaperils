@@ -428,6 +428,41 @@ async function adminDeleteCheckin(checkinId, testMode = false) {
   return { success: true };
 }
 
+async function adminClearMessages(testMode = false) {
+  const r = await pool.query('DELETE FROM messages WHERE test_mode=$1', [!!testMode]);
+  return { success: true, deleted: r.rowCount };
+}
+
+async function adminEraseUser(userId, testMode = false) {
+  const user = await getUser(userId, testMode);
+  if (!user) return { error: 'User not found' };
+
+  // Delete all their checkins
+  const checkins = await pool.query(
+    'DELETE FROM checkins WHERE user_id=$1 AND test_mode=$2 RETURNING *',
+    [userId, !!testMode]
+  );
+  // Clean up local selfie files (Cloudinary ones are left alone)
+  for (const c of checkins.rows) {
+    if (c.selfie && !c.selfie.startsWith('http')) {
+      const dir = testMode ? TEST_SELFIES_DIR : SELFIES_DIR;
+      try { fs.unlinkSync(path.join(dir, c.selfie)); } catch(e) {}
+    }
+  }
+
+  // Delete all their vouch requests
+  await pool.query('DELETE FROM vouches WHERE requester_id=$1 AND test_mode=$2', [userId, !!testMode]);
+
+  // Delete the user record entirely
+  await pool.query('DELETE FROM users WHERE id=$1 AND test_mode=$2', [userId, !!testMode]);
+
+  return {
+    success: true,
+    erased: user.name,
+    checkinsDeleted: checkins.rowCount
+  };
+}
+
 module.exports = {
   getUser, getUserByToken, getAllUsers, createUser, updateUserSubscription,
   getSubscribedUsers, addCheckin, getCheckinsForUser, getCheckinsForDate,
@@ -435,5 +470,6 @@ module.exports = {
   getAllVouches, approveVouch, getLeaderboard, logMessage, getRecentMessages,
   silenceUser, unsilenceUser, normalizePhone, getMarchWeekdays, getAprilWeekdays,
   deleteCheckin, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
+  adminClearMessages, adminEraseUser,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };

@@ -371,6 +371,21 @@ app.delete('/api/admin/checkins/:id', adminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+// Clear all messages (activity feed)
+app.delete('/api/admin/messages', adminAuth, async (req, res) => {
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const result = await store.adminClearMessages(testMode);
+  res.json(result);
+});
+
+// Fully erase a user account and all their data
+app.delete('/api/admin/users/:id/erase', adminAuth, async (req, res) => {
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const result = await store.adminEraseUser(req.params.id, testMode);
+  if (result.error) return res.status(400).json(result);
+  res.json(result);
+});
+
 // OTHER ROUTES
 app.get('/api/subscribers/count', async (req, res) => {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';

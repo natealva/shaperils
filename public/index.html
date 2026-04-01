@@ -1647,6 +1647,7 @@ async function loadAdminPanel() {
       html += '<td style="padding:8px;text-align:center;">';
       html += '<button onclick="adminEditUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',\'' + escapeHtml(u.phone) + '\')" style="padding:4px 8px;background:var(--brown);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Edit</button>';
       if (u.active) html += '<button onclick="adminDeactivateUser(\'' + u.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Deactivate</button>';
+      html += '<button onclick="adminEraseUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\')" style="padding:4px 8px;background:#333;color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Erase</button>';
       html += '</td></tr>';
     });
     html += '</table></div>';
@@ -1664,7 +1665,15 @@ async function loadAdminPanel() {
       html += '<button onclick="adminDeleteCheckin(\'' + c.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;">Delete</button>';
       html += '</td></tr>';
     });
-    html += '</table></div></div>';
+    html += '</table></div>';
+
+    // Admin actions
+    html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Admin Actions</h3>';
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    html += '<button onclick="adminClearFeed()" style="padding:10px 18px;background:var(--red-accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.88rem;font-weight:600;">Clear Activity Feed</button>';
+    html += '</div>';
+
+    html += '</div>';
     section.innerHTML = html;
   } catch(e) { section.innerHTML = '<p style="color:red;padding:20px;">Error loading admin data</p>'; }
 }
@@ -1703,6 +1712,32 @@ function adminDeleteCheckin(checkinId) {
   }).then(r => r.json()).then(d => {
     if (d.success) { showToast('Check-in deleted'); loadAdminPanel(); }
     else showToast(d.error || 'Failed', 'error');
+  });
+}
+
+function adminEraseUser(userId, userName) {
+  if (!confirm('PERMANENTLY ERASE ' + userName + '?\n\nThis will delete their account, all check-ins, selfies, and vouch requests. This cannot be undone.')) return;
+  if (!confirm('Are you sure? Type OK to confirm you want to erase ' + userName + ' completely.')) return;
+  fetch(API + '/api/admin/users/' + userId + '/erase', {
+    method: 'DELETE',
+    headers: { 'x-admin-pin': adminPin }
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      showToast(d.erased + ' erased (' + d.checkinsDeleted + ' check-ins removed)');
+      loadAdminPanel();
+    } else showToast(d.error || 'Failed', 'error');
+  });
+}
+
+function adminClearFeed() {
+  if (!confirm('Clear the entire activity feed? This deletes all message history.')) return;
+  fetch(API + '/api/admin/messages', {
+    method: 'DELETE',
+    headers: { 'x-admin-pin': adminPin }
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      showToast('Activity feed cleared (' + d.deleted + ' messages removed)');
+    } else showToast(d.error || 'Failed', 'error');
   });
 }
 
