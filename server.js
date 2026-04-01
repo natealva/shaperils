@@ -101,6 +101,28 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null, 
 }
 
 // ═══════════════════════════════════════════════════════════════
+// HEALTH / DIAGNOSTICS
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    cloudinary: cloudinary.config().cloud_name ? 'configured (' + cloudinary.config().cloud_name + ')' : 'NOT configured',
+    twilio: twilioClient ? 'configured' : 'NOT configured',
+    timestamp: new Date().toISOString(),
+  };
+  // Quick Cloudinary connectivity test
+  if (cloudinary.config().cloud_name) {
+    try {
+      await cloudinary.api.ping();
+      health.cloudinary_ping = 'ok';
+    } catch (err) {
+      health.cloudinary_ping = 'FAILED: ' + (err.message || 'unknown error');
+    }
+  }
+  res.json(health);
+});
+
+// ═══════════════════════════════════════════════════════════════
 // AUTH ROUTES
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/auth/register', async (req, res) => {
@@ -188,9 +210,37 @@ app.post('/api/send', authMiddleware, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // CHECK-IN ROUTES
 // ═══════════════════════════════════════════════════════════════
+// Helper: upload to Cloudinary with retry
+async function uploadToCloudinary(dataUrl, folder, publicId, retries = 2) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await cloudinary.uploader.upload(dataUrl, {
+        folder,
+        public_id: publicId,
+        overwrite: true,
+        transformation: [{ width: 640, height: 640, crop: 'fill', gravity: 'face' }],
+      });
+      return result;
+    } catch (err) {
+      lastErr = err;
+      console.error(`Cloudinary upload attempt ${attempt + 1} failed:`, err.message || err);
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); // back off 1s, 2s
+      }
+    }
+  }
+  throw lastErr;
+}
+
 app.post('/api/checkin', authMiddleware, async (req, res) => {
   const { selfie } = req.body;
   if (!selfie) return res.status(400).json({ error: 'Selfie required!' });
+
+  // Validate selfie data
+  if (!selfie.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'Invalid image data' });
+  }
 
   const now = new Date();
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -199,28 +249,40 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
   let selfieValue; // Will be either a Cloudinary URL or a local filename
 
   if (cloudinary.config().cloud_name) {
-    // Upload to Cloudinary
+    // Upload to Cloudinary (with retry)
     try {
       const folder = req.testMode ? 'shayprils_test' : 'shayprils';
       const publicId = `${req.user.id}_${dateStr}`;
-      const result = await cloudinary.uploader.upload(selfie, {
-        folder,
-        public_id: publicId,
-        overwrite: true,
-        transformation: [{ width: 640, height: 640, crop: 'fill', gravity: 'face' }],
-      });
+      const result = await uploadToCloudinary(selfie, folder, publicId);
       selfieValue = result.secure_url;
       console.log('Uploaded to Cloudinary:', selfieValue);
     } catch (err) {
-      console.error('Cloudinary upload failed:', err);
-      return res.status(500).json({ error: 'Failed to upload selfie' });
+      console.error('Cloudinary upload failed after retries:', err.message || err);
+      const detail = err.message || 'Unknown error';
+      // Fallback: try saving locally if Cloudinary fails
+      try {
+        console.log('Falling back to local storage...');
+        const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
+        const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
+        const filename = `${req.user.id}_${dateStr}.${ext}`;
+        const dir = req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR;
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, filename), base64Data, 'base64');
+        selfieValue = filename;
+        console.log('Saved locally as fallback:', filename);
+      } catch (fallbackErr) {
+        console.error('Local fallback also failed:', fallbackErr.message);
+        return res.status(500).json({ error: `Upload failed: ${detail}` });
+      }
     }
   } else {
-    // Fallback: save to local disk (ephemeral on Render)
+    // No Cloudinary configured: save to local disk (ephemeral on Render)
     const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
     const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
     const filename = `${req.user.id}_${dateStr}.${ext}`;
-    const filepath = path.join(req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR, filename);
+    const dir = req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR;
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filepath = path.join(dir, filename);
     try { fs.writeFileSync(filepath, base64Data, 'base64'); }
     catch (err) { console.error('Failed to save selfie:', err); return res.status(500).json({ error: 'Failed to save selfie' }); }
     selfieValue = filename;

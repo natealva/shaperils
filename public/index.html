@@ -943,6 +943,12 @@ async function submitCheckin() {
       headers: authHeaders(),
       body: JSON.stringify({ selfie: capturedImageData }),
     });
+    if (!res.ok) {
+      let msg = 'Check-in failed (status ' + res.status + ')';
+      try { const d = await res.json(); msg = d.error || msg; } catch (_) {}
+      showToast(msg, 'error');
+      return;
+    }
     const data = await res.json();
     if (data.success) {
       showToast(data.duplicate ? 'Already checked in today!' : 'Checked in! Selfie saved.');
@@ -952,7 +958,8 @@ async function submitCheckin() {
       showToast(data.error || 'Check-in failed', 'error');
     }
   } catch (e) {
-    showToast('Server error', 'error');
+    console.error('Check-in error:', e);
+    showToast('Network error — check your connection and try again', 'error');
   }
 
   document.getElementById('btnCheckin').disabled = false;
