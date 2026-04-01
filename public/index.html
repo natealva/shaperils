@@ -322,6 +322,13 @@
     .album-item.photo-missing::before {
       content: '\ud83d\udcf7'; font-size: 1.8rem; opacity: 0.3;
     }
+    .reupload-btn {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: var(--brick); color: white; border: none; border-radius: 8px;
+      padding: 6px 12px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+      z-index: 2; white-space: nowrap;
+    }
+    .reupload-btn:hover { background: var(--brick-dark); }
     .album-item .album-label {
       position: absolute; bottom: 0; left: 0; right: 0;
       background: linear-gradient(transparent, rgba(44,24,16,0.8));
@@ -1368,11 +1375,20 @@ async function loadAlbum() {
       for (const photo of grouped[date]) {
         const isOwn = currentUser && photo.user_id === currentUser.id;
         const photoSrc = selfieUrl(photo.selfie);
-        html += '<div class="album-item" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\')">';
-        html += '<img src="' + photoSrc + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.classList.add(\'photo-missing\')" />';
-        html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
-        if (isOwn) {
-          html += '<button class="delete-selfie-btn" onclick="event.stopPropagation();deleteSelfie(\'' + photo.id + '\')">Delete</button>';
+        const isBroken = !photo.selfie || !photo.selfie.startsWith('http');
+        html += '<div class="album-item' + (isBroken ? ' photo-missing' : '') + '" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', ' + photo.id + ', \'' + photo.user_id + '\')">';
+        if (isBroken) {
+          html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
+          if (isOwn) {
+            html += '<button class="reupload-btn" onclick="event.stopPropagation();reuploadSelfie(\'' + photo.id + '\')">Re-upload</button>';
+          }
+        } else {
+          html += '<img src="' + photoSrc + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.classList.add(\'photo-missing\');var rb=this.parentElement.querySelector(\'.reupload-btn\');if(rb)rb.style.display=\'block\';" />';
+          html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
+          if (isOwn) {
+            html += '<button class="reupload-btn" style="display:none;" onclick="event.stopPropagation();reuploadSelfie(\'' + photo.id + '\')">Re-upload</button>';
+            html += '<button class="delete-selfie-btn" onclick="event.stopPropagation();deleteSelfie(\'' + photo.id + '\')">Delete</button>';
+          }
         }
         html += '</div>';
       }
@@ -1600,6 +1616,55 @@ function escapeHtml(str) {
 }
 
 /* =============================== */
+
+// Re-upload selfie for an existing check-in (photo missing/broken)
+async function reuploadSelfie(checkinId) {
+  // Create a temporary file input to pick a photo
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'user';
+  input.onchange = async function() {
+    if (!input.files[0]) return;
+    showToast('Uploading photo...');
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      // Resize to 640x640 just like the normal check-in flow
+      const img = new Image();
+      img.onload = async function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640; canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+        const size = Math.min(img.width, img.height);
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, 640, 640);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        try {
+          const res = await fetch(API + '/api/checkin/' + checkinId + '/selfie', {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify({ selfie: dataUrl }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Photo updated!');
+            loadAlbum();
+            loadCalendar();
+            loadFeed();
+          } else {
+            showToast(data.error || 'Upload failed', 'error');
+          }
+        } catch (err) {
+          showToast('Network error — try again', 'error');
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(input.files[0]);
+  };
+  input.click();
+}
 
 // Delete own selfie
 async function deleteSelfie(checkinId) {

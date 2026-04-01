@@ -382,6 +382,34 @@ app.get('/api/checkin/mine', authMiddleware, async (req, res) => {
   res.json({ checkins });
 });
 
+// Re-upload selfie for an existing check-in (keeps check-in record intact)
+app.put('/api/checkin/:id/selfie', authMiddleware, async (req, res) => {
+  const { selfie } = req.body;
+  if (!selfie) return res.status(400).json({ error: 'Selfie required' });
+  if (!selfie.startsWith('data:image/')) return res.status(400).json({ error: 'Invalid image data' });
+
+  // Verify this check-in belongs to the user (or user is admin)
+  const checkins = await store.getCheckinsForUser(req.user.id, req.testMode);
+  const checkin = checkins.find(c => c.id === req.params.id);
+  if (!checkin) return res.status(404).json({ error: 'Check-in not found or not yours' });
+
+  if (!cloudinary.config().cloud_name) {
+    return res.status(500).json({ error: 'Photo storage not configured' });
+  }
+
+  try {
+    const folder = req.testMode ? 'shayprils_test' : 'shayprils';
+    const publicId = `${req.user.id}_${checkin.date}`;
+    const result = await uploadToCloudinary(selfie, folder, publicId);
+    await store.updateCheckinSelfie(checkin.id, result.secure_url, req.testMode);
+    console.log('Re-uploaded selfie for', req.user.name, 'date', checkin.date, ':', result.secure_url);
+    res.json({ success: true, message: 'Photo updated!', url: result.secure_url });
+  } catch (err) {
+    console.error('Re-upload failed:', err.message || err);
+    res.status(500).json({ error: 'Photo upload failed — try again. (' + (err.message || 'unknown') + ')' });
+  }
+});
+
 app.delete('/api/checkin/:id', authMiddleware, async (req, res) => {
   const result = await store.deleteCheckin(req.params.id, req.user.id, req.testMode);
   if (result.error) return res.status(400).json(result);
@@ -543,7 +571,7 @@ app.get('/api/history', async (req, res) => {
   res.json(await store.getRecentMessages(testMode));
 });
 
-app.get('/api/health', async (req, res) => {
+app.get('/api/status', async (req, res) => {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
   const subs = await store.getSubscribedUsers(testMode);
   const users = await store.getAllUsers(testMode);
