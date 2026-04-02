@@ -500,6 +500,16 @@
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
           Come back tomorrow. Streak alive!
         </p>
+        <div id="drinksTracker" style="margin-top:14px;background:rgba(255,255,255,0.6);border-radius:12px;padding:14px 16px;display:none;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--brown);margin-bottom:8px;">How many drinks did you have?</div>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
+            <input type="number" id="drinksInput" min="0" max="99" value="0"
+              onchange="updateDrinksFromInput()"
+              style="width:60px;text-align:center;font-size:1.3rem;font-weight:700;padding:8px;border:2px solid var(--tan);border-radius:10px;background:white;color:var(--brown);-moz-appearance:textfield;"
+            />
+            <button onclick="incrementDrinks()" style="padding:8px 18px;background:var(--brick);color:white;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;min-width:48px;">+1</button>
+          </div>
+        </div>
       </div>
       <div id="checkinForm">
         <div class="card">
@@ -727,6 +737,7 @@ let currentUser = null;
 let cameraStream = null;
 let capturedImageData = null;
 let galleryUploadsAllowed = false;
+let todayCheckin = null;
 let calendarSelectedUser = null;
 let vouchRequestDate = null;
 let calendarMonth = 'april';
@@ -992,6 +1003,11 @@ async function submitCheckin() {
       }
       capturedImageData = null;
       showCheckedInState();
+      // Show drinks tracker for the new check-in
+      if (data.checkin) {
+        todayCheckin = data.checkin;
+      }
+      checkTodayCheckin(); // refresh to get full checkin data with ID
       loadLeaderboard();
       loadFeed();
     } else {
@@ -1012,12 +1028,18 @@ async function checkTodayCheckin() {
     const res = await fetch(API + '/api/checkin/mine', { headers: authHeaders() });
     const data = await res.json();
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    const todayCheckin = data.checkins.find(c => c.date === today);
+    todayCheckin = data.checkins.find(c => c.date === today) || null;
     if (todayCheckin) {
       showCheckedInState();
+      // Show drinks tracker with current value
+      const tracker = document.getElementById('drinksTracker');
+      const input = document.getElementById('drinksInput');
+      input.value = todayCheckin.drinks || 0;
+      tracker.style.display = 'block';
     } else {
       document.getElementById('alreadyCheckedIn').classList.add('hidden');
       document.getElementById('checkinForm').classList.remove('hidden');
+      document.getElementById('drinksTracker').style.display = 'none';
     }
   } catch (e) {}
 }
@@ -1026,6 +1048,32 @@ function showCheckedInState() {
   document.getElementById('alreadyCheckedIn').classList.remove('hidden');
   document.getElementById('checkinForm').classList.add('hidden');
   stopCamera();
+}
+
+function incrementDrinks() {
+  const input = document.getElementById('drinksInput');
+  const newVal = (parseInt(input.value) || 0) + 1;
+  input.value = newVal;
+  saveDrinksFromHomepage(newVal);
+}
+
+function updateDrinksFromInput() {
+  const input = document.getElementById('drinksInput');
+  const val = Math.max(0, parseInt(input.value) || 0);
+  input.value = val;
+  saveDrinksFromHomepage(val);
+}
+
+async function saveDrinksFromHomepage(count) {
+  if (!todayCheckin) return;
+  try {
+    await fetch(API + '/api/checkin/' + todayCheckin.id + '/drinks', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ drinks: count })
+    });
+    todayCheckin.drinks = count;
+  } catch (e) { showToast('Could not save drinks', 'error'); }
 }
 
 /* =============================== */

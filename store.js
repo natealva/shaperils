@@ -403,7 +403,9 @@ async function getLeaderboard(testMode = false) {
   }).sort((a, b) => {
     // Primary: days checked in (desc)
     if (b.total_checkins !== a.total_checkins) return b.total_checkins - a.total_checkins;
-    // Tiebreak: alphabetical by name (asc)
+    // Tiebreak 1: total cumulative drinks (desc)
+    if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
+    // Tiebreak 2: alphabetical by name (asc)
     return a.name.localeCompare(b.name);
   });
 }
