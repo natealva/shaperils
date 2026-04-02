@@ -364,7 +364,10 @@ async function getLeaderboard(testMode = false) {
 
   const allWeekdays = [...getMarchWeekdays(), ...getAprilWeekdays()];
   const aprilWeekdays = getAprilWeekdays();
-  const today = new Date().toISOString().split('T')[0];
+  // Use Eastern Time for "today" — matches how check-in dates are recorded
+  const now = new Date();
+  const etStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const today = etStr; // format: YYYY-MM-DD
 
   return users.map(u => {
     const userCheckins = checkins.filter(c => c.user_id === u.id);
