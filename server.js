@@ -594,6 +594,67 @@ app.get('/api/status', async (req, res) => {
   res.json({ status: 'ok', twilio: !!twilioClient, subscribers: subs.length, users: users.length });
 });
 
+// ─── Privacy Policy & Terms (required for A2P 10DLC) ───────
+app.get('/privacy', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy Policy — Shayprils</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:640px;margin:40px auto;padding:0 20px;color:#333;line-height:1.6}
+h1{color:#722F37}h2{color:#722F37;margin-top:1.5em}a{color:#722F37}</style></head><body>
+<h1>Shayprils Privacy Policy</h1>
+<p><strong>Last updated:</strong> March 31, 2026</p>
+<p>Shayprils ("we", "us", "our") is a private social app for a group of friends who check in daily at Shays bar during April 2026. This policy explains how we handle your information.</p>
+
+<h2>Information We Collect</h2>
+<p>When you use Shayprils, we collect: your name, phone number, selfie photos you upload, and check-in dates. We use this information solely to operate the app and its features (leaderboard, photo album, SMS notifications).</p>
+
+<h2>SMS Messaging</h2>
+<p>If you opt in to SMS notifications, we will send you text messages when a friend checks in at Shays. You can opt out at any time by replying STOP to any message, or by using the Unsubscribe button in the app. Message and data rates may apply. Message frequency varies (typically 1–5 messages per day).</p>
+
+<h2>How We Use Your Information</h2>
+<p>We use your information to: display your check-ins and selfies to other participants, calculate leaderboard standings, and send SMS notifications if you opted in. We do not sell, share, or disclose your personal information to any third parties.</p>
+
+<h2>Data Storage</h2>
+<p>Photos are stored securely on Cloudinary. App data is stored in a PostgreSQL database hosted on Render. Phone numbers are stored securely and used only for sending notifications through Twilio.</p>
+
+<h2>Data Retention</h2>
+<p>We retain your data for the duration of the April 2026 challenge. You may request deletion of your data at any time by contacting us.</p>
+
+<h2>Contact</h2>
+<p>Questions about this policy? Contact us at <a href="mailto:nalvarez@mba2026.hbs.edu">nalvarez@mba2026.hbs.edu</a>.</p>
+</body></html>`);
+});
+
+app.get('/terms', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terms of Service — Shayprils</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:640px;margin:40px auto;padding:0 20px;color:#333;line-height:1.6}
+h1{color:#722F37}h2{color:#722F37;margin-top:1.5em}a{color:#722F37}</style></head><body>
+<h1>Shayprils Terms of Service</h1>
+<p><strong>Last updated:</strong> March 31, 2026</p>
+<p>By using Shayprils, you agree to these terms.</p>
+
+<h2>Description of Service</h2>
+<p>Shayprils is a private social app for a group of friends participating in a daily check-in challenge at Shays bar during April 2026. The app tracks attendance, displays selfie photos, and optionally sends SMS notifications.</p>
+
+<h2>SMS Notifications</h2>
+<p>By providing your phone number and opting in to notifications, you consent to receive SMS messages from Shayprils. You may opt out at any time by replying STOP to any message or using the Unsubscribe button in the app. Message and data rates may apply.</p>
+
+<h2>User Content</h2>
+<p>You retain ownership of any photos you upload. By uploading a selfie, you grant Shayprils permission to display it within the app to other participants.</p>
+
+<h2>Acceptable Use</h2>
+<p>You agree to use Shayprils only for its intended purpose — participating in the April 2026 check-in challenge with friends. You will not misuse the service or attempt to access it in unauthorized ways.</p>
+
+<h2>Limitation of Liability</h2>
+<p>Shayprils is provided "as is" for fun among friends. We are not liable for any damages arising from use of the service.</p>
+
+<h2>Contact</h2>
+<p>Questions? Contact us at <a href="mailto:nalvarez@mba2026.hbs.edu">nalvarez@mba2026.hbs.edu</a>.</p>
+</body></html>`);
+});
+
 // Serve frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
