@@ -70,6 +70,14 @@ async function initDb() {
     await client.query(`
       ALTER TABLE checkins ADD COLUMN IF NOT EXISTS drinks INTEGER
     `).catch(() => {}); // ignore if already exists
+    // App settings table (key-value store for admin toggles)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
     console.log('Database tables initialized');
   } finally {
     client.release();
@@ -494,6 +502,27 @@ async function adminEraseUser(userId, testMode = false) {
   };
 }
 
+// ─── App Settings ──────────────────────────────────────────
+async function getSetting(key) {
+  const { rows } = await pool.query('SELECT value FROM app_settings WHERE key=$1', [key]);
+  return rows.length ? rows[0].value : null;
+}
+
+async function setSetting(key, value) {
+  await pool.query(
+    `INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
+     ON CONFLICT (key) DO UPDATE SET value=$2, updated_at=NOW()`,
+    [key, value]
+  );
+}
+
+async function getAllSettings() {
+  const { rows } = await pool.query('SELECT key, value FROM app_settings');
+  const settings = {};
+  rows.forEach(r => { settings[r.key] = r.value; });
+  return settings;
+}
+
 module.exports = {
   getUser, getUserByToken, getAllUsers, createUser, updateUserSubscription,
   getSubscribedUsers, addCheckin, getCheckinsForUser, getCheckinsForDate,
@@ -502,5 +531,6 @@ module.exports = {
   silenceUser, unsilenceUser, normalizePhone, getMarchWeekdays, getAprilWeekdays,
   deleteCheckin, updateCheckinSelfie, updateCheckinDrinks, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
   adminClearMessages, adminEraseUser,
+  getSetting, setSetting, getAllSettings,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };

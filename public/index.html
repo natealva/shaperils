@@ -522,9 +522,9 @@
             <button id="btnRetake" class="btn btn-outline hidden" onclick="retakePhoto()">Retake</button>
             <button id="btnCheckin" class="btn btn-green hidden" onclick="submitCheckin()">Check In</button>
           </div>
-          <div style="text-align:center; margin-top:10px;">
+          <div id="uploadPhotoOption" style="text-align:center; margin-top:10px; display:none;">
             <label style="color: var(--text-dim); font-size: 0.8rem; cursor: pointer;">
-              Or <u>upload a photo</u>
+              Or <u>upload from camera roll</u>
               <input type="file" accept="image/*" id="fileUpload" style="display:none;" onchange="handleFileUpload(event)" />
             </label>
           </div>
@@ -726,6 +726,7 @@ function testHeader() { return TEST_MODE ? { 'x-test-mode': '1' } : {}; }
 let currentUser = null;
 let cameraStream = null;
 let capturedImageData = null;
+let galleryUploadsAllowed = false;
 let calendarSelectedUser = null;
 let vouchRequestDate = null;
 let calendarMonth = 'april';
@@ -985,6 +986,10 @@ async function submitCheckin() {
     const data = await res.json();
     if (data.success) {
       showToast(data.duplicate ? 'Already checked in today!' : 'Checked in! Selfie saved.');
+      // Auto-save selfie to device camera roll / downloads
+      if (!data.duplicate && capturedImageData) {
+        saveSelfieToCameraRoll(capturedImageData);
+      }
       capturedImageData = null;
       showCheckedInState();
       loadLeaderboard();
@@ -1671,11 +1676,10 @@ function escapeHtml(str) {
 
 // Re-upload selfie for an existing check-in (photo missing/broken)
 async function reuploadSelfie(checkinId) {
-  // Create a temporary file input to pick a photo
+  // Create a temporary file input to pick a photo — always allow gallery for re-uploads
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-  input.capture = 'user';
   input.onchange = async function() {
     if (!input.files[0]) return;
     showToast('Uploading photo...');
@@ -1764,14 +1768,31 @@ async function adminLogin() {
 async function loadAdminPanel() {
   const section = document.getElementById('adminSection');
   try {
-    const [usersRes, checkinsRes] = await Promise.all([
+    const [usersRes, checkinsRes, settingsRes] = await Promise.all([
       fetch(API + '/api/admin/users', { headers: { 'x-admin-pin': adminPin } }),
-      fetch(API + '/api/admin/checkins', { headers: { 'x-admin-pin': adminPin } })
+      fetch(API + '/api/admin/checkins', { headers: { 'x-admin-pin': adminPin } }),
+      fetch(API + '/api/admin/settings', { headers: { 'x-admin-pin': adminPin } })
     ]);
     const usersData = await usersRes.json();
     const checkinsData = await checkinsRes.json();
+    const settingsData = await settingsRes.json();
+    const settings = settingsData.settings || {};
+    const galleryOn = settings.allow_gallery_uploads === 'true';
     let html = '<div style="max-width:800px;margin:0 auto;padding:16px;">';
     html += '<h2 style="color:var(--brown);margin-bottom:16px;">Admin Panel</h2>';
+
+    // Admin toggles
+    html += '<h3 style="color:var(--brick);margin:0 0 8px;">Settings</h3>';
+    html += '<div style="background:var(--cream);border-radius:12px;padding:16px;margin-bottom:16px;">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;">';
+    html += '<div><strong style="color:var(--brown);">Allow Gallery Uploads</strong>';
+    html += '<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">When ON, users can pick a photo from their camera roll instead of taking a new selfie. Turn this on to let people fix missing photos.</div></div>';
+    html += '<label style="position:relative;display:inline-block;width:52px;height:28px;margin-left:16px;flex-shrink:0;cursor:pointer;">';
+    html += '<input type="checkbox" id="toggleGallery" onchange="adminToggleSetting(\'allow_gallery_uploads\', this.checked)" ' + (galleryOn ? 'checked' : '') + ' style="opacity:0;width:0;height:0;">';
+    html += '<span style="position:absolute;inset:0;background:' + (galleryOn ? 'var(--brick)' : '#ccc') + ';border-radius:28px;transition:0.3s;"></span>';
+    html += '<span style="position:absolute;left:' + (galleryOn ? '26px' : '3px') + ';top:3px;width:22px;height:22px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
+    html += '</label>';
+    html += '</div></div>';
 
     // Users table
     html += '<h3 style="color:var(--brick);margin:16px 0 8px;">Users (' + usersData.users.length + ')</h3>';
@@ -1880,8 +1901,63 @@ function adminClearFeed() {
   });
 }
 
+function adminToggleSetting(key, value) {
+  fetch(API + '/api/admin/settings/' + key, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+    body: JSON.stringify({ value: value ? 'true' : 'false' })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      showToast(key.replace(/_/g, ' ') + ': ' + (value ? 'ON' : 'OFF'));
+      loadAdminPanel();
+    } else showToast(d.error || 'Failed', 'error');
+  });
+}
+
 // INIT
 /* =============================== */
+
+async function fetchPublicSettings() {
+  try {
+    const res = await fetch(API + '/api/settings/public');
+    const data = await res.json();
+    galleryUploadsAllowed = !!data.allow_gallery_uploads;
+  } catch (e) { galleryUploadsAllowed = false; }
+  applyGallerySetting();
+}
+
+function applyGallerySetting() {
+  const uploadOption = document.getElementById('uploadPhotoOption');
+  const fileInput = document.getElementById('fileUpload');
+  if (galleryUploadsAllowed) {
+    uploadOption.style.display = 'block';
+    fileInput.removeAttribute('capture');
+  } else {
+    uploadOption.style.display = 'none';
+    fileInput.setAttribute('capture', 'user');
+  }
+}
+
+function saveSelfieToCameraRoll(dataUrl) {
+  try {
+    // Convert data URL to blob and trigger download
+    const byteString = atob(dataUrl.split(',')[1]);
+    const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: mimeString });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = new Date().toISOString().split('T')[0];
+    a.download = 'shayprils-selfie-' + dateStr + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) { console.log('Could not auto-save selfie:', e); }
+}
 
 (async function init() {
   if (TEST_MODE) {
@@ -1891,6 +1967,7 @@ function adminClearFeed() {
     document.body.prepend(banner);
     document.body.style.paddingTop = '36px';
   }
+  fetchPublicSettings();
   if (await checkAuth()) {
     showApp();
   }

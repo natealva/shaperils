@@ -575,6 +575,25 @@ app.delete('/api/admin/users/:id/erase', adminAuth, async (req, res) => {
   res.json(result);
 });
 
+// ─── Admin Settings ────────────────────────────────────────
+app.get('/api/admin/settings', adminAuth, async (req, res) => {
+  const settings = await store.getAllSettings();
+  res.json({ settings });
+});
+
+app.put('/api/admin/settings/:key', adminAuth, async (req, res) => {
+  const { value } = req.body;
+  if (value === undefined) return res.status(400).json({ error: 'Value required' });
+  await store.setSetting(req.params.key, String(value));
+  res.json({ success: true, key: req.params.key, value: String(value) });
+});
+
+// Public settings endpoint (only exposes non-sensitive settings)
+app.get('/api/settings/public', async (req, res) => {
+  const allowGallery = await store.getSetting('allow_gallery_uploads');
+  res.json({ allow_gallery_uploads: allowGallery === 'true' });
+});
+
 // OTHER ROUTES
 app.get('/api/subscribers/count', async (req, res) => {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
