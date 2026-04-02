@@ -371,9 +371,7 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
     return res.json({ success: true, duplicate: true, message: 'You already checked in today!', checkin: checkinResult.checkin });
   }
 
-  const notifyText = `${req.user.name} just checked in at Shays! That's dedication.`;
-  sendToSubscribers(req.user.name, notifyText, req.user.id, req.testMode).catch(console.error);
-
+  // Note: check-ins do NOT send SMS — only Rally tab buttons trigger texts
   res.json({ success: true, duplicate: false, message: `Checked in for ${dateStr}! Selfie saved.`, checkin: checkinResult.checkin });
 });
 
@@ -491,10 +489,7 @@ app.post('/api/vouch/approve', authMiddleware, async (req, res) => {
   const result = await store.approveVouch(vouchId, req.user.id, req.user.name, req.testMode);
   if (result.error) return res.status(400).json({ error: result.error });
 
-  if (result.vouch) {
-    const notifyText = `${req.user.name} vouched for ${result.vouch.requester_name} being at Shays on ${result.vouch.date}!`;
-    sendToSubscribers(req.user.name, notifyText, null, req.testMode).catch(console.error);
-  }
+  // Note: vouches do NOT send SMS — only Rally tab buttons trigger texts
   res.json({ success: true, message: 'Vouch approved!' });
 });
 
