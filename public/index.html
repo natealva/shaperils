@@ -1938,25 +1938,37 @@ function applyGallerySetting() {
   }
 }
 
-function saveSelfieToCameraRoll(dataUrl) {
+async function saveSelfieToCameraRoll(dataUrl) {
   try {
-    // Convert data URL to blob and trigger download
+    // Convert data URL to blob
     const byteString = atob(dataUrl.split(',')[1]);
     const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
     for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
     const blob = new Blob([ab], { type: mimeString });
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileName = 'shayprils-selfie-' + dateStr + '.jpg';
+
+    // Use Web Share API on mobile — opens native share sheet with "Save Image" option
+    if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: mimeString })] })) {
+      const file = new File([blob], fileName, { type: mimeString });
+      await navigator.share({ files: [file] });
+      return;
+    }
+    // Fallback for desktop: trigger download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const dateStr = new Date().toISOString().split('T')[0];
-    a.download = 'shayprils-selfie-' + dateStr + '.jpg';
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  } catch (e) { console.log('Could not auto-save selfie:', e); }
+  } catch (e) {
+    // User dismissed share sheet — that's fine, not an error
+    if (e.name !== 'AbortError') console.log('Could not auto-save selfie:', e);
+  }
 }
 
 (async function init() {
