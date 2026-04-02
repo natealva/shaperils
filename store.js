@@ -467,6 +467,11 @@ async function adminDeleteCheckin(checkinId, testMode = false) {
   return { success: true };
 }
 
+async function adminDeleteMessage(messageId, testMode = false) {
+  const r = await pool.query('DELETE FROM messages WHERE id=$1 AND test_mode=$2', [messageId, !!testMode]);
+  return { success: r.rowCount > 0 };
+}
+
 async function adminClearMessages(testMode = false) {
   const r = await pool.query('DELETE FROM messages WHERE test_mode=$1', [!!testMode]);
   return { success: true, deleted: r.rowCount };
@@ -530,7 +535,7 @@ module.exports = {
   getAllVouches, approveVouch, getLeaderboard, logMessage, getRecentMessages,
   silenceUser, unsilenceUser, normalizePhone, getMarchWeekdays, getAprilWeekdays,
   deleteCheckin, updateCheckinSelfie, updateCheckinDrinks, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
-  adminClearMessages, adminEraseUser,
+  adminDeleteMessage, adminClearMessages, adminEraseUser,
   getSetting, setSetting, getAllSettings,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };

@@ -1441,6 +1441,7 @@ async function loadFeed() {
     messages.forEach(m => {
       feed.push({
         type: 'alert',
+        id: m.id,
         name: m.sender_name,
         text: m.message_text,
         time: new Date(m.sent_at),
@@ -1450,6 +1451,7 @@ async function loadFeed() {
     (Array.isArray(checkins) ? checkins : []).slice(0, 20).forEach(c => {
       feed.push({
         type: 'checkin',
+        id: c.id,
         name: c.user_name,
         text: c.user_name + ' checked in at Shays!',
         time: new Date(c.created_at || c.date),
@@ -1481,7 +1483,12 @@ async function loadFeed() {
       html += '<div style="font-size:0.82rem;font-weight:500;color:var(--brown);">' + escapeHtml(item.name) + recipientsBadge + '</div>';
       html += '<div style="font-size:0.82rem;color:var(--text);margin-top:2px;line-height:1.3;">' + escapeHtml(item.text) + '</div>';
       html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">' + timeAgo + '</div>';
-      html += '</div></div>';
+      html += '</div>';
+      // Admin: delete button for feed items
+      if (adminPin && item.id) {
+        html += '<button onclick="adminDeleteFeedItem(\'' + item.type + '\',\'' + item.id + '\')" style="flex-shrink:0;background:none;border:none;color:var(--text-dim);font-size:1rem;cursor:pointer;padding:4px 6px;opacity:0.5;" title="Delete">&times;</button>';
+      }
+      html += '</div>';
     });
     container.innerHTML = html;
   } catch (e) {
@@ -1899,6 +1906,27 @@ function adminClearFeed() {
       showToast('Activity feed cleared (' + d.deleted + ' messages removed)');
     } else showToast(d.error || 'Failed', 'error');
   });
+}
+
+function adminDeleteFeedItem(type, id) {
+  if (!confirm('Remove this from the activity feed?')) return;
+  if (type === 'alert') {
+    fetch(API + '/api/admin/messages/' + id, {
+      method: 'DELETE',
+      headers: { 'x-admin-pin': adminPin }
+    }).then(r => r.json()).then(d => {
+      if (d.success) { showToast('Removed from feed'); loadFeed(); }
+      else showToast('Failed to remove', 'error');
+    });
+  } else if (type === 'checkin') {
+    fetch(API + '/api/admin/checkins/' + id, {
+      method: 'DELETE',
+      headers: { 'x-admin-pin': adminPin }
+    }).then(r => r.json()).then(d => {
+      if (d.success) { showToast('Removed from feed'); loadFeed(); }
+      else showToast('Failed to remove', 'error');
+    });
+  }
 }
 
 function adminToggleSetting(key, value) {
