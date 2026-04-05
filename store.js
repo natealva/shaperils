@@ -78,6 +78,17 @@ async function initDb() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    // Cheers reactions on photos
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cheers (
+        id TEXT PRIMARY KEY,
+        checkin_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        user_name TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(checkin_id, user_id)
+      )
+    `);
     console.log('Database tables initialized');
   } finally {
     client.release();
@@ -531,6 +542,41 @@ async function getAllSettings() {
   return settings;
 }
 
+// ─── Cheers ──────────────────────────────────────────
+async function toggleCheers(checkinId, userId, userName) {
+  // Check if already cheered
+  const existing = await pool.query(
+    'SELECT * FROM cheers WHERE checkin_id=$1 AND user_id=$2',
+    [checkinId, userId]
+  );
+  if (existing.rows.length > 0) {
+    // Remove cheers
+    await pool.query('DELETE FROM cheers WHERE checkin_id=$1 AND user_id=$2', [checkinId, userId]);
+    return { cheered: false };
+  }
+  // Add cheers
+  const id = 'cheers_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  await pool.query(
+    'INSERT INTO cheers (id, checkin_id, user_id, user_name) VALUES ($1,$2,$3,$4)',
+    [id, checkinId, userId, userName]
+  );
+  return { cheered: true };
+}
+
+async function getCheersForCheckins(checkinIds) {
+  if (!checkinIds.length) return {};
+  const r = await pool.query(
+    'SELECT checkin_id, user_id, user_name FROM cheers WHERE checkin_id = ANY($1)',
+    [checkinIds]
+  );
+  const map = {};
+  for (const row of r.rows) {
+    if (!map[row.checkin_id]) map[row.checkin_id] = [];
+    map[row.checkin_id].push({ user_id: row.user_id, user_name: row.user_name });
+  }
+  return map;
+}
+
 module.exports = {
   getUser, getUserByToken, getAllUsers, createUser, updateUserSubscription,
   getSubscribedUsers, addCheckin, getCheckinsForUser, getCheckinsForDate,
@@ -540,5 +586,6 @@ module.exports = {
   deleteCheckin, updateCheckinSelfie, updateCheckinDrinks, adminDeleteCheckin, adminDeleteUser, adminUpdateUser, adminGetAllUsers,
   adminDeleteMessage, adminClearMessages, adminEraseUser,
   getSetting, setSetting, getAllSettings,
+  toggleCheers, getCheersForCheckins,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };

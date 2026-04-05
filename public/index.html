@@ -361,6 +361,21 @@
     .lightbox-download{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--brick);color:white;padding:10px 24px;border-radius:20px;text-decoration:none;font-weight:600;font-size:0.95rem;z-index:10001;cursor:pointer;}
     .lightbox-download:hover{background:var(--brick-dark);}
 
+    /* === Cheers reactions === */
+    .cheers-btn {
+      background: rgba(0,0,0,0.5); border: 2px solid transparent; color: white;
+      padding: 8px 16px; border-radius: 20px; font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .cheers-btn:hover { background: rgba(0,0,0,0.7); }
+    .cheers-btn.cheered { border-color: #f0c040; background: rgba(240,192,64,0.25); }
+    .cheers-badge {
+      position: absolute; bottom: 4px; right: 4px;
+      background: rgba(0,0,0,0.55); color: #f0c040; font-size: 0.7rem;
+      padding: 2px 5px; border-radius: 8px; pointer-events: none;
+      display: flex; align-items: center; gap: 2px;
+    }
+
     /* === Vouch system === */
     .vouch-card {
       background: #FFF8E1; border: 1px solid rgba(210,150,60,0.3);
@@ -732,6 +747,10 @@
         </select>
       </label>
     </div>
+  </div>
+  <div id="lightboxCheers" onclick="event.stopPropagation()" style="position:absolute;top:20px;left:20px;z-index:10001;display:flex;align-items:center;gap:8px;">
+    <button class="cheers-btn" id="cheersBtn" onclick="toggleCheers()">🍻 <span id="cheersCount">0</span></button>
+    <div id="cheersNames" style="color:white;font-size:0.78rem;max-width:200px;text-shadow:0 1px 3px rgba(0,0,0,0.8);"></div>
   </div>
   <div class="lightbox-info" id="lightboxInfo"></div>
 </div>
@@ -1433,6 +1452,9 @@ async function renderCalendar(calendar, userId) {
     html += '<div class="' + cls + '" title="' + day.date + ': ' + count + ' check-in' + (count !== 1 ? 's' : '') + '" style="' + bgStyle + textColor + '" ' + clickHandler + '>';
     html += '<span class="day-num">' + day.dayNum + '</span>';
     if (!hasSelfie) html += '<span class="day-indicator"></span>';
+    if (hasSelfie && userCheckin.cheers_count > 0) {
+      html += '<div class="cheers-badge">🍻 ' + userCheckin.cheers_count + '</div>';
+    }
     html += '</div>';
   }
   grid.innerHTML = html;
@@ -1658,6 +1680,9 @@ async function loadAlbum() {
         } else {
           html += '<img src="' + photoSrc + '" alt="' + escapeHtml(photo.user_name) + '" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.classList.add(\'photo-missing\');var rb=this.parentElement.querySelector(\'.reupload-btn\');if(rb)rb.style.display=\'block\';" />';
           html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
+          if (photo.cheers_count > 0) {
+            html += '<div class="cheers-badge">🍻 ' + photo.cheers_count + '</div>';
+          }
           if (isOwn) {
             html += '<button class="reupload-btn" style="display:none;" onclick="event.stopPropagation();reuploadSelfie(\'' + photo.id + '\')">Re-upload</button>';
             html += '<button class="delete-selfie-btn" onclick="event.stopPropagation();deleteSelfie(\'' + photo.id + '\')">Delete</button>';
@@ -1777,7 +1802,58 @@ function openLightbox(src, name, date, checkinId, ownerId, drinks) {
   } else {
     drinksSection.style.display = 'none';
   }
+  // Cheers — show button only for logged-in users, but always show count
+  const cheersDiv = document.getElementById('lightboxCheers');
+  cheersDiv.style.display = checkinId ? 'flex' : 'none';
+  document.getElementById('cheersBtn').style.display = (currentUser && !guestMode) ? 'flex' : 'none';
+  loadCheers(checkinId);
   document.getElementById('lightbox').classList.add('visible');
+}
+
+async function loadCheers(checkinId) {
+  if (!checkinId) return;
+  try {
+    const res = await fetch(API + '/api/cheers/' + checkinId);
+    const data = await res.json();
+    updateCheersUI(data.cheers || [], data.cheers_count || 0);
+  } catch (e) {
+    document.getElementById('cheersCount').textContent = '0';
+    document.getElementById('cheersNames').textContent = '';
+  }
+}
+
+function updateCheersUI(cheers, count) {
+  document.getElementById('cheersCount').textContent = count;
+  const btn = document.getElementById('cheersBtn');
+  const iCheered = currentUser && cheers.some(c => c.user_id === currentUser.id);
+  btn.classList.toggle('cheered', iCheered);
+  // Show who cheered
+  const names = cheers.map(c => c.user_name);
+  const namesEl = document.getElementById('cheersNames');
+  if (names.length === 0) {
+    namesEl.textContent = '';
+  } else if (names.length <= 3) {
+    namesEl.textContent = names.join(', ');
+  } else {
+    namesEl.textContent = names.slice(0, 2).join(', ') + ' +' + (names.length - 2) + ' more';
+  }
+}
+
+async function toggleCheers() {
+  if (!currentUser || guestMode || !window._currentCheckinId) return;
+  try {
+    const res = await fetch(API + '/api/cheers', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ checkin_id: window._currentCheckinId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      updateCheersUI(data.cheers || [], data.cheers_count || 0);
+    }
+  } catch (e) {
+    showToast('Error toggling cheers', 'error');
+  }
 }
 
 async function saveDrinks() {

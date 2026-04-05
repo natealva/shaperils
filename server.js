@@ -534,7 +534,43 @@ app.get('/api/checkin/date/:date', async (req, res) => {
 app.get('/api/album', async (req, res) => {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
   const photos = await store.getAllPhotos(testMode);
-  res.json({ photos });
+  // Attach cheers counts to each photo
+  const checkinIds = photos.map(p => p.id);
+  const cheersMap = await store.getCheersForCheckins(checkinIds);
+  const photosWithCheers = photos.map(p => ({
+    ...p,
+    cheers: cheersMap[p.id] || [],
+    cheers_count: (cheersMap[p.id] || []).length,
+  }));
+  res.json({ photos: photosWithCheers });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CHEERS ROUTES
+// ═══════════════════════════════════════════════════════════════
+app.post('/api/cheers', authMiddleware, async (req, res) => {
+  const { checkin_id } = req.body;
+  if (!checkin_id) return res.status(400).json({ error: 'checkin_id required' });
+  try {
+    const result = await store.toggleCheers(checkin_id, req.user.id, req.user.name);
+    // Return updated cheers list for this checkin
+    const cheersMap = await store.getCheersForCheckins([checkin_id]);
+    const cheers = cheersMap[checkin_id] || [];
+    res.json({ success: true, cheered: result.cheered, cheers, cheers_count: cheers.length });
+  } catch (err) {
+    console.error('Cheers error:', err);
+    res.status(500).json({ error: 'Failed to toggle cheers' });
+  }
+});
+
+app.get('/api/cheers/:checkin_id', async (req, res) => {
+  try {
+    const cheersMap = await store.getCheersForCheckins([req.params.checkin_id]);
+    const cheers = cheersMap[req.params.checkin_id] || [];
+    res.json({ cheers, cheers_count: cheers.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get cheers' });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -595,13 +631,20 @@ app.get('/api/calendar', async (req, res) => {
   const checkins = await store.getAllCheckins(testMode);
   const users = await store.getAllUsers(testMode);
 
+  // Get cheers for all checkins shown in calendar
+  const allCheckinIds = checkins.map(c => c.id);
+  const cheersMap = await store.getCheersForCheckins(allCheckinIds);
+
   const calendar = weekdays.map(date => {
     const dayCheckins = checkins.filter(c => c.date === date);
     return {
       date,
       dayOfWeek: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
       dayNum: parseInt(date.split('-')[2]),
-      checkins: dayCheckins.map(c => ({ id: c.id, user_id: c.user_id, user_name: c.user_name, selfie: c.selfie, drinks: c.drinks })),
+      checkins: dayCheckins.map(c => ({
+        id: c.id, user_id: c.user_id, user_name: c.user_name, selfie: c.selfie, drinks: c.drinks,
+        cheers_count: (cheersMap[c.id] || []).length,
+      })),
     };
   });
 
