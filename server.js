@@ -267,23 +267,25 @@ app.post('/api/send', authMiddleware, async (req, res) => {
   const senderName = req.user.name;
   let messageText = '';
 
+  const appLink = 'https://shaperils.onrender.com';
+
   switch (messageType) {
     case 'heading_now':
-      messageText = `${senderName} is heading to Shays right now! Come through!`; break;
+      messageText = `${senderName} is heading to Shays right now! Come through!\n${appLink}`; break;
     case 'solo_join':
-      messageText = `${senderName} is heading to Shays solo — come keep them company!`; break;
+      messageText = `${senderName} is heading to Shays solo — come keep them company!\n${appLink}`; break;
     case 'with_friends':
       messageText = companions
-        ? `${senderName} is heading to Shays with ${companions}. Join the crew!`
-        : `${senderName} is heading to Shays with friends. Join the crew!`; break;
+        ? `${senderName} is heading to Shays with ${companions}. Join the crew!\n${appLink}`
+        : `${senderName} is heading to Shays with friends. Join the crew!\n${appLink}`; break;
     case 'who_wants':
-      messageText = `Who wants to go to Shays? ${senderName} is trying to rally the troops!`; break;
+      messageText = `Who wants to go to Shays? ${senderName} is trying to rally the troops!\n${appLink}`; break;
     case 'custom':
       messageText = customMessage
-        ? `Shays Alert from ${senderName}: ${customMessage}`
-        : `${senderName} sent a Shays alert!`; break;
+        ? `Shays Alert from ${senderName}: ${customMessage}\n${appLink}`
+        : `${senderName} sent a Shays alert!\n${appLink}`; break;
     default:
-      messageText = `${senderName} is heading to Shays! Come through!`;
+      messageText = `${senderName} is heading to Shays! Come through!\n${appLink}`;
   }
 
   try {

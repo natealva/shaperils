@@ -1266,30 +1266,55 @@ async function renderCalendar(calendar, userId) {
 function renderNotificationSettings() {
   const container = document.getElementById('notifStatus');
   if (!currentUser) return;
-  
+
   const silenced = currentUser.silenced_until;
   const subscribed = currentUser.subscribed;
-  
+  const isOn = subscribed && !(silenced === 'forever' || (silenced && new Date(silenced) > new Date()));
+
   let html = '';
-  if (silenced === 'forever') {
-    html += '<p style="color:var(--red-accent);font-size:0.88rem;margin-bottom:12px;">Notifications are permanently silenced.</p>';
-    html += '<button class="btn btn-green" onclick="resubscribeNotifs()" style="margin-bottom:8px;">Re-subscribe to Texts</button>';
-  } else if (silenced && new Date(silenced) > new Date()) {
-    const until = new Date(silenced).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications silenced until ' + until + '</p>';
-    html += '<button class="btn btn-green" onclick="resubscribeNotifs()" style="margin-bottom:8px;">Re-subscribe Now</button>';
-  } else if (subscribed) {
-    html += '<p style="color:var(--green);font-size:0.88rem;margin-bottom:12px;">Notifications are ON — you get texts when someone heads to Shays.</p>';
-    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
-    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'day\')">Mute 1 Day</button>';
-    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'week\')">Mute 1 Week</button>';
-    html += '<button class="btn btn-outline" style="flex:1;padding:10px;font-size:0.82rem;" onclick="silenceNotifs(\'forever\')">Unsubscribe</button>';
-    html += '</div>';
-  } else {
-    html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px;">Notifications are OFF. Subscribe to get texts when someone heads to Shays.</p>';
-    html += '<button class="btn btn-green" onclick="resubscribeNotifs()">Subscribe to Texts</button>';
-  }
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">';
+  html += '  <div style="flex:1;">';
+  html += '    <div style="font-size:0.88rem;color:' + (isOn ? 'var(--green)' : 'var(--text-muted)') + ';font-weight:500;">';
+  html += isOn ? 'Texts are ON — you get notified when someone heads to Shays.' : 'Texts are OFF — you won\'t receive notifications.';
+  html += '    </div>';
+  html += '  </div>';
+  html += '  <label style="position:relative;display:inline-block;width:50px;height:28px;margin-left:12px;flex-shrink:0;cursor:pointer;">';
+  html += '    <input type="checkbox" ' + (isOn ? 'checked' : '') + ' onchange="toggleNotifications(this.checked)" style="opacity:0;width:0;height:0;position:absolute;" />';
+  html += '    <span style="position:absolute;top:0;left:0;right:0;bottom:0;background:' + (isOn ? 'var(--green)' : '#ccc') + ';border-radius:28px;transition:background 0.25s;">';
+  html += '      <span style="position:absolute;height:22px;width:22px;left:' + (isOn ? '25px' : '3px') + ';bottom:3px;background:white;border-radius:50%;transition:left 0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
+  html += '    </span>';
+  html += '  </label>';
+  html += '</div>';
   container.innerHTML = html;
+}
+
+async function toggleNotifications(turnOn) {
+  try {
+    if (turnOn) {
+      const res = await fetch(API + '/api/auth/unsilence', {
+        method: 'POST', headers: authHeaders()
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentUser.silenced_until = null;
+        currentUser.subscribed = true;
+        renderNotificationSettings();
+        showToast('Notifications turned ON');
+      }
+    } else {
+      const res = await fetch(API + '/api/auth/silence', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ duration: 'forever' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentUser.silenced_until = data.silenced_until;
+        currentUser.subscribed = false;
+        renderNotificationSettings();
+        showToast('Notifications turned OFF');
+      }
+    }
+  } catch(e) { showToast('Error toggling notifications', 'error'); }
 }
 
 async function silenceNotifs(duration) {
