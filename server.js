@@ -532,17 +532,25 @@ app.get('/api/checkin/date/:date', async (req, res) => {
 // ALBUM ROUTES
 // ═══════════════════════════════════════════════════════════════
 app.get('/api/album', async (req, res) => {
-  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
-  const photos = await store.getAllPhotos(testMode);
-  // Attach cheers counts to each photo
-  const checkinIds = photos.map(p => p.id);
-  const cheersMap = await store.getCheersForCheckins(checkinIds);
-  const photosWithCheers = photos.map(p => ({
-    ...p,
-    cheers: cheersMap[p.id] || [],
-    cheers_count: (cheersMap[p.id] || []).length,
-  }));
-  res.json({ photos: photosWithCheers });
+  try {
+    const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+    const photos = await store.getAllPhotos(testMode);
+    // Attach cheers counts to each photo
+    let cheersMap = {};
+    try {
+      const checkinIds = photos.map(p => p.id);
+      cheersMap = await store.getCheersForCheckins(checkinIds);
+    } catch (e) { console.error('Cheers lookup failed:', e.message); }
+    const photosWithCheers = photos.map(p => ({
+      ...p,
+      cheers: cheersMap[p.id] || [],
+      cheers_count: (cheersMap[p.id] || []).length,
+    }));
+    res.json({ photos: photosWithCheers });
+  } catch (err) {
+    console.error('Album error:', err);
+    res.status(500).json({ error: 'Failed to load album' });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -632,8 +640,11 @@ app.get('/api/calendar', async (req, res) => {
   const users = await store.getAllUsers(testMode);
 
   // Get cheers for all checkins shown in calendar
-  const allCheckinIds = checkins.map(c => c.id);
-  const cheersMap = await store.getCheersForCheckins(allCheckinIds);
+  let cheersMap = {};
+  try {
+    const allCheckinIds = checkins.map(c => c.id);
+    cheersMap = await store.getCheersForCheckins(allCheckinIds);
+  } catch (e) { console.error('Calendar cheers lookup failed:', e.message); }
 
   const calendar = weekdays.map(date => {
     const dayCheckins = checkins.filter(c => c.date === date);
