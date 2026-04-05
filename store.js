@@ -226,21 +226,22 @@ async function unsilenceUser(userId, testMode = false) {
 
 // Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Check-ins Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function addCheckin(userId, userName, dateStr, selfieFilename, testMode = false) {
-  // Check for duplicate
-  const dup = await pool.query(
-    'SELECT * FROM checkins WHERE user_id=$1 AND date=$2 AND test_mode=$3',
+  // Check how many check-ins today (max 2)
+  const existing = await pool.query(
+    'SELECT * FROM checkins WHERE user_id=$1 AND date=$2 AND test_mode=$3 ORDER BY created_at',
     [userId, dateStr, !!testMode]
   );
-  if (dup.rows.length > 0) {
-    return { duplicate: true, checkin: dup.rows[0] };
+  if (existing.rows.length >= 2) {
+    return { max_reached: true, checkin: existing.rows[0] };
   }
+  const isSecond = existing.rows.length === 1;
   const id = 'checkin_' + Date.now();
   const r = await pool.query(
     `INSERT INTO checkins (id,user_id,user_name,date,selfie,test_mode)
      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
     [id, userId, userName, dateStr, selfieFilename, !!testMode]
   );
-  return { duplicate: false, checkin: r.rows[0] };
+  return { duplicate: false, second_checkin: isSecond, checkin: r.rows[0] };
 }
 
 async function getCheckinsForUser(userId, testMode = false) {

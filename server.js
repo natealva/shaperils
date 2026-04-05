@@ -338,13 +338,22 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const dateStr = et.toISOString().split('T')[0];
 
+  // Check how many check-ins exist today to build unique Cloudinary ID
+  const existingCheckins = await store.getCheckinsForDate(dateStr, req.testMode);
+  const myTodayCheckins = existingCheckins.filter(c => c.user_id === req.user.id);
+  const checkinNum = myTodayCheckins.length + 1; // 1 or 2
+
+  if (myTodayCheckins.length >= 2) {
+    return res.json({ success: true, max_reached: true, message: 'You\'ve already checked in twice today!' });
+  }
+
   let selfieValue; // Will be a Cloudinary URL
 
   if (cloudinary.config().cloud_name) {
     // Upload to Cloudinary (with retry) — no local fallback to avoid data loss on redeploy
     try {
       const folder = req.testMode ? 'shayprils_test' : 'shayprils';
-      const publicId = `${req.user.id}_${dateStr}`;
+      const publicId = `${req.user.id}_${dateStr}_${checkinNum}`;
       const result = await uploadToCloudinary(selfie, folder, publicId);
       selfieValue = result.secure_url;
       console.log('Uploaded to Cloudinary:', selfieValue);
@@ -359,7 +368,7 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
     console.warn('WARNING: Saving photo locally — will be lost on next deploy!');
     const base64Data = selfie.replace(/^data:image\/\w+;base64,/, '');
     const ext = selfie.startsWith('data:image/png') ? 'png' : 'jpg';
-    const filename = `${req.user.id}_${dateStr}.${ext}`;
+    const filename = `${req.user.id}_${dateStr}_${checkinNum}.${ext}`;
     const dir = req.testMode ? store.TEST_SELFIES_DIR : store.SELFIES_DIR;
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     const filepath = path.join(dir, filename);
@@ -369,12 +378,15 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
   }
 
   const checkinResult = await store.addCheckin(req.user.id, req.user.name, dateStr, selfieValue, req.testMode);
-  if (checkinResult.duplicate) {
-    return res.json({ success: true, duplicate: true, message: 'You already checked in today!', checkin: checkinResult.checkin });
+  if (checkinResult.max_reached) {
+    return res.json({ success: true, max_reached: true, message: 'You\'ve already checked in twice today!' });
   }
 
   // Note: check-ins do NOT send SMS — only Rally tab buttons trigger texts
-  res.json({ success: true, duplicate: false, message: `Checked in for ${dateStr}! Selfie saved.`, checkin: checkinResult.checkin });
+  const msg = checkinResult.second_checkin
+    ? `Welcome back to Shays! Second check-in for ${dateStr} saved.`
+    : `Checked in for ${dateStr}! Selfie saved.`;
+  res.json({ success: true, duplicate: false, second_checkin: !!checkinResult.second_checkin, message: msg, checkin: checkinResult.checkin });
 });
 
 app.get('/api/checkin/mine', authMiddleware, async (req, res) => {
@@ -408,6 +420,79 @@ app.put('/api/checkin/:id/selfie', authMiddleware, async (req, res) => {
     console.error('Re-upload failed:', err.message || err);
     res.status(500).json({ error: 'Photo upload failed — try again. (' + (err.message || 'unknown') + ')' });
   }
+});
+
+// Upload selfie for a vouched day (creates a check-in for that date)
+app.post('/api/checkin/vouched', authMiddleware, async (req, res) => {
+  const { selfie, date } = req.body;
+  if (!selfie || !date) return res.status(400).json({ error: 'Selfie and date required' });
+  if (!selfie.startsWith('data:image/')) return res.status(400).json({ error: 'Invalid image data' });
+
+  // Verify the user has an approved vouch for this date
+  const vouches = (await store.getAllVouches(req.testMode)).filter(
+    v => v.requester_id === req.user.id && v.date === date && v.status === 'approved'
+  );
+  if (vouches.length === 0) return res.status(403).json({ error: 'No approved vouch for this date' });
+
+  // Check if they already have a check-in for this date
+  const existing = await store.getCheckinsForDate(date, req.testMode);
+  const myExisting = existing.filter(c => c.user_id === req.user.id);
+  if (myExisting.length > 0) return res.json({ success: true, duplicate: true, message: 'You already have a check-in for this date' });
+
+  if (!cloudinary.config().cloud_name) return res.status(500).json({ error: 'Photo storage not configured' });
+
+  try {
+    const folder = req.testMode ? 'shayprils_test' : 'shayprils';
+    const publicId = `${req.user.id}_${date}_vouch`;
+    const result = await uploadToCloudinary(selfie, folder, publicId);
+    const checkinResult = await store.addCheckin(req.user.id, req.user.name, date, result.secure_url, req.testMode);
+    res.json({ success: true, message: 'Selfie uploaded for vouched day!', checkin: checkinResult.checkin });
+  } catch (err) {
+    console.error('Vouched selfie upload failed:', err.message || err);
+    res.status(500).json({ error: 'Photo upload failed — try again.' });
+  }
+});
+
+// Admin: upload or replace a selfie for any user on any date
+app.post('/api/admin/checkin/photo', adminAuth, async (req, res) => {
+  const { selfie, user_id, date, checkin_id } = req.body;
+  if (!selfie) return res.status(400).json({ error: 'Selfie required' });
+  if (!selfie.startsWith('data:image/')) return res.status(400).json({ error: 'Invalid image data' });
+
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+
+  if (!cloudinary.config().cloud_name) return res.status(500).json({ error: 'Photo storage not configured' });
+
+  try {
+    const folder = testMode ? 'shayprils_test' : 'shayprils';
+    const publicId = `admin_${user_id || 'unknown'}_${date || Date.now()}`;
+    const result = await uploadToCloudinary(selfie, folder, publicId);
+
+    if (checkin_id) {
+      // Replace existing check-in's selfie
+      await store.updateCheckinSelfie(checkin_id, result.secure_url, testMode);
+      res.json({ success: true, message: 'Photo replaced!', url: result.secure_url });
+    } else if (user_id && date) {
+      // Create new check-in for this user/date
+      const users = await store.getAllUsers(testMode);
+      const user = users.find(u => u.id === user_id);
+      const userName = user ? user.name : 'Unknown';
+      const checkinResult = await store.addCheckin(user_id, userName, date, result.secure_url, testMode);
+      res.json({ success: true, message: 'Photo uploaded!', checkin: checkinResult.checkin });
+    } else {
+      return res.status(400).json({ error: 'Need checkin_id or user_id+date' });
+    }
+  } catch (err) {
+    console.error('Admin photo upload failed:', err.message || err);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// Admin: delete a check-in photo from calendar
+app.delete('/api/admin/checkin/:id/photo', adminAuth, async (req, res) => {
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const result = await store.adminDeleteCheckin(req.params.id, testMode);
+  res.json(result);
 });
 
 // Update drink count for a check-in

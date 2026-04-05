@@ -520,12 +520,18 @@
             <button onclick="incrementDrinks()" style="padding:8px 18px;background:var(--brick);color:white;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;min-width:48px;">+1</button>
           </div>
         </div>
+        <!-- Second check-in option -->
+        <div id="secondCheckinOption" style="display:none;margin-top:14px;background:rgba(255,255,255,0.6);border-radius:12px;padding:14px 16px;text-align:center;">
+          <button onclick="startSecondCheckin()" style="background:none;border:1px solid var(--border);border-radius:10px;padding:10px 16px;color:var(--brown);font-size:0.85rem;cursor:pointer;font-family:inherit;font-weight:500;">
+            Left &amp; came back? Check in again
+          </button>
+        </div>
       </div>
       <div id="checkinForm">
         <div class="card">
           <div class="card-title"><span class="icon icon-green">C</span> Check In at Shays</div>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px;">
-            Upload a selfie at Shays to log today's check-in. One photo per day.
+            Upload a selfie at Shays to log today's check-in.
           </p>
           <div class="camera-area" id="cameraArea">
             <video id="cameraVideo" autoplay playsinline style="display:none;"></video>
@@ -703,6 +709,10 @@
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;">
     <button id="lightboxSaveBtn" class="lightbox-download" onclick="event.stopPropagation();saveLightboxPhoto(event)">Save Photo</button>
     <button id="lightboxDelete" class="lightbox-download" style="background:#e74c3c;" onclick="event.stopPropagation();deleteLightboxPhoto()">Delete Photo</button>
+    <label id="lightboxAdminUpload" class="lightbox-download" style="display:none;background:#8e44ad;cursor:pointer;" onclick="event.stopPropagation()">
+      Replace Photo
+      <input type="file" accept="image/*" style="display:none;" onchange="adminReplaceLightboxPhoto(event)" />
+    </label>
     <div id="lightboxDrinks" onclick="event.stopPropagation()" style="display:none;background:rgba(0,0,0,0.6);border-radius:12px;padding:10px 16px;margin-top:4px;">
       <label style="color:white;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:8px;">
         How many drinks?
@@ -734,6 +744,44 @@
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeVouchModal()">Cancel</button>
       <button class="btn btn-primary" onclick="submitVouchRequest()">Request Vouch</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vouch Selfie Upload Modal -->
+<div id="vouchSelfieModal" class="modal-overlay" onclick="if(event.target===this)closeVouchSelfieModal()">
+  <div class="modal">
+    <div class="modal-title">Upload Selfie</div>
+    <p id="vouchSelfieText" style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">Upload a photo from this day.</p>
+    <div style="text-align:center;margin-bottom:14px;">
+      <img id="vouchSelfiePreview" style="display:none;max-width:100%;border-radius:10px;margin-bottom:10px;" />
+      <label class="btn btn-outline" style="display:inline-block;cursor:pointer;">
+        Choose Photo
+        <input type="file" accept="image/*" id="vouchSelfieInput" style="display:none;" onchange="previewVouchSelfie(event)" />
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeVouchSelfieModal()">Cancel</button>
+      <button class="btn btn-green" id="vouchSelfieSubmit" onclick="submitVouchSelfie()" disabled>Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Photo Upload Modal -->
+<div id="adminPhotoModal" class="modal-overlay" onclick="if(event.target===this)closeAdminPhotoModal()">
+  <div class="modal">
+    <div class="modal-title">Admin: Manage Photo</div>
+    <p id="adminPhotoText" style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;"></p>
+    <div style="text-align:center;margin-bottom:14px;">
+      <img id="adminPhotoPreview" style="display:none;max-width:100%;border-radius:10px;margin-bottom:10px;" />
+      <label class="btn btn-outline" style="display:inline-block;cursor:pointer;">
+        Choose Photo
+        <input type="file" accept="image/*" id="adminPhotoInput" style="display:none;" onchange="previewAdminPhoto(event)" />
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAdminPhotoModal()">Cancel</button>
+      <button class="btn btn-green" id="adminPhotoSubmit" onclick="submitAdminPhoto()" disabled>Upload</button>
     </div>
   </div>
 </div>
@@ -1041,9 +1089,13 @@ async function submitCheckin() {
     }
     const data = await res.json();
     if (data.success) {
-      showToast(data.duplicate ? 'Already checked in today!' : 'Checked in! Selfie saved.');
+      if (data.max_reached) {
+        showToast('You\'ve already checked in twice today!');
+      } else {
+        showToast(data.second_checkin ? 'Welcome back to Shays! 2nd selfie saved.' : 'Checked in! Selfie saved.');
+      }
       // Auto-save selfie to device camera roll / downloads
-      if (!data.duplicate && capturedImageData) {
+      if (!data.max_reached && capturedImageData) {
         saveSelfieToCameraRoll(capturedImageData);
       }
       capturedImageData = null;
@@ -1073,18 +1125,27 @@ async function checkTodayCheckin() {
     const res = await fetch(API + '/api/checkin/mine', { headers: authHeaders() });
     const data = await res.json();
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    todayCheckin = data.checkins.find(c => c.date === today) || null;
+    const todayCheckins = data.checkins.filter(c => c.date === today);
+    todayCheckin = todayCheckins[0] || null;
     if (todayCheckin) {
       showCheckedInState();
-      // Show drinks tracker with current value
+      // Show drinks tracker with current value from first check-in
       const tracker = document.getElementById('drinksTracker');
       const input = document.getElementById('drinksInput');
       input.value = todayCheckin.drinks || 0;
       tracker.style.display = 'block';
+      // Show/hide second check-in option
+      const secondOpt = document.getElementById('secondCheckinOption');
+      if (todayCheckins.length >= 2) {
+        secondOpt.style.display = 'none'; // Already checked in twice
+      } else {
+        secondOpt.style.display = ''; // Can check in again
+      }
     } else {
       document.getElementById('alreadyCheckedIn').classList.add('hidden');
       document.getElementById('checkinForm').classList.remove('hidden');
       document.getElementById('drinksTracker').style.display = 'none';
+      document.getElementById('secondCheckinOption').style.display = 'none';
     }
   } catch (e) {}
 }
@@ -1093,6 +1154,20 @@ function showCheckedInState() {
   document.getElementById('alreadyCheckedIn').classList.remove('hidden');
   document.getElementById('checkinForm').classList.add('hidden');
   stopCamera();
+}
+
+function startSecondCheckin() {
+  // Hide the checked-in state and show the check-in form for a 2nd selfie
+  document.getElementById('alreadyCheckedIn').classList.add('hidden');
+  document.getElementById('checkinForm').classList.remove('hidden');
+  // Reset camera state
+  capturedImageData = null;
+  document.getElementById('selfiePreview').style.display = 'none';
+  document.getElementById('cameraPlaceholder').style.display = '';
+  document.getElementById('btnStartCamera').classList.remove('hidden');
+  document.getElementById('btnCapture').classList.add('hidden');
+  document.getElementById('btnRetake').classList.add('hidden');
+  document.getElementById('btnCheckin').classList.add('hidden');
 }
 
 function incrementDrinks() {
@@ -1326,6 +1401,14 @@ async function renderCalendar(calendar, userId) {
     const canRequestVouch = isMyCalendar && !userCheckedIn && !isVouched && !isPendingVouch && !isFuture && !isToday;
     if (canRequestVouch) cls += ' clickable';
 
+    // Vouched but no selfie — user can upload one
+    const canUploadVouchSelfie = isMyCalendar && !userCheckedIn && isVouched;
+    if (canUploadVouchSelfie) cls += ' clickable';
+
+    // Admin can upload photo for any user on any past day
+    const isAdmin = !!adminPin;
+    const canAdminUpload = isAdmin && !isFuture && !userCheckedIn && !isMyCalendar;
+
     // Selfie thumbnail
     const hasSelfie = userCheckin && userCheckin.selfie;
     const selfieImgUrl = hasSelfie ? selfieUrl(userCheckin.selfie) : '';
@@ -1337,8 +1420,13 @@ async function renderCalendar(calendar, userId) {
       const calDrinkVal = userCheckin.drinks != null ? userCheckin.drinks : '';
       clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', \'' + userCheckin.id + '\', \'' + userCheckin.user_id + '\', \'' + calDrinkVal + '\')"';
       cls += ' has-selfie';
+    } else if (canUploadVouchSelfie) {
+      clickHandler = 'onclick="openVouchSelfieModal(\'' + day.date + '\')"';
     } else if (canRequestVouch) {
       clickHandler = 'onclick="openVouchModal(\'' + day.date + '\')"';
+    } else if (canAdminUpload) {
+      clickHandler = 'onclick="openAdminPhotoModal(\'' + userId + '\', \'' + day.date + '\')"';
+      cls += ' clickable';
     }
 
     const count = day.checkins.length;
@@ -1669,6 +1757,8 @@ function getTimeAgo(date) {
 function openLightbox(src, name, date, checkinId, ownerId, drinks) {
   document.getElementById('lightboxImg').src = src;
   window._currentCheckinId = checkinId || null;
+  window._currentCheckinOwnerId = ownerId || null;
+  window._currentCheckinDate = date || null;
   document.getElementById('lightboxInfo').textContent = name + ' — ' + date;
   document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
   document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
@@ -1676,6 +1766,8 @@ function openLightbox(src, name, date, checkinId, ownerId, drinks) {
   const isOwner = currentUser && ownerId && currentUser.id === ownerId;
   const isAdmin = !!adminPin;
   document.getElementById('lightboxDelete').style.display = (isOwner || isAdmin) ? 'block' : 'none';
+  // Admin replace photo button
+  document.getElementById('lightboxAdminUpload').style.display = isAdmin ? 'block' : 'none';
   // Drinks input — only show for the photo owner
   const drinksSection = document.getElementById('lightboxDrinks');
   const drinksSelect = document.getElementById('drinksSelect');
@@ -1738,10 +1830,14 @@ async function deleteLightboxPhoto() {
   if (!window._currentCheckinId) { showToast('Cannot delete this photo', 'error'); return; }
   if (!confirm('Delete this selfie?')) return;
   try {
-    const res = await fetch(API + '/api/checkin/' + window._currentCheckinId, {
-      method: 'DELETE',
-      headers: authHeaders()
-    });
+    const isAdmin = !!adminPin;
+    const url = isAdmin
+      ? API + '/api/admin/checkin/' + window._currentCheckinId + '/photo' + testParam()
+      : API + '/api/checkin/' + window._currentCheckinId;
+    const headers = isAdmin
+      ? { 'Content-Type': 'application/json', 'x-admin-pin': adminPin, ...testHeader() }
+      : authHeaders();
+    const res = await fetch(url, { method: 'DELETE', headers });
     const data = await res.json();
     if (data.success) {
       closeLightbox();
@@ -1754,6 +1850,138 @@ async function deleteLightboxPhoto() {
   } catch(e) {
     showToast('Error deleting photo', 'error');
   }
+}
+
+// Admin: replace photo from lightbox
+async function adminReplaceLightboxPhoto(event) {
+  const file = event.target.files[0];
+  if (!file || !window._currentCheckinId) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const res = await fetch(API + '/api/admin/checkin/photo' + testParam(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin, ...testHeader() },
+        body: JSON.stringify({ selfie: e.target.result, checkin_id: window._currentCheckinId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeLightbox();
+        loadCalendar();
+        loadAlbum();
+        showToast('Photo replaced!');
+      } else showToast(data.error || 'Upload failed', 'error');
+    } catch(err) { showToast('Upload error', 'error'); }
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+// Vouch selfie upload modal
+let vouchSelfieDate = null;
+let vouchSelfieData = null;
+
+function openVouchSelfieModal(date) {
+  vouchSelfieDate = date;
+  vouchSelfieData = null;
+  document.getElementById('vouchSelfieText').textContent = 'Upload a photo from ' + date + '.';
+  document.getElementById('vouchSelfiePreview').style.display = 'none';
+  document.getElementById('vouchSelfieInput').value = '';
+  document.getElementById('vouchSelfieSubmit').disabled = true;
+  document.getElementById('vouchSelfieModal').style.display = 'flex';
+}
+
+function closeVouchSelfieModal() {
+  document.getElementById('vouchSelfieModal').style.display = 'none';
+}
+
+function previewVouchSelfie(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    vouchSelfieData = e.target.result;
+    document.getElementById('vouchSelfiePreview').src = e.target.result;
+    document.getElementById('vouchSelfiePreview').style.display = 'block';
+    document.getElementById('vouchSelfieSubmit').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitVouchSelfie() {
+  if (!vouchSelfieData || !vouchSelfieDate) return;
+  document.getElementById('vouchSelfieSubmit').disabled = true;
+  document.getElementById('vouchSelfieSubmit').textContent = 'Uploading...';
+  try {
+    const res = await fetch(API + '/api/checkin/vouched', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ selfie: vouchSelfieData, date: vouchSelfieDate })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeVouchSelfieModal();
+      loadCalendar();
+      loadAlbum();
+      showToast('Selfie uploaded for vouched day!');
+    } else showToast(data.error || 'Upload failed', 'error');
+  } catch(e) { showToast('Upload error', 'error'); }
+  document.getElementById('vouchSelfieSubmit').disabled = false;
+  document.getElementById('vouchSelfieSubmit').textContent = 'Upload';
+}
+
+// Admin photo upload modal (for calendar days without selfies)
+let adminPhotoUserId = null;
+let adminPhotoDate = null;
+let adminPhotoData = null;
+
+function openAdminPhotoModal(userId, date) {
+  adminPhotoUserId = userId;
+  adminPhotoDate = date;
+  adminPhotoData = null;
+  document.getElementById('adminPhotoText').textContent = 'Upload a photo for ' + date + '.';
+  document.getElementById('adminPhotoPreview').style.display = 'none';
+  document.getElementById('adminPhotoInput').value = '';
+  document.getElementById('adminPhotoSubmit').disabled = true;
+  document.getElementById('adminPhotoModal').style.display = 'flex';
+}
+
+function closeAdminPhotoModal() {
+  document.getElementById('adminPhotoModal').style.display = 'none';
+}
+
+function previewAdminPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    adminPhotoData = e.target.result;
+    document.getElementById('adminPhotoPreview').src = e.target.result;
+    document.getElementById('adminPhotoPreview').style.display = 'block';
+    document.getElementById('adminPhotoSubmit').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitAdminPhoto() {
+  if (!adminPhotoData || !adminPhotoUserId || !adminPhotoDate) return;
+  document.getElementById('adminPhotoSubmit').disabled = true;
+  document.getElementById('adminPhotoSubmit').textContent = 'Uploading...';
+  try {
+    const res = await fetch(API + '/api/admin/checkin/photo' + testParam(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin, ...testHeader() },
+      body: JSON.stringify({ selfie: adminPhotoData, user_id: adminPhotoUserId, date: adminPhotoDate })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeAdminPhotoModal();
+      loadCalendar();
+      loadAlbum();
+      showToast('Photo uploaded!');
+    } else showToast(data.error || 'Upload failed', 'error');
+  } catch(e) { showToast('Upload error', 'error'); }
+  document.getElementById('adminPhotoSubmit').disabled = false;
+  document.getElementById('adminPhotoSubmit').textContent = 'Upload';
 }
 
 /* =============================== */
