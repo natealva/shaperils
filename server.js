@@ -520,7 +520,23 @@ app.get('/api/calendar', async (req, res) => {
     };
   });
 
-  res.json({ calendar, month, users: users.map(u => ({ id: u.id, name: u.name })) });
+  // Compute streak & total check-ins for each user (for calendar user list)
+  const allWeekdays = [...store.getMarchWeekdays(), ...store.getAprilWeekdays()];
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const enrichedUsers = users.map(u => {
+    const userCheckins = checkins.filter(c => c.user_id === u.id);
+    const checkedDates = new Set(userCheckins.map(c => c.date));
+    // Calculate current streak
+    let streak = 0;
+    const relevantDays = allWeekdays.filter(d => d <= today).reverse();
+    for (const day of relevantDays) {
+      if (checkedDates.has(day)) streak++;
+      else break;
+    }
+    return { id: u.id, name: u.name, streak, total_checkins: checkedDates.size };
+  });
+
+  res.json({ calendar, month, users: enrichedUsers });
 });
 
 // ═══════════════════════════════════════════════════════════════

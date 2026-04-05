@@ -469,6 +469,9 @@
         <input type="tel" id="loginPhone" placeholder="(555) 123-4567" />
       </div>
       <button class="btn btn-primary" onclick="doLogin()">Join Shayprils</button>
+      <div style="text-align:center;margin-top:14px;">
+        <button onclick="enterGuestMode()" style="background:none;border:none;color:var(--text-muted);font-size:0.85rem;cursor:pointer;text-decoration:underline;font-family:inherit;">Just looking</button>
+      </div>
     </div>
   </div>
 </div>
@@ -484,6 +487,13 @@
     <div class="user-bar">
       <div class="greeting">Hey, <strong id="userNameDisplay"></strong></div>
       <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+
+    <!-- Guest mode banner -->
+    <div id="guestBanner" style="display:none;background:var(--green-bg);border:1px solid var(--green);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:0.9rem;color:var(--brown);font-weight:600;margin-bottom:6px;">You're browsing as a guest</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px;">Create an account to check in, take selfies, and join the fun!</div>
+      <button class="btn btn-primary" onclick="exitGuestMode()" style="padding:10px 24px;font-size:0.85rem;">Create an Account</button>
     </div>
 
     <!-- CHECK-IN TAB -->
@@ -734,6 +744,7 @@ const TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1
 function testParam() { return TEST_MODE ? '?test=1' : ''; }
 function testHeader() { return TEST_MODE ? { 'x-test-mode': '1' } : {}; }
 let currentUser = null;
+let guestMode = false;
 let cameraStream = null;
 let capturedImageData = null;
 let galleryUploadsAllowed = false;
@@ -807,12 +818,46 @@ function doLogout() {
 }
 
 function showApp() {
+  guestMode = false;
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('userNameDisplay').textContent = currentUser.name;
   document.getElementById('adminNavBtn').style.display = '';
+  // Show full UI for logged-in users
+  document.getElementById('tab-checkin').style.display = '';
+  document.getElementById('guestBanner').style.display = 'none';
+  document.querySelectorAll('[data-tab="rally"]').forEach(b => b.style.display = '');
+  document.querySelectorAll('[data-tab="checkin"]').forEach(b => b.style.display = '');
+  document.querySelector('.user-bar').style.display = '';
   checkTodayCheckin();
   renderNotificationSettings();
+}
+
+function enterGuestMode() {
+  guestMode = true;
+  currentUser = null;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('userNameDisplay').textContent = 'Guest';
+  document.getElementById('adminNavBtn').style.display = 'none';
+  // Hide logged-in-only UI
+  document.getElementById('tab-checkin').style.display = 'none';
+  document.getElementById('guestBanner').style.display = '';
+  document.querySelectorAll('[data-tab="rally"]').forEach(b => b.style.display = 'none');
+  document.querySelectorAll('[data-tab="checkin"]').forEach(b => b.style.display = 'none');
+  document.querySelector('.user-bar').style.display = 'none';
+  // Default to calendar tab
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-tab="calendar"]').classList.add('active');
+  document.getElementById('tab-calendar').classList.add('active');
+  loadCalendar();
+}
+
+function exitGuestMode() {
+  guestMode = false;
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
 }
 
 function getToken() {
@@ -1180,14 +1225,55 @@ async function loadCalendar() {
   } catch (e) {}
 }
 
+let calendarShowAllUsers = false;
+
 function renderCalendarUsers(users) {
   const container = document.getElementById('calUserSelect');
   if (!calendarSelectedUser && currentUser) calendarSelectedUser = currentUser.id;
 
-  container.innerHTML = users.map(u =>
+  // Find current user
+  const me = users.find(u => currentUser && u.id === currentUser.id);
+  // Active = streak of 2+ (excluding current user)
+  const active = users.filter(u => u.streak >= 2 && !(currentUser && u.id === currentUser.id))
+    .sort((a, b) => b.streak !== a.streak ? b.streak - a.streak : a.name.localeCompare(b.name));
+  // Remaining = everyone else (excluding current user)
+  const remaining = users.filter(u => u.streak < 2 && !(currentUser && u.id === currentUser.id))
+    .sort((a, b) => b.total_checkins !== a.total_checkins ? b.total_checkins - a.total_checkins : a.name.localeCompare(b.name));
+
+  const makeBtn = (u) =>
     `<button class="cal-user-btn ${u.id === calendarSelectedUser ? 'active' : ''}"
-      onclick="selectCalUser('${u.id}')">${escapeHtml(u.name)}</button>`
-  ).join('');
+      onclick="selectCalUser('${u.id}')">${escapeHtml(u.name)}</button>`;
+
+  let html = '';
+
+  // Current user — always shown at top
+  if (me) {
+    html += makeBtn(me);
+  }
+
+  // Active users section
+  if (active.length > 0) {
+    html += `<div style="width:100%;font-size:0.72rem;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px;margin-bottom:2px;">On a streak</div>`;
+    html += active.map(makeBtn).join('');
+  }
+
+  // Remaining users section — collapsible
+  if (remaining.length > 0) {
+    html += `<div style="width:100%;display:flex;align-items:center;gap:6px;margin-top:8px;margin-bottom:2px;cursor:pointer;" onclick="toggleCalendarAllUsers()">`;
+    html += `<span style="font-size:0.72rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Everyone else (${remaining.length})</span>`;
+    html += `<span style="font-size:0.7rem;color:var(--text-dim);transition:transform 0.2s;display:inline-block;transform:rotate(${calendarShowAllUsers ? '90deg' : '0deg'});">&#9654;</span>`;
+    html += `</div>`;
+    if (calendarShowAllUsers) {
+      html += remaining.map(makeBtn).join('');
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function toggleCalendarAllUsers() {
+  calendarShowAllUsers = !calendarShowAllUsers;
+  if (calendarData) renderCalendarUsers(calendarData.users);
 }
 
 function selectCalUser(userId) {
