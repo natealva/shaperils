@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Shayprils &mdash; Every. Single. Weekday.</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>">
   <style>
@@ -103,9 +103,8 @@
       padding: 0; z-index: 100;
       max-width: 520px; margin: 0 auto;
       box-shadow: 0 -2px 12px rgba(44,24,16,0.06);
-    }
-    @supports (padding-bottom: env(safe-area-inset-bottom)) {
-      .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      transition: transform 0.15s ease-out;
     }
     .nav-btn {
       flex: 1; padding: 10px 4px 8px; border: none; background: none;
@@ -348,7 +347,7 @@
       align-items: center; justify-content: center; padding: 20px;
     }
     .lightbox.visible { display: flex; }
-    .lightbox img { max-width: 100%; max-height: 70vh; border-radius: 12px; }
+    .lightbox img { max-width: 100%; max-height: 70vh; border-radius: 12px; display: block; }
     .lightbox-info {
       color: white; text-align: center; font-size: 0.9rem;
       margin-top: 12px;
@@ -657,7 +656,8 @@
       <div class="card">
         <div class="card-title"><span class="icon icon-brick">P</span> Shayprils Photo Album</div>
         <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 14px;">
-          Every check-in selfie from April, all in one place.
+          Every check-in selfie from April, all in one place.<br>
+          <span style="color:var(--brick);font-weight:500;">Tap a photo to give someone a Cheers! 🍻</span>
         </p>
         <div id="albumContent">
           <div class="empty-state">No photos yet. Be the first to check in!</div>
@@ -720,7 +720,13 @@
 <!-- Lightbox -->
 <div id="lightbox" class="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="event.stopPropagation();closeLightbox()">✕</button>
-  <img id="lightboxImg" src="" onclick="event.stopPropagation()" />
+  <div id="lightboxPhotoWrap" onclick="event.stopPropagation()" style="position:relative;display:inline-block;max-width:100%;max-height:70vh;">
+    <img id="lightboxImg" src="" style="display:block;max-width:100%;max-height:70vh;border-radius:12px;" />
+    <div id="lightboxCheers" onclick="event.stopPropagation()" style="position:absolute;bottom:10px;right:10px;z-index:2;display:flex;align-items:center;gap:8px;">
+      <button class="cheers-btn" id="cheersBtn" onclick="toggleCheers()">🍻 <span id="cheersCount">0</span></button>
+      <div id="cheersNames" style="color:white;font-size:0.78rem;max-width:200px;text-shadow:0 1px 3px rgba(0,0,0,0.8);"></div>
+    </div>
+  </div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:10001;">
     <button id="lightboxSaveBtn" class="lightbox-download" onclick="event.stopPropagation();saveLightboxPhoto(event)">Save Photo</button>
     <button id="lightboxDelete" class="lightbox-download" style="background:#e74c3c;" onclick="event.stopPropagation();deleteLightboxPhoto()">Delete Photo</button>
@@ -747,10 +753,6 @@
         </select>
       </label>
     </div>
-  </div>
-  <div id="lightboxCheers" onclick="event.stopPropagation()" style="position:absolute;top:20px;left:20px;z-index:10001;display:flex;align-items:center;gap:8px;">
-    <button class="cheers-btn" id="cheersBtn" onclick="toggleCheers()">🍻 <span id="cheersCount">0</span></button>
-    <div id="cheersNames" style="color:white;font-size:0.78rem;max-width:200px;text-shadow:0 1px 3px rgba(0,0,0,0.8);"></div>
   </div>
   <div class="lightbox-info" id="lightboxInfo"></div>
 </div>
@@ -2474,6 +2476,18 @@ async function saveSelfieToCameraRoll(dataUrl) {
   if (await checkAuth()) {
     showApp();
   }
+})();
+
+// Keep bottom nav above mobile browser toolbar using Visual Viewport API
+(function() {
+  const nav = document.querySelector('.bottom-nav');
+  if (!nav || !window.visualViewport) return;
+  function adjustNav() {
+    const vvBottom = window.innerHeight - (window.visualViewport.offsetTop + window.visualViewport.height);
+    nav.style.transform = vvBottom > 0 ? 'translateY(-' + vvBottom + 'px)' : 'translateY(0)';
+  }
+  window.visualViewport.addEventListener('resize', adjustNav);
+  window.visualViewport.addEventListener('scroll', adjustNav);
 })();
 
   </script>
