@@ -51,6 +51,54 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
   console.warn('Twilio credentials not set — running in demo mode');
 }
 
+// ─── Twilio A2P Campaign Gate ───────────────────────────────
+// Blocks outbound SMS until the US A2P 10DLC campaign is approved by
+// carriers, so we don't get billed for attempts that will be rejected.
+// Status is cached for 6 hours and auto-refreshes, so once Twilio
+// approves the campaign, sends automatically resume with no action.
+const TWILIO_MESSAGING_SERVICE_SID =
+  process.env.TWILIO_MESSAGING_SERVICE_SID || 'BNdaf937f16d19b9ba50dc0c17597297c9';
+const TWILIO_CAMPAIGN_SID =
+  process.env.TWILIO_CAMPAIGN_SID || 'CM81b6798d82734e3207181d0598bb7866';
+const CAMPAIGN_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+let _campaignCache = { status: null, checkedAt: 0 };
+
+async function isA2pCampaignApproved() {
+  // Emergency override — set SMS_GATE_DISABLED=true to force-allow sends
+  // (e.g. if we want to bypass the check during troubleshooting).
+  if (process.env.SMS_GATE_DISABLED === 'true') return true;
+
+  if (!twilioClient || !TWILIO_MESSAGING_SERVICE_SID || !TWILIO_CAMPAIGN_SID) {
+    return false;
+  }
+
+  const now = Date.now();
+  const cacheFresh = _campaignCache.status &&
+    (now - _campaignCache.checkedAt) < CAMPAIGN_CACHE_TTL_MS;
+  if (cacheFresh) {
+    return _campaignCache.status === 'VERIFIED';
+  }
+
+  try {
+    const campaign = await twilioClient.messaging.v1
+      .services(TWILIO_MESSAGING_SERVICE_SID)
+      .usAppToPerson(TWILIO_CAMPAIGN_SID)
+      .fetch();
+    const status = campaign.campaignStatus || campaign.campaign_status || 'UNKNOWN';
+    _campaignCache = { status, checkedAt: now };
+    console.log(`[A2P Gate] Campaign status refreshed: ${status}`);
+    return status === 'VERIFIED';
+  } catch (err) {
+    console.error('[A2P Gate] Failed to fetch campaign status:', err.message);
+    // On fetch error, fall back to last known status if we have one,
+    // otherwise block to be safe.
+    if (_campaignCache.status) {
+      return _campaignCache.status === 'VERIFIED';
+    }
+    return false;
+  }
+}
+
 // ─── Auth middleware ────────────────────────────────────────
 async function authMiddleware(req, res, next) {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
@@ -77,6 +125,24 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null, 
     : subscribers;
 
   if (recipients.length === 0) return { sent: 0, total: 0 };
+
+  // A2P gate: if the 10DLC campaign isn't approved yet, don't call Twilio
+  // at all — every attempt would be rejected by carriers and we'd still
+  // get billed. Once the campaign flips to VERIFIED, the cache picks it
+  // up on the next refresh (within 6 hours) and sends resume automatically.
+  const approved = await isA2pCampaignApproved();
+  if (!approved) {
+    const status = _campaignCache.status || 'unknown';
+    console.log(`[A2P Gate] Blocked broadcast to ${recipients.length} subscriber(s) — campaign status: ${status}`);
+    await store.logMessage(senderName, 'broadcast_blocked', messageText, 0, testMode);
+    return {
+      sent: 0,
+      total: recipients.length,
+      blocked: true,
+      reason: 'campaign_not_approved',
+      campaign_status: status,
+    };
+  }
 
   let sentCount = 0;
   for (const sub of recipients) {

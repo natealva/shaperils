@@ -754,7 +754,6 @@
       </label>
     </div>
   </div>
-  <div class="lightbox-info" id="lightboxInfo"></div>
 </div>
 
 <!-- Vouch Request Modal -->
@@ -1786,7 +1785,6 @@ function openLightbox(src, name, date, checkinId, ownerId, drinks) {
   window._currentCheckinId = checkinId || null;
   window._currentCheckinOwnerId = ownerId || null;
   window._currentCheckinDate = date || null;
-  document.getElementById('lightboxInfo').textContent = name + ' — ' + date;
   document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
   document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
   // Only show delete if this is the user's own photo or they're admin
