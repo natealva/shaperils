@@ -1595,11 +1595,19 @@ async function submitVouchRequest() {
 }
 
 async function loadVouchRequests() {
+  const card = document.getElementById('vouchRequestsCard');
+  // Only the admin sees pending vouch requests. Hide the card entirely
+  // for everyone else and skip the network call.
+  if (!adminPin) {
+    if (card) card.classList.add('hidden');
+    return;
+  }
   try {
-    const res = await fetch(API + '/api/vouch/pending', { headers: authHeaders() });
+    const res = await fetch(API + '/api/vouch/pending', {
+      headers: { ...authHeaders(), 'x-admin-pin': adminPin },
+    });
     const data = await res.json();
     const list = document.getElementById('vouchRequestsList');
-    const card = document.getElementById('vouchRequestsCard');
 
     if (data.vouches && data.vouches.length > 0) {
       card.classList.remove('hidden');
@@ -1620,10 +1628,14 @@ async function loadVouchRequests() {
 }
 
 async function approveVouch(vouchId) {
+  if (!adminPin) {
+    showToast('Only the admin can approve vouches', 'error');
+    return;
+  }
   try {
     const res = await fetch(API + '/api/vouch/approve', {
       method: 'POST',
-      headers: authHeaders(),
+      headers: { ...authHeaders(), 'x-admin-pin': adminPin },
       body: JSON.stringify({ vouchId }),
     });
     const data = await res.json();

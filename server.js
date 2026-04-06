@@ -669,6 +669,11 @@ app.post('/api/vouch/request', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/vouch/pending', authMiddleware, async (req, res) => {
+  // Only the admin sees pending vouch requests. Non-admins get an empty
+  // list so the UI card stays hidden for them without erroring out.
+  if (req.headers['x-admin-pin'] !== ADMIN_PIN) {
+    return res.json({ vouches: [] });
+  }
   const vouches = await store.getPendingVouchRequests(req.user.id, req.testMode);
   res.json({ vouches });
 });
@@ -680,6 +685,10 @@ app.get('/api/vouch/list', async (req, res) => {
 });
 
 app.post('/api/vouch/approve', authMiddleware, async (req, res) => {
+  // Only the admin can approve vouches.
+  if (req.headers['x-admin-pin'] !== ADMIN_PIN) {
+    return res.status(403).json({ error: 'Only the admin can approve vouches' });
+  }
   const { vouchId } = req.body;
   if (!vouchId) return res.status(400).json({ error: 'Vouch ID required' });
 
