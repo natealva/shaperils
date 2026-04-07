@@ -740,12 +740,20 @@ app.get('/api/calendar', async (req, res) => {
   const enrichedUsers = users.map(u => {
     const userCheckins = checkins.filter(c => c.user_id === u.id);
     const checkedDates = new Set(userCheckins.map(c => c.date));
-    // Calculate current streak
+    // Calculate current streak. Today gets the benefit of the doubt:
+    // if it's still in progress and the user hasn't checked in yet, we
+    // skip today instead of treating it as a miss. Any prior unchecked
+    // weekday is still a hard streak-breaker.
     let streak = 0;
     const relevantDays = allWeekdays.filter(d => d <= today).reverse();
     for (const day of relevantDays) {
-      if (checkedDates.has(day)) streak++;
-      else break;
+      if (checkedDates.has(day)) {
+        streak++;
+      } else if (day === today) {
+        continue;
+      } else {
+        break;
+      }
     }
     return { id: u.id, name: u.name, streak, total_checkins: checkedDates.size };
   });
