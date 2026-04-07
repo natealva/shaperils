@@ -808,6 +808,133 @@ app.delete('/api/admin/messages/:id', adminAuth, async (req, res) => {
   res.json(result);
 });
 
+// ─── Hype Bot: recap data + post-to-feed ───────────────────
+// GET /api/admin/recap?date=YYYY-MM-DD
+// Returns everything the Hype Bot needs to write a daily recap.
+// If date is omitted, defaults to "yesterday in America/New_York".
+app.get('/api/admin/recap', adminAuth, async (req, res) => {
+  try {
+    const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+
+    // Default to yesterday in ET
+    let targetDate = req.query.date;
+    if (!targetDate) {
+      const nowEt = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      nowEt.setDate(nowEt.getDate() - 1);
+      targetDate = nowEt.toISOString().slice(0, 10);
+    }
+
+    const [checkins, users] = await Promise.all([
+      store.getAllCheckins(testMode),
+      store.getAllUsers(testMode),
+    ]);
+
+    const dayCheckins = checkins.filter(c => c.date === targetDate);
+    const checkinIds = dayCheckins.map(c => c.id);
+
+    let cheersMap = {};
+    try { cheersMap = await store.getCheersForCheckins(checkinIds); } catch (e) {}
+
+    const userMap = {};
+    users.forEach(u => { userMap[u.id] = u; });
+
+    // Per-checkin breakdown w/ cheers
+    const checkinDetails = dayCheckins.map(c => ({
+      id: c.id,
+      user_id: c.user_id,
+      user_name: c.user_name || (userMap[c.user_id] && userMap[c.user_id].name) || 'Unknown',
+      selfie: c.selfie || null,
+      drinks: c.drinks != null ? c.drinks : null,
+      cheers_count: (cheersMap[c.id] || []).length,
+      cheers: (cheersMap[c.id] || []).map(x => x.user_name),
+    }));
+
+    // Per-user totals for the day
+    const perUserMap = {};
+    for (const c of checkinDetails) {
+      if (!perUserMap[c.user_id]) {
+        perUserMap[c.user_id] = { user_id: c.user_id, user_name: c.user_name, count: 0, total_drinks: 0, total_cheers: 0 };
+      }
+      perUserMap[c.user_id].count += 1;
+      if (c.drinks != null) perUserMap[c.user_id].total_drinks += Number(c.drinks) || 0;
+      perUserMap[c.user_id].total_cheers += c.cheers_count;
+    }
+    const perUser = Object.values(perUserMap).sort((a, b) => b.count - a.count || b.total_drinks - a.total_drinks);
+
+    // Top cheered photo of the day
+    let topCheered = null;
+    for (const c of checkinDetails) {
+      if (!topCheered || c.cheers_count > topCheered.cheers_count) topCheered = c;
+    }
+    if (topCheered && topCheered.cheers_count === 0) topCheered = null;
+
+    // Streaks/leaderboard, computed the same way as the calendar endpoint
+    const allWeekdays = [...store.getMarchWeekdays(), ...store.getAprilWeekdays()];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const leaderboard = users.map(u => {
+      const userCheckins = checkins.filter(c => c.user_id === u.id);
+      const checkedDates = new Set(userCheckins.map(c => c.date));
+      let streak = 0;
+      const relevantDays = allWeekdays.filter(d => d <= today).reverse();
+      for (const day of relevantDays) {
+        if (checkedDates.has(day)) streak++;
+        else if (day === today) continue;
+        else break;
+      }
+      return { id: u.id, name: u.name, streak, total_checkins: checkedDates.size };
+    }).sort((a, b) => b.streak - a.streak || b.total_checkins - a.total_checkins);
+
+    // Vouches approved on this date (if helper exists)
+    let vouches = [];
+    try {
+      const all = await store.getAllVouches(testMode);
+      vouches = (all || []).filter(v => v.date === targetDate && v.status === 'approved');
+    } catch (e) {}
+
+    // Yesterday-vs-day-before delta
+    const dayBefore = (() => {
+      const d = new Date(targetDate + 'T12:00:00');
+      d.setDate(d.getDate() - 1);
+      return d.toISOString().slice(0, 10);
+    })();
+    const dayBeforeCount = checkins.filter(c => c.date === dayBefore).length;
+
+    res.json({
+      date: targetDate,
+      day_of_week: new Date(targetDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
+      total_checkins: dayCheckins.length,
+      unique_visitors: perUser.length,
+      day_before: { date: dayBefore, total_checkins: dayBeforeCount },
+      per_user: perUser,
+      checkins: checkinDetails,
+      top_cheered: topCheered,
+      vouches_approved: vouches,
+      leaderboard,
+    });
+  } catch (err) {
+    console.error('[recap] failed:', err);
+    res.status(500).json({ error: 'Failed to build recap', details: err.message });
+  }
+});
+
+// POST /api/admin/post-feed { sender_name, message_text }
+// Drops a system message into the activity feed (does NOT send any SMS).
+app.post('/api/admin/post-feed', adminAuth, async (req, res) => {
+  try {
+    const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+    const senderName = (req.body && req.body.sender_name) || 'Shayprils Hype Bot';
+    const messageText = req.body && req.body.message_text;
+    if (!messageText || !messageText.trim()) {
+      return res.status(400).json({ error: 'message_text is required' });
+    }
+    await store.logMessage(senderName, 'system', messageText, 0, testMode);
+    res.json({ success: true, posted_at: new Date().toISOString() });
+  } catch (err) {
+    console.error('[post-feed] failed:', err);
+    res.status(500).json({ error: 'Failed to post to feed', details: err.message });
+  }
+});
+
 // Fully erase a user account and all their data
 app.delete('/api/admin/users/:id/erase', adminAuth, async (req, res) => {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';

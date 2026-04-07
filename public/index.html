@@ -363,6 +363,44 @@
     .lightbox-download{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--brick);color:white;padding:10px 24px;border-radius:20px;text-decoration:none;font-weight:600;font-size:0.95rem;z-index:10001;cursor:pointer;}
     .lightbox-download:hover{background:var(--brick-dark);}
 
+    /* === Lightbox carousel nav === */
+    .lightbox-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(0,0,0,0.5); color: white; border: none;
+      width: 44px; height: 44px; border-radius: 50%; font-size: 1.4rem;
+      cursor: pointer; z-index: 10002; display: none;
+      align-items: center; justify-content: center; line-height: 1;
+    }
+    .lightbox-nav:hover { background: rgba(0,0,0,0.75); }
+    .lightbox-nav.visible { display: flex; }
+    .lightbox-nav.prev { left: 16px; }
+    .lightbox-nav.next { right: 16px; }
+    .lightbox-pagedots {
+      position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+      display: none; gap: 6px; z-index: 10002;
+    }
+    .lightbox-pagedots.visible { display: flex; }
+    .lightbox-pagedots .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+    }
+    .lightbox-pagedots .dot.active { background: #f0c040; }
+
+    /* === Calendar tile stacked-pages indicator === */
+    .cal-day.has-multi {
+      box-shadow:
+        2px 2px 0 -1px rgba(255,255,255,0.85),
+        2px 2px 0 0 var(--brown),
+        4px 4px 0 -1px rgba(255,255,255,0.85),
+        4px 4px 0 0 var(--brown);
+    }
+    .cal-day .multi-badge {
+      position: absolute; top: 4px; right: 4px;
+      background: rgba(0,0,0,0.6); color: #f0c040;
+      font-size: 0.62rem; font-weight: 700;
+      padding: 1px 5px; border-radius: 8px; pointer-events: none;
+    }
+
     /* === Cheers reactions === */
     .cheers-btn {
       background: rgba(0,0,0,0.5); border: 2px solid transparent; color: white;
@@ -723,6 +761,9 @@
 <!-- Lightbox -->
 <div id="lightbox" class="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="event.stopPropagation();closeLightbox()">✕</button>
+  <button id="lightboxPrev" class="lightbox-nav prev" onclick="event.stopPropagation();lightboxNav(-1)">‹</button>
+  <button id="lightboxNext" class="lightbox-nav next" onclick="event.stopPropagation();lightboxNav(1)">›</button>
+  <div id="lightboxPageDots" class="lightbox-pagedots" onclick="event.stopPropagation()"></div>
   <div id="lightboxPhotoWrap" onclick="event.stopPropagation()" style="position:relative;display:inline-block;max-width:100%;max-height:70vh;">
     <img id="lightboxImg" src="" style="display:block;max-width:100%;max-height:70vh;border-radius:12px;" />
     <div id="lightboxCheers" onclick="event.stopPropagation()" style="position:absolute;bottom:10px;right:10px;z-index:2;display:flex;align-items:center;gap:8px;">
@@ -1426,9 +1467,16 @@ async function renderCalendar(calendar, userId) {
   let html = '';
   for (let i = 0; i < firstDayOffset; i++) html += '<div></div>';
 
+  // Reset registry of multi-checkin groups (used by inline onclick handlers below)
+  window._calCheckinGroups = window._calCheckinGroups || {};
   for (const day of calendar) {
-    const userCheckin = userId ? day.checkins.find(c => c.user_id === userId) : null;
+    const userCheckins = userId ? day.checkins.filter(c => c.user_id === userId) : [];
+    // Sort newest-first so the freshest selfie shows on the tile background.
+    // Check-in IDs are timestamp-suffixed (checkin_<ms>), so id-desc sort works.
+    userCheckins.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    const userCheckin = userCheckins[0] || null;
     const userCheckedIn = !!userCheckin;
+    const multiCount = userCheckins.length;
     const isToday = day.date === today;
     const isFuture = day.date > today;
 
@@ -1464,8 +1512,23 @@ async function renderCalendar(calendar, userId) {
     let clickHandler = '';
     if (hasSelfie) {
       const calDrinkVal = userCheckin.drinks != null ? userCheckin.drinks : '';
-      clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', \'' + userCheckin.id + '\', \'' + userCheckin.user_id + '\', \'' + calDrinkVal + '\')"';
-      cls += ' has-selfie';
+      if (multiCount > 1) {
+        // Multiple check-ins on the same day → register the group and open the carousel
+        const groupKey = userId + '_' + day.date;
+        window._calCheckinGroups[groupKey] = userCheckins.map(c => ({
+          src: selfieUrl(c.selfie),
+          name: c.user_name,
+          date: day.date,
+          checkinId: c.id,
+          ownerId: c.user_id,
+          drinks: c.drinks != null ? c.drinks : '',
+        }));
+        clickHandler = 'onclick="openLightboxGroup(\'' + groupKey + '\', 0)"';
+        cls += ' has-selfie has-multi';
+      } else {
+        clickHandler = 'onclick="openLightbox(\'' + selfieImgUrl + '\', \'' + escapeHtml(userCheckin.user_name) + '\', \'' + day.date + '\', \'' + userCheckin.id + '\', \'' + userCheckin.user_id + '\', \'' + calDrinkVal + '\')"';
+        cls += ' has-selfie';
+      }
     } else if (canUploadVouchSelfie) {
       clickHandler = 'onclick="openVouchSelfieModal(\'' + day.date + '\')"';
     } else if (canRequestVouch) {
@@ -1481,6 +1544,9 @@ async function renderCalendar(calendar, userId) {
     if (!hasSelfie) html += '<span class="day-indicator"></span>';
     if (hasSelfie && userCheckin.cheers_count > 0) {
       html += '<div class="cheers-badge">🍻 ' + userCheckin.cheers_count + '</div>';
+    }
+    if (multiCount > 1) {
+      html += '<div class="multi-badge">×' + multiCount + '</div>';
     }
     html += '</div>';
   }
@@ -1819,34 +1885,112 @@ function getTimeAgo(date) {
 }
 
 function openLightbox(src, name, date, checkinId, ownerId, drinks) {
-  document.getElementById('lightboxImg').src = src;
-  window._currentCheckinId = checkinId || null;
-  window._currentCheckinOwnerId = ownerId || null;
-  window._currentCheckinDate = date || null;
-  document.getElementById('lightboxSaveBtn').setAttribute('data-src', src);
-  document.getElementById('lightboxSaveBtn').setAttribute('data-name', name + '_' + date);
-  // Only show delete if this is the user's own photo or they're admin
-  const isOwner = currentUser && ownerId && currentUser.id === ownerId;
+  // Single-item entry point — wrap in a 1-item carousel
+  openLightboxItems([{ src, name, date, checkinId, ownerId, drinks }], 0);
+}
+
+function openLightboxGroup(groupKey, startIndex) {
+  const items = (window._calCheckinGroups && window._calCheckinGroups[groupKey]) || [];
+  if (!items.length) return;
+  openLightboxItems(items, startIndex || 0);
+}
+
+function openLightboxItems(items, startIndex) {
+  window._lightboxItems = items || [];
+  window._lightboxIndex = Math.max(0, Math.min(startIndex || 0, window._lightboxItems.length - 1));
+  _renderLightboxItem();
+  document.getElementById('lightbox').classList.add('visible');
+}
+
+function _renderLightboxItem() {
+  const items = window._lightboxItems || [];
+  const idx = window._lightboxIndex || 0;
+  const it = items[idx];
+  if (!it) return;
+  document.getElementById('lightboxImg').src = it.src;
+  window._currentCheckinId = it.checkinId || null;
+  window._currentCheckinOwnerId = it.ownerId || null;
+  window._currentCheckinDate = it.date || null;
+  document.getElementById('lightboxSaveBtn').setAttribute('data-src', it.src);
+  document.getElementById('lightboxSaveBtn').setAttribute('data-name', (it.name || '') + '_' + (it.date || '') + (items.length > 1 ? '_' + (idx + 1) : ''));
+  const isOwner = currentUser && it.ownerId && currentUser.id === it.ownerId;
   const isAdmin = !!adminPin;
   document.getElementById('lightboxDelete').style.display = (isOwner || isAdmin) ? 'block' : 'none';
-  // Admin replace photo button
   document.getElementById('lightboxAdminUpload').style.display = isAdmin ? 'block' : 'none';
-  // Drinks input — only show for the photo owner
   const drinksSection = document.getElementById('lightboxDrinks');
   const drinksSelect = document.getElementById('drinksSelect');
   if (isOwner) {
     drinksSection.style.display = 'block';
-    drinksSelect.value = (drinks !== undefined && drinks !== '' && drinks !== 'undefined') ? drinks : '';
+    drinksSelect.value = (it.drinks !== undefined && it.drinks !== '' && it.drinks !== 'undefined') ? it.drinks : '';
   } else {
     drinksSection.style.display = 'none';
   }
-  // Cheers — show button only for logged-in users, but always show count
   const cheersDiv = document.getElementById('lightboxCheers');
-  cheersDiv.style.display = checkinId ? 'flex' : 'none';
+  cheersDiv.style.display = it.checkinId ? 'flex' : 'none';
   document.getElementById('cheersBtn').style.display = (currentUser && !guestMode) ? 'flex' : 'none';
-  loadCheers(checkinId);
-  document.getElementById('lightbox').classList.add('visible');
+  loadCheers(it.checkinId);
+
+  // Carousel chrome — only show when there's more than one item
+  const multi = items.length > 1;
+  document.getElementById('lightboxPrev').classList.toggle('visible', multi);
+  document.getElementById('lightboxNext').classList.toggle('visible', multi);
+  const dotsEl = document.getElementById('lightboxPageDots');
+  dotsEl.classList.toggle('visible', multi);
+  if (multi) {
+    let dotsHtml = '';
+    for (let i = 0; i < items.length; i++) {
+      dotsHtml += '<div class="dot' + (i === idx ? ' active' : '') + '"></div>';
+    }
+    dotsEl.innerHTML = dotsHtml;
+  }
 }
+
+function lightboxNav(delta) {
+  const items = window._lightboxItems || [];
+  if (items.length < 2) return;
+  const n = items.length;
+  window._lightboxIndex = ((window._lightboxIndex || 0) + delta + n) % n;
+  _renderLightboxItem();
+}
+
+// Swipe gesture support for the lightbox carousel
+(function attachLightboxSwipe() {
+  if (window._lightboxSwipeAttached) return;
+  window._lightboxSwipeAttached = true;
+  let startX = null, startY = null;
+  function attach() {
+    const wrap = document.getElementById('lightboxPhotoWrap');
+    if (!wrap) return;
+    wrap.addEventListener('touchstart', function(e) {
+      if (!e.touches || !e.touches[0]) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    wrap.addEventListener('touchend', function(e) {
+      if (startX == null) return;
+      const t = (e.changedTouches && e.changedTouches[0]) || null;
+      if (!t) { startX = null; return; }
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      startX = null; startY = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        lightboxNav(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attach);
+  } else {
+    attach();
+  }
+  // Keyboard nav as a bonus
+  document.addEventListener('keydown', function(e) {
+    if (!document.getElementById('lightbox').classList.contains('visible')) return;
+    if (e.key === 'ArrowLeft') lightboxNav(-1);
+    else if (e.key === 'ArrowRight') lightboxNav(1);
+    else if (e.key === 'Escape') closeLightbox();
+  });
+})();
 
 async function loadCheers(checkinId) {
   if (!checkinId) return;
