@@ -2269,8 +2269,7 @@ async function loadLeaderboard() {
           <div class="lb-info">
             <div class="lb-name">${escapeHtml(entry.name)}${drinksLabel ? '<span style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-left:6px;">' + drinksLabel + '</span>' : ''}</div>
             <div class="lb-stats">
-              ${entry.weekdays_hit} days &middot; ${entry.streak} streak
-              ${entry.weekdays_missed > 0 ? '&middot; ' + entry.weekdays_missed + ' missed' : ''}
+              ${entry.weekdays_hit} days &middot; ${entry.streak} streak &middot; ${entry.weekdays_missed} missed
             </div>
           </div>
           <div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct}%"></div></div>
