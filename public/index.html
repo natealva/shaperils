@@ -1322,18 +1322,24 @@ async function loadCalendar() {
 }
 
 let calendarShowAllUsers = false;
+let calendarShowShame = false;
 
 function renderCalendarUsers(users) {
   const container = document.getElementById('calUserSelect');
   if (!calendarSelectedUser && currentUser) calendarSelectedUser = currentUser.id;
 
+  const isMe = (u) => currentUser && u.id === currentUser.id;
+
   // Find current user
-  const me = users.find(u => currentUser && u.id === currentUser.id);
+  const me = users.find(isMe);
   // Active = streak of 2+ (excluding current user)
-  const active = users.filter(u => u.streak >= 2 && !(currentUser && u.id === currentUser.id))
+  const active = users.filter(u => u.streak >= 2 && !isMe(u))
     .sort((a, b) => b.streak !== a.streak ? b.streak - a.streak : a.name.localeCompare(b.name));
-  // Remaining = everyone else (excluding current user)
-  const remaining = users.filter(u => u.streak < 2 && !(currentUser && u.id === currentUser.id))
+  // Wall of Shayme = checked in 0 or 1 times (excluding current user)
+  const shame = users.filter(u => u.total_checkins <= 1 && !isMe(u))
+    .sort((a, b) => a.total_checkins !== b.total_checkins ? a.total_checkins - b.total_checkins : a.name.localeCompare(b.name));
+  // Everyone else = not on a streak, but has checked in more than once
+  const remaining = users.filter(u => u.streak < 2 && u.total_checkins > 1 && !isMe(u))
     .sort((a, b) => b.total_checkins !== a.total_checkins ? b.total_checkins - a.total_checkins : a.name.localeCompare(b.name));
 
   const makeBtn = (u) =>
@@ -1353,7 +1359,7 @@ function renderCalendarUsers(users) {
     html += active.map(makeBtn).join('');
   }
 
-  // Remaining users section — collapsible
+  // Everyone else section — collapsible
   if (remaining.length > 0) {
     html += `<div style="width:100%;display:flex;align-items:center;gap:6px;margin-top:8px;margin-bottom:2px;cursor:pointer;" onclick="toggleCalendarAllUsers()">`;
     html += `<span style="font-size:0.72rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Everyone else (${remaining.length})</span>`;
@@ -1364,11 +1370,27 @@ function renderCalendarUsers(users) {
     }
   }
 
+  // Wall of Shayme section — collapsible (0 or 1 check-ins)
+  if (shame.length > 0) {
+    html += `<div style="width:100%;display:flex;align-items:center;gap:6px;margin-top:8px;margin-bottom:2px;cursor:pointer;" onclick="toggleCalendarShame()">`;
+    html += `<span style="font-size:0.72rem;font-weight:600;color:var(--brick);text-transform:uppercase;letter-spacing:0.5px;">Wall of Shayme (${shame.length})</span>`;
+    html += `<span style="font-size:0.7rem;color:var(--brick);transition:transform 0.2s;display:inline-block;transform:rotate(${calendarShowShame ? '90deg' : '0deg'});">&#9654;</span>`;
+    html += `</div>`;
+    if (calendarShowShame) {
+      html += shame.map(makeBtn).join('');
+    }
+  }
+
   container.innerHTML = html;
 }
 
 function toggleCalendarAllUsers() {
   calendarShowAllUsers = !calendarShowAllUsers;
+  if (calendarData) renderCalendarUsers(calendarData.users);
+}
+
+function toggleCalendarShame() {
+  calendarShowShame = !calendarShowShame;
   if (calendarData) renderCalendarUsers(calendarData.users);
 }
 

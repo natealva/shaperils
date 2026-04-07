@@ -142,11 +142,20 @@ function getAprilWeekdays() {
 }
 
 function calculateStreak(weekdays, checkedDates, today) {
+  // Walk weekdays backwards from today. Today gets the benefit of the
+  // doubt: if it's still in progress and the user hasn't checked in yet,
+  // we skip it instead of breaking the streak. Any prior unchecked
+  // weekday is still treated as a hard miss.
   let streak = 0;
   const relevantDays = weekdays.filter(d => d <= today).reverse();
   for (const day of relevantDays) {
-    if (checkedDates.has(day)) streak++;
-    else break;
+    if (checkedDates.has(day)) {
+      streak++;
+    } else if (day === today) {
+      continue;
+    } else {
+      break;
+    }
   }
   return streak;
 }
@@ -397,8 +406,10 @@ async function getLeaderboard(testMode = false) {
       ...userVouches.map(v => v.date),
     ]);
     const weekdaysHit = allWeekdays.filter(d => checkedDates.has(d));
-    // Only count missed days in APRIL (not March)
-    const weekdaysMissed = aprilWeekdays.filter(d => d <= today && !checkedDates.has(d));
+    // Only count missed days in APRIL (not March), and give today the
+    // benefit of the doubt — only mark a day as missed once it has fully
+    // passed, so the streak doesn't break mid-day.
+    const weekdaysMissed = aprilWeekdays.filter(d => d < today && !checkedDates.has(d));
 
     // Sum drinks from check-ins
     const totalDrinks = userCheckins.reduce((sum, c) => sum + (c.drinks || 0), 0);
