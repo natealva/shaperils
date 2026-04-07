@@ -1375,8 +1375,8 @@ function renderCalendarUsers(users) {
   // Wall of Shayme section — collapsible (0 or 1 check-ins)
   if (shame.length > 0) {
     html += `<div style="width:100%;display:flex;align-items:center;gap:6px;margin-top:8px;margin-bottom:2px;cursor:pointer;" onclick="toggleCalendarShame()">`;
-    html += `<span style="font-size:0.72rem;font-weight:600;color:var(--brick);text-transform:uppercase;letter-spacing:0.5px;">Wall of Shayme (${shame.length})</span>`;
-    html += `<span style="font-size:0.7rem;color:var(--brick);transition:transform 0.2s;display:inline-block;transform:rotate(${calendarShowShame ? '90deg' : '0deg'});">&#9654;</span>`;
+    html += `<span style="font-size:0.72rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Wall of Shayme (${shame.length})</span>`;
+    html += `<span style="font-size:0.7rem;color:var(--text-dim);transition:transform 0.2s;display:inline-block;transform:rotate(${calendarShowShame ? '90deg' : '0deg'});">&#9654;</span>`;
     html += `</div>`;
     if (calendarShowShame) {
       html += shame.map(makeBtn).join('');
