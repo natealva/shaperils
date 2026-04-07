@@ -255,12 +255,14 @@
     .cal-day.today { border-color: var(--brick); box-shadow: 0 0 0 2px rgba(155,59,59,0.15); }
     .cal-day.hit { background: var(--green-light); border-color: rgba(74,124,89,0.4); color: var(--green); }
     .cal-day.missed { background: var(--red-bg); border-color: rgba(193,57,43,0.3); color: var(--red-accent); }
+    .cal-day.today-pending { background: #E3EEF7; border-color: rgba(61,106,142,0.45); color: #2D5878; }
     .cal-day.vouched { background: #FFF3E0; border-color: rgba(210,150,60,0.5); color: #B8100B; }
     .cal-day.pending-vouch { background: #FFF8E1; border-color: rgba(210,150,60,0.3); color: #D2960C; border-style: dashed; }
     .cal-day .day-num { font-size: 0.95rem; }
     .cal-day .day-indicator { font-size: 0.65rem; margin-top: 1px; }
     .cal-day.hit .day-indicator::after { content: 'Yes'; }
     .cal-day.missed .day-indicator::after { content: 'No'; }
+    .cal-day.today-pending .day-indicator::after { content: 'Today'; font-size: 0.6rem; }
     .cal-day.vouched .day-indicator::after { content: 'Vouched'; font-size: 0.55rem; }
     .cal-day.pending-vouch .day-indicator::after { content: 'Pending'; font-size: 0.55rem; }
     .cal-day.missed.clickable { cursor: pointer; }
@@ -1439,7 +1441,8 @@ async function renderCalendar(calendar, userId) {
     if (isFuture) cls += ' future';
     else if (userCheckedIn || isVouched) cls += (isVouched ? ' vouched' : ' hit');
     else if (isPendingVouch) cls += ' pending-vouch';
-    else if (!isFuture) cls += ' missed';
+    else if (isToday) cls += ' today-pending'; // benefit of the doubt — day still in progress
+    else cls += ' missed';
 
     const canRequestVouch = isMyCalendar && !userCheckedIn && !isVouched && !isPendingVouch && !isFuture && !isToday;
     if (canRequestVouch) cls += ' clickable';
