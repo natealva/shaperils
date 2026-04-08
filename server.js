@@ -118,6 +118,14 @@ function adminAuth(req, res, next) {
 }
 
 // ─── Helper: Send SMS ───────────────────────────────────────
+// Sending strategy (in priority order):
+//   1. If TWILIO_TFN_FROM is set, send from the toll-free number. Toll-free
+//      has its own verification track (not 10DLC) and can send right away
+//      at reduced throughput while verification is pending. This BYPASSES
+//      the A2P 10DLC campaign gate because it isn't subject to it.
+//   2. Otherwise, fall back to the 10DLC long code, gated by the A2P
+//      campaign status check so we don't get billed for carrier-rejected
+//      attempts while the campaign is still pending.
 async function sendToSubscribers(senderName, messageText, excludeUserId = null, testMode = false) {
   const subscribers = await store.getSubscribedUsers(testMode);
   const recipients = excludeUserId
@@ -126,34 +134,39 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null, 
 
   if (recipients.length === 0) return { sent: 0, total: 0 };
 
-  // A2P gate: if the 10DLC campaign isn't approved yet, don't call Twilio
-  // at all — every attempt would be rejected by carriers and we'd still
-  // get billed. Once the campaign flips to VERIFIED, the cache picks it
-  // up on the next refresh (within 6 hours) and sends resume automatically.
-  const approved = await isA2pCampaignApproved();
-  if (!approved) {
-    const status = _campaignCache.status || 'unknown';
-    console.log(`[A2P Gate] Blocked broadcast to ${recipients.length} subscriber(s) — campaign status: ${status}`);
-    await store.logMessage(senderName, 'broadcast_blocked', messageText, 0, testMode);
-    return {
-      sent: 0,
-      total: recipients.length,
-      blocked: true,
-      reason: 'campaign_not_approved',
-      campaign_status: status,
-    };
+  const tfnFrom = process.env.TWILIO_TFN_FROM; // e.g. "+18446852640"
+  const longFrom = process.env.TWILIO_PHONE_NUMBER;
+  const fromNumber = tfnFrom || longFrom;
+  const usingTfn = !!tfnFrom;
+
+  // Only gate on A2P if we're sending from the 10DLC long code. Toll-free
+  // isn't subject to the 10DLC campaign review at all.
+  if (!usingTfn) {
+    const approved = await isA2pCampaignApproved();
+    if (!approved) {
+      const status = _campaignCache.status || 'unknown';
+      console.log(`[A2P Gate] Blocked broadcast to ${recipients.length} subscriber(s) — campaign status: ${status}`);
+      await store.logMessage(senderName, 'broadcast_blocked', messageText, 0, testMode);
+      return {
+        sent: 0,
+        total: recipients.length,
+        blocked: true,
+        reason: 'campaign_not_approved',
+        campaign_status: status,
+      };
+    }
   }
 
   let sentCount = 0;
   for (const sub of recipients) {
     try {
-      if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
+      if (twilioClient && fromNumber) {
         await twilioClient.messages.create({
           body: messageText,
-          from: process.env.TWILIO_PHONE_NUMBER,
+          from: fromNumber,
           to: sub.phone,
         });
-        console.log(`Sent to ${sub.name} (${sub.phone})`);
+        console.log(`Sent to ${sub.name} (${sub.phone}) from ${usingTfn ? 'TFN' : '10DLC'} ${fromNumber}`);
       } else {
         console.log(`[DEMO] -> ${sub.name} (${sub.phone}): ${messageText}`);
       }
@@ -163,7 +176,7 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null, 
     }
   }
   await store.logMessage(senderName, 'broadcast', messageText, sentCount, testMode);
-  return { sent: sentCount, total: recipients.length };
+  return { sent: sentCount, total: recipients.length, from: usingTfn ? 'tfn' : '10dlc' };
 }
 
 // ═══════════════════════════════════════════════════════════════
