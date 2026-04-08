@@ -409,6 +409,17 @@
     }
     .cheers-btn:hover { background: rgba(0,0,0,0.7); }
     .cheers-btn.cheered { border-color: #f0c040; background: rgba(240,192,64,0.25); }
+    /* Feed variant — sits on light card background, smaller, less aggressive */
+    .feed-cheers-btn {
+      background: var(--green-bg); border: 1px solid var(--border); color: var(--brown);
+      padding: 5px 10px; border-radius: 14px; font-size: 0.85rem; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .feed-cheers-btn:hover:not(:disabled) { background: rgba(240,192,64,0.18); border-color: #f0c040; }
+    .feed-cheers-btn.cheered { background: rgba(240,192,64,0.28); border-color: #f0c040; color: var(--brown); }
+    .feed-cheers-btn:disabled { opacity: 0.5; cursor: default; }
+    .feed-cheers-btn .feed-cheers-count { font-size: 0.78rem; font-weight: 600; }
     .cheers-badge {
       position: absolute; bottom: 4px; right: 4px;
       background: rgba(0,0,0,0.55); color: #f0c040; font-size: 0.7rem;
@@ -526,6 +537,28 @@
       <button class="btn btn-primary" onclick="doLogin()">Join Shayprils</button>
       <div style="text-align:center;margin-top:14px;">
         <button onclick="enterGuestMode()" style="background:none;border:none;color:var(--text-muted);font-size:0.85rem;cursor:pointer;text-decoration:underline;font-family:inherit;">Just looking</button>
+      </div>
+    </div>
+
+    <!-- Public-facing description (so reviewers / first-time visitors understand the app) -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-title"><span class="icon icon-green">A</span> About Shayprils</div>
+      <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.5;margin-bottom:10px;">
+        Shayprils is a small, private social check-in app for a group of friends meeting up at <strong>Shays</strong> bar every weekday in April 2026. Members sign in with their name and phone number, take a selfie when they arrive, and (if they opt in) get a text when a friend checks in so the crew can rally together.
+      </p>
+      <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-size:0.72rem;color:var(--brown);font-weight:600;margin-bottom:4px;">SMS opt-in</div>
+        <p style="font-size:0.78rem;color:var(--text);line-height:1.45;margin:0;">
+          After signing in, you can choose to receive text alerts when friends check in. We only text you if you tap <em>Subscribe</em> in the app. You can stop anytime by replying <strong>STOP</strong> to any message or tapping <em>Unsubscribe</em>. Reply <strong>HELP</strong> for help. Message frequency varies (typically 1–5 msgs/day). Msg &amp; data rates may apply.
+        </p>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:8px;font-style:italic;">
+          Sample message: "Shayprils: Nate just checked in at Shays. Come join! Reply STOP to unsubscribe."
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;">
+        <a href="/privacy" style="color:var(--brick);text-decoration:underline;">Privacy Policy</a>
+        &nbsp;·&nbsp;
+        <a href="/terms" style="color:var(--brick);text-decoration:underline;">Terms of Service</a>
       </div>
     </div>
   </div>
@@ -755,6 +788,15 @@
 
 <!-- Admin Section -->
 <div id="adminSection" class="tab-content" style="display:none"></div>
+
+<!-- Footer (always visible above bottom nav) -->
+<div style="text-align:center;padding:14px 16px 90px;font-size:0.72rem;color:var(--text-dim);">
+  <a href="/privacy" style="color:var(--text-muted);text-decoration:underline;">Privacy</a>
+  &nbsp;·&nbsp;
+  <a href="/terms" style="color:var(--text-muted);text-decoration:underline;">Terms</a>
+  &nbsp;·&nbsp;
+  <span>SMS opt-in &amp; opt-out via the Subscribe / Unsubscribe button. Reply STOP to cancel.</span>
+</div>
 
 <!-- Toast -->
 <div id="toast" class="toast"></div>
@@ -1815,7 +1857,9 @@ async function loadFeed() {
         name: m.sender_name,
         text: m.message_text,
         time: new Date(m.sent_at),
-        recipients: m.recipients_count
+        recipients: m.recipients_count,
+        cheers: m.cheers || [],
+        cheers_count: m.cheers_count || 0
       });
     });
     (Array.isArray(checkins) ? checkins : []).slice(0, 20).forEach(c => {
@@ -1847,13 +1891,20 @@ async function loadFeed() {
       const recipientsBadge = item.type === 'alert' && item.recipients > 0
         ? '<span style="font-size:0.7rem;color:var(--green);margin-left:6px;">Sent to ' + item.recipients + '</span>'
         : '';
-      html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">';
+      html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);" data-feed-id="' + item.id + '" data-feed-type="' + item.type + '">';
       html += thumb || '<span style="font-size:1.3rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + (item.type === 'alert' ? 'var(--red-bg)' : 'var(--green-bg)') + ';border-radius:10px;">' + icon + '</span>';
       html += '<div style="flex:1;min-width:0;">';
       html += '<div style="font-size:0.82rem;font-weight:500;color:var(--brown);">' + escapeHtml(item.name) + recipientsBadge + '</div>';
       html += '<div style="font-size:0.82rem;color:var(--text);margin-top:2px;line-height:1.3;">' + escapeHtml(item.text) + '</div>';
       html += '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">' + timeAgo + '</div>';
       html += '</div>';
+      // Cheers button (only on alert/system messages, not selfie checkins which already have cheers in lightbox)
+      if (item.type === 'alert' && item.id) {
+        const iCheered = currentUser && (item.cheers || []).some(c => c.user_id === currentUser.id);
+        const disabled = (!currentUser || guestMode) ? 'disabled' : '';
+        const cheeredClass = iCheered ? ' cheered' : '';
+        html += '<button class="feed-cheers-btn cheers-btn' + cheeredClass + '" ' + disabled + ' onclick="toggleFeedCheers(' + item.id + ', this)" title="Cheers!" style="flex-shrink:0;align-self:center;">🍻 <span class="feed-cheers-count">' + (item.cheers_count || 0) + '</span></button>';
+      }
       // Admin: delete button for feed items
       if (adminPin && item.id) {
         html += '<button onclick="adminDeleteFeedItem(\'' + item.type + '\',\'' + item.id + '\')" style="flex-shrink:0;background:none;border:none;color:var(--text-dim);font-size:1rem;cursor:pointer;padding:4px 6px;opacity:0.5;" title="Delete">&times;</button>';
@@ -2042,6 +2093,39 @@ async function toggleCheers() {
     }
   } catch (e) {
     showToast('Error toggling cheers', 'error');
+  }
+}
+
+async function toggleFeedCheers(messageId, btn) {
+  if (!currentUser || guestMode) return;
+  // Optimistic UI
+  const countEl = btn.querySelector('.feed-cheers-count');
+  const wasChecked = btn.classList.contains('cheered');
+  const oldCount = parseInt(countEl.textContent, 10) || 0;
+  btn.classList.toggle('cheered');
+  countEl.textContent = wasChecked ? Math.max(0, oldCount - 1) : oldCount + 1;
+  btn.disabled = true;
+  try {
+    const res = await fetch(API + '/api/message-cheers', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ message_id: messageId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      countEl.textContent = data.cheers_count || 0;
+      btn.classList.toggle('cheered', !!data.cheered);
+    } else {
+      // Roll back
+      btn.classList.toggle('cheered', wasChecked);
+      countEl.textContent = oldCount;
+    }
+  } catch (e) {
+    btn.classList.toggle('cheered', wasChecked);
+    countEl.textContent = oldCount;
+    showToast('Error toggling cheers', 'error');
+  } finally {
+    btn.disabled = false;
   }
 }
 

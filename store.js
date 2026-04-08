@@ -89,6 +89,17 @@ async function initDb() {
         UNIQUE(checkin_id, user_id)
       )
     `);
+    // Cheers reactions on activity feed messages
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS message_cheers (
+        id TEXT PRIMARY KEY,
+        message_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        user_name TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(message_id, user_id)
+      )
+    `);
     console.log('Database tables initialized');
   } finally {
     client.release();
@@ -588,6 +599,52 @@ async function getCheersForCheckins(checkinIds) {
   return map;
 }
 
+// ─── Message (feed) cheers ─────────────────────────────
+async function toggleMessageCheers(messageId, userId, userName) {
+  const mid = parseInt(messageId, 10);
+  if (isNaN(mid)) return { cheered: false };
+  const existing = await pool.query(
+    'SELECT * FROM message_cheers WHERE message_id=$1 AND user_id=$2',
+    [mid, userId]
+  );
+  if (existing.rows.length > 0) {
+    await pool.query('DELETE FROM message_cheers WHERE message_id=$1 AND user_id=$2', [mid, userId]);
+    return { cheered: false };
+  }
+  const id = 'mcheers_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  await pool.query(
+    'INSERT INTO message_cheers (id, message_id, user_id, user_name) VALUES ($1,$2,$3,$4)',
+    [id, mid, userId, userName]
+  );
+  return { cheered: true };
+}
+
+async function getMessageCheers(messageId) {
+  const mid = parseInt(messageId, 10);
+  if (isNaN(mid)) return [];
+  const r = await pool.query(
+    'SELECT user_id, user_name FROM message_cheers WHERE message_id=$1 ORDER BY created_at ASC',
+    [mid]
+  );
+  return r.rows;
+}
+
+async function getCheersForMessages(messageIds) {
+  if (!messageIds.length) return {};
+  const ids = messageIds.map(id => parseInt(id, 10)).filter(n => !isNaN(n));
+  if (!ids.length) return {};
+  const r = await pool.query(
+    'SELECT message_id, user_id, user_name FROM message_cheers WHERE message_id = ANY($1)',
+    [ids]
+  );
+  const map = {};
+  for (const row of r.rows) {
+    if (!map[row.message_id]) map[row.message_id] = [];
+    map[row.message_id].push({ user_id: row.user_id, user_name: row.user_name });
+  }
+  return map;
+}
+
 module.exports = {
   getUser, getUserByToken, getAllUsers, createUser, updateUserSubscription,
   getSubscribedUsers, addCheckin, getCheckinsForUser, getCheckinsForDate,
@@ -598,5 +655,6 @@ module.exports = {
   adminDeleteMessage, adminClearMessages, adminEraseUser,
   getSetting, setSetting, getAllSettings,
   toggleCheers, getCheersForCheckins,
+  toggleMessageCheers, getMessageCheers, getCheersForMessages,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };

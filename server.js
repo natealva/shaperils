@@ -674,6 +674,29 @@ app.get('/api/cheers/:checkin_id', async (req, res) => {
   }
 });
 
+// Message (feed post) cheers
+app.post('/api/message-cheers', authMiddleware, async (req, res) => {
+  const { message_id } = req.body;
+  if (!message_id) return res.status(400).json({ error: 'message_id required' });
+  try {
+    const result = await store.toggleMessageCheers(message_id, req.user.id, req.user.name);
+    const cheers = await store.getMessageCheers(message_id);
+    res.json({ success: true, cheered: result.cheered, cheers, cheers_count: cheers.length });
+  } catch (err) {
+    console.error('Message cheers error:', err);
+    res.status(500).json({ error: 'Failed to toggle message cheers' });
+  }
+});
+
+app.get('/api/message-cheers/:message_id', async (req, res) => {
+  try {
+    const cheers = await store.getMessageCheers(req.params.message_id);
+    res.json({ cheers, cheers_count: cheers.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get message cheers' });
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════
 // VOUCH ROUTES
 // ═══════════════════════════════════════════════════════════════
@@ -998,7 +1021,18 @@ app.get('/api/subscribers/count', async (req, res) => {
 
 app.get('/api/history', async (req, res) => {
   const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
-  res.json(await store.getRecentMessages(testMode));
+  const messages = await store.getRecentMessages(testMode);
+  // Attach cheers info per message
+  let cheersMap = {};
+  try {
+    cheersMap = await store.getCheersForMessages(messages.map(m => m.id));
+  } catch (e) {}
+  for (const m of messages) {
+    const cheers = cheersMap[m.id] || [];
+    m.cheers = cheers;
+    m.cheers_count = cheers.length;
+  }
+  res.json(messages);
 });
 
 app.get('/api/status', async (req, res) => {
