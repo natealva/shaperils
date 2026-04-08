@@ -562,19 +562,33 @@ app.delete('/api/admin/checkin/:id/photo', adminAuth, async (req, res) => {
 });
 
 // Update drink count for a check-in
-app.put('/api/checkin/:id/drinks', authMiddleware, async (req, res) => {
+// Owner can update their own. Admin (via x-admin-pin) can update anyone's.
+app.put('/api/checkin/:id/drinks', async (req, res) => {
+  const testMode = req.query.test === '1' || req.headers['x-test-mode'] === '1';
+  const isAdmin = req.headers['x-admin-pin'] === ADMIN_PIN;
+
   const { drinks } = req.body;
   if (drinks === undefined || drinks === null) return res.status(400).json({ error: 'Drinks count required' });
   const count = parseInt(drinks, 10);
-  if (isNaN(count) || count < 0) return res.status(400).json({ error: 'Invalid drinks count' });
+  if (isNaN(count) || count < 0 || count > 99) return res.status(400).json({ error: 'Invalid drinks count' });
 
-  // Verify this check-in belongs to the user
-  const checkins = await store.getCheckinsForUser(req.user.id, req.testMode);
-  const checkin = checkins.find(c => c.id === req.params.id);
-  if (!checkin) return res.status(404).json({ error: 'Check-in not found or not yours' });
+  if (isAdmin) {
+    // Admin path — locate the check-in across all users
+    const all = await store.getAllCheckins(testMode);
+    const checkin = all.find(c => c.id === req.params.id);
+    if (!checkin) return res.status(404).json({ error: 'Check-in not found' });
+    await store.updateCheckinDrinks(checkin.id, count, testMode);
+    return res.json({ success: true, drinks: count });
+  }
 
-  await store.updateCheckinDrinks(checkin.id, count, req.testMode);
-  res.json({ success: true, drinks: count });
+  // Owner path — must be authenticated
+  return authMiddleware(req, res, async () => {
+    const checkins = await store.getCheckinsForUser(req.user.id, req.testMode);
+    const checkin = checkins.find(c => c.id === req.params.id);
+    if (!checkin) return res.status(404).json({ error: 'Check-in not found or not yours' });
+    await store.updateCheckinDrinks(checkin.id, count, req.testMode);
+    res.json({ success: true, drinks: count });
+  });
 });
 
 app.delete('/api/checkin/:id', authMiddleware, async (req, res) => {

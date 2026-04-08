@@ -567,12 +567,13 @@
         </p>
         <div id="drinksTracker" style="margin-top:14px;background:rgba(255,255,255,0.6);border-radius:12px;padding:14px 16px;display:none;">
           <div style="font-size:0.85rem;font-weight:600;color:var(--brown);margin-bottom:8px;">How many drinks did you have?</div>
-          <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
-            <input type="number" id="drinksInput" min="0" max="99" value="0"
-              onchange="updateDrinksFromInput()"
-              style="width:60px;text-align:center;font-size:1.3rem;font-weight:700;padding:8px;border:2px solid var(--tan);border-radius:10px;background:white;color:var(--brown);-moz-appearance:textfield;"
-            />
-            <button onclick="incrementDrinks()" style="padding:8px 18px;background:var(--brick);color:white;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;min-width:48px;">+1</button>
+          <div style="display:flex;align-items:center;gap:14px;justify-content:center;">
+            <button type="button" onclick="decrementDrinks()" aria-label="One fewer drink"
+              style="width:44px;height:44px;border-radius:50%;background:var(--brick);color:white;border:none;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+            <span id="drinksInput" data-value="0"
+              style="min-width:48px;text-align:center;font-size:1.6rem;font-weight:800;color:var(--brown);user-select:none;">0</span>
+            <button type="button" onclick="incrementDrinks()" aria-label="One more drink"
+              style="width:44px;height:44px;border-radius:50%;background:var(--brick);color:white;border:none;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
           </div>
         </div>
         <!-- Second check-in option -->
@@ -779,23 +780,14 @@
       <input type="file" accept="image/*" style="display:none;" onchange="adminReplaceLightboxPhoto(event)" />
     </label>
     <div id="lightboxDrinks" onclick="event.stopPropagation()" style="display:none;background:rgba(0,0,0,0.6);border-radius:12px;padding:10px 16px;margin-top:4px;">
-      <label style="color:white;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:8px;">
-        How many drinks?
-        <select id="drinksSelect" onchange="saveDrinks()" style="padding:6px 10px;border-radius:8px;border:none;font-size:0.9rem;background:white;color:var(--brown);min-width:55px;">
-          <option value="">--</option>
-          <option value="0">0</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">10+</option>
-        </select>
-      </label>
+      <div style="color:white;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:10px;justify-content:center;">
+        <span id="lightboxDrinksLabel">Drinks</span>
+        <button id="lightboxDrinksMinus" type="button" onclick="event.stopPropagation();stepLightboxDrinks(-1)"
+          style="display:none;width:30px;height:30px;border-radius:50%;border:none;background:white;color:var(--brown);font-size:1.05rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+        <span id="lightboxDrinksValue" style="min-width:24px;text-align:center;font-size:1.1rem;font-weight:700;color:white;">0</span>
+        <button id="lightboxDrinksPlus" type="button" onclick="event.stopPropagation();stepLightboxDrinks(1)"
+          style="display:none;width:30px;height:30px;border-radius:50%;border:none;background:white;color:var(--brown);font-size:1.05rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1196,7 +1188,9 @@ async function checkTodayCheckin() {
       // Show drinks tracker with current value from first check-in
       const tracker = document.getElementById('drinksTracker');
       const input = document.getElementById('drinksInput');
-      input.value = todayCheckin.drinks || 0;
+      const startVal = todayCheckin.drinks || 0;
+      input.dataset.value = startVal;
+      input.textContent = startVal;
       tracker.style.display = 'block';
       // Show/hide second check-in option
       const secondOpt = document.getElementById('secondCheckinOption');
@@ -1234,19 +1228,18 @@ function startSecondCheckin() {
   document.getElementById('btnCheckin').classList.add('hidden');
 }
 
-function incrementDrinks() {
+function _stepHomepageDrinks(delta) {
   const input = document.getElementById('drinksInput');
-  const newVal = (parseInt(input.value) || 0) + 1;
-  input.value = newVal;
+  if (!input) return;
+  const current = parseInt(input.dataset.value || '0', 10) || 0;
+  const newVal = Math.max(0, Math.min(99, current + delta));
+  if (newVal === current) return;
+  input.dataset.value = newVal;
+  input.textContent = newVal;
   saveDrinksFromHomepage(newVal);
 }
-
-function updateDrinksFromInput() {
-  const input = document.getElementById('drinksInput');
-  const val = Math.max(0, parseInt(input.value) || 0);
-  input.value = val;
-  saveDrinksFromHomepage(val);
-}
+function incrementDrinks() { _stepHomepageDrinks(1); }
+function decrementDrinks() { _stepHomepageDrinks(-1); }
 
 async function saveDrinksFromHomepage(count) {
   if (!todayCheckin) return;
@@ -1917,11 +1910,25 @@ function _renderLightboxItem() {
   const isAdmin = !!adminPin;
   document.getElementById('lightboxDelete').style.display = (isOwner || isAdmin) ? 'block' : 'none';
   document.getElementById('lightboxAdminUpload').style.display = isAdmin ? 'block' : 'none';
+  // Drinks display: visible to everyone if a value exists; editable for owner & admin.
   const drinksSection = document.getElementById('lightboxDrinks');
-  const drinksSelect = document.getElementById('drinksSelect');
-  if (isOwner) {
+  const drinksValueEl = document.getElementById('lightboxDrinksValue');
+  const drinksPlus = document.getElementById('lightboxDrinksPlus');
+  const drinksMinus = document.getElementById('lightboxDrinksMinus');
+  const drinksLabel = document.getElementById('lightboxDrinksLabel');
+  const canEdit = isOwner || isAdmin;
+  const rawDrinks = (it.drinks !== undefined && it.drinks !== '' && it.drinks !== 'undefined' && it.drinks !== null)
+    ? parseInt(it.drinks, 10)
+    : null;
+  const hasValue = rawDrinks != null && !isNaN(rawDrinks);
+  if (canEdit || hasValue) {
     drinksSection.style.display = 'block';
-    drinksSelect.value = (it.drinks !== undefined && it.drinks !== '' && it.drinks !== 'undefined') ? it.drinks : '';
+    const shown = hasValue ? rawDrinks : 0;
+    drinksValueEl.textContent = shown;
+    window._lightboxDrinks = shown;
+    drinksLabel.textContent = canEdit ? (isOwner ? 'How many drinks?' : 'Drinks (admin)') : 'Drinks';
+    drinksPlus.style.display = canEdit ? 'inline-block' : 'none';
+    drinksMinus.style.display = canEdit ? 'inline-block' : 'none';
   } else {
     drinksSection.style.display = 'none';
   }
@@ -2038,23 +2045,43 @@ async function toggleCheers() {
   }
 }
 
-async function saveDrinks() {
-  const drinks = document.getElementById('drinksSelect').value;
-  if (!window._currentCheckinId || drinks === '') return;
+async function stepLightboxDrinks(delta) {
+  if (!window._currentCheckinId) return;
+  const current = parseInt(window._lightboxDrinks || 0, 10) || 0;
+  const next = Math.max(0, Math.min(99, current + delta));
+  if (next === current) return;
+  // Optimistic UI
+  window._lightboxDrinks = next;
+  document.getElementById('lightboxDrinksValue').textContent = next;
+  // Mirror into the open carousel item so navigating away & back keeps the value
   try {
+    const items = window._lightboxItems || [];
+    const it = items[window._lightboxIndex || 0];
+    if (it) it.drinks = next;
+  } catch (e) {}
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    // Owner uses normal auth; admin uses pin header. We send both — server picks.
+    const auth = (typeof authHeaders === 'function') ? authHeaders() : {};
+    Object.assign(headers, auth);
+    if (adminPin) headers['x-admin-pin'] = adminPin;
     const res = await fetch(API + '/api/checkin/' + window._currentCheckinId + '/drinks', {
       method: 'PUT',
-      headers: authHeaders(),
-      body: JSON.stringify({ drinks: parseInt(drinks) }),
+      headers,
+      body: JSON.stringify({ drinks: next }),
     });
     const data = await res.json();
     if (data.success) {
-      showToast('Drinks updated!');
       loadLeaderboard();
     } else {
+      // Roll back on failure
+      window._lightboxDrinks = current;
+      document.getElementById('lightboxDrinksValue').textContent = current;
       showToast(data.error || 'Failed to save', 'error');
     }
   } catch (e) {
+    window._lightboxDrinks = current;
+    document.getElementById('lightboxDrinksValue').textContent = current;
     showToast('Error saving drinks', 'error');
   }
 }
