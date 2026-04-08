@@ -540,25 +540,29 @@
       </div>
     </div>
 
-    <!-- Public-facing description (so reviewers / first-time visitors understand the app) -->
-    <div class="card" style="margin-top:18px;">
-      <div class="card-title"><span class="icon icon-green">A</span> About Shayprils</div>
-      <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.5;margin-bottom:10px;">
-        Shayprils is a small, private social check-in app for a group of friends meeting up at <strong>Shays</strong> bar every weekday in April 2026. Members sign in with their name and phone number, take a selfie when they arrive, and (if they opt in) get a text when a friend checks in so the crew can rally together.
-      </p>
-      <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:10px;padding:10px 12px;margin-bottom:10px;">
-        <div style="font-size:0.72rem;color:var(--brown);font-weight:600;margin-bottom:4px;">SMS opt-in</div>
-        <p style="font-size:0.78rem;color:var(--text);line-height:1.45;margin:0;">
-          After signing in, you can choose to receive text alerts when friends check in. We only text you if you tap <em>Subscribe</em> in the app. You can stop anytime by replying <strong>STOP</strong> to any message or tapping <em>Unsubscribe</em>. Reply <strong>HELP</strong> for help. Message frequency varies (typically 1–5 msgs/day). Msg &amp; data rates may apply.
-        </p>
-        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:8px;font-style:italic;">
-          Sample message: "Shayprils: Nate just checked in at Shays. Come join! Reply STOP to unsubscribe."
+    <!-- Minimal footer under sign-in with expandable about/SMS disclosure -->
+    <div style="margin-top:18px;text-align:center;">
+      <details style="font-size:0.78rem;color:var(--text-muted);">
+        <summary style="cursor:pointer;color:var(--text-muted);list-style:none;padding:6px;user-select:none;">What's Shayprils? <span style="opacity:0.5;">(tap for info &amp; SMS details)</span></summary>
+        <div style="text-align:left;margin-top:10px;padding:14px;background:rgba(255,255,255,0.5);border:1px solid var(--border);border-radius:12px;">
+          <p style="color:var(--text-muted);font-size:0.82rem;line-height:1.5;margin:0 0 10px;">
+            Shayprils is a small, private check-in app for a group of friends meeting up at <strong>Shays</strong> bar every weekday in April 2026. You sign in with your name and phone, take a selfie when you arrive, and (if you opt in) get a text when a friend checks in so the crew can rally together.
+          </p>
+          <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:0.7rem;color:var(--brown);font-weight:600;margin-bottom:4px;">SMS opt-in</div>
+            <p style="font-size:0.76rem;color:var(--text);line-height:1.45;margin:0;">
+              After signing in, you can choose to get text alerts when friends check in. We only text you if you tap <em>Subscribe</em> in the app. Stop anytime by replying <strong>STOP</strong> or tapping <em>Unsubscribe</em>. Reply <strong>HELP</strong> for help. Typically 1–5 msgs/day. Msg &amp; data rates may apply.
+            </p>
+            <div style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;font-style:italic;">
+              Sample: "Shayprils: Nate just checked in at Shays. Come join! Reply STOP to unsubscribe."
+            </div>
+          </div>
         </div>
-      </div>
-      <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;">
-        <a href="/privacy" style="color:var(--brick);text-decoration:underline;">Privacy Policy</a>
+      </details>
+      <div style="margin-top:8px;font-size:0.75rem;">
+        <a href="/privacy" style="color:var(--text-muted);text-decoration:underline;">Privacy</a>
         &nbsp;·&nbsp;
-        <a href="/terms" style="color:var(--brick);text-decoration:underline;">Terms of Service</a>
+        <a href="/terms" style="color:var(--text-muted);text-decoration:underline;">Terms</a>
       </div>
     </div>
   </div>
