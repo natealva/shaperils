@@ -220,6 +220,17 @@
     .camera-area video, .camera-area img {
       width: 100%; height: 100%; object-fit: cover;
     }
+    /* Un-mirror the front camera preview so it looks like the final photo */
+    .camera-area video { transform: scaleX(-1); }
+    .flash-toggle {
+      position: absolute; top: 10px; right: 10px; z-index: 5;
+      background: rgba(0,0,0,0.45); border: none; border-radius: 50%;
+      width: 38px; height: 38px; display: none; align-items: center;
+      justify-content: center; cursor: pointer; font-size: 1.2rem;
+      color: white; backdrop-filter: blur(4px); transition: background 0.15s;
+    }
+    .flash-toggle.on { background: rgba(255,200,40,0.7); color: #222; }
+    .flash-toggle:active { transform: scale(0.92); }
     .camera-area canvas { display: none; }
     .camera-placeholder {
       color: var(--text-dim); text-align: center; padding: 40px;
@@ -627,6 +638,7 @@
             Upload a selfie at Shays to log today's check-in.
           </p>
           <div class="camera-area" id="cameraArea">
+            <button id="flashToggle" class="flash-toggle" onclick="toggleFlash()" aria-label="Toggle flash" title="Toggle flash">&#9889;</button>
             <video id="cameraVideo" autoplay playsinline style="display:none;"></video>
             <img id="selfiePreview" style="display:none;" />
             <canvas id="selfieCanvas"></canvas>
@@ -1105,8 +1117,35 @@ async function startCamera() {
     document.getElementById('btnCapture').classList.remove('hidden');
     document.getElementById('btnRetake').classList.add('hidden');
     document.getElementById('btnCheckin').classList.add('hidden');
+    // Check if torch (flash) is supported and show toggle
+    window._flashOn = false;
+    var flashBtn = document.getElementById('flashToggle');
+    flashBtn.style.display = 'none';
+    flashBtn.classList.remove('on');
+    try {
+      var track = cameraStream.getVideoTracks()[0];
+      var caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.torch) {
+        flashBtn.style.display = 'flex';
+      }
+    } catch (e) {}
   } catch (e) {
     showToast('Could not access camera. Try uploading a photo instead.', 'error');
+  }
+}
+
+async function toggleFlash() {
+  if (!cameraStream) return;
+  try {
+    var track = cameraStream.getVideoTracks()[0];
+    window._flashOn = !window._flashOn;
+    await track.applyConstraints({ advanced: [{ torch: window._flashOn }] });
+    var btn = document.getElementById('flashToggle');
+    btn.classList.toggle('on', window._flashOn);
+  } catch (e) {
+    showToast('Flash not available on this device', 'error');
+    window._flashOn = false;
+    document.getElementById('flashToggle').classList.remove('on');
   }
 }
 
@@ -1118,7 +1157,8 @@ function capturePhoto() {
   const ctx = canvas.getContext('2d');
   const sx = (video.videoWidth - size) / 2;
   const sy = (video.videoHeight - size) / 2;
-  // Flip horizontally so the saved photo isn't mirrored
+  // Flip horizontally — raw front-camera data is mirrored; this un-mirrors it
+  // to match what the user sees in the (CSS-unmirrored) preview
   ctx.translate(640, 0);
   ctx.scale(-1, 1);
   ctx.drawImage(video, sx, sy, size, size, 0, 0, 640, 640);
@@ -1169,6 +1209,9 @@ function stopCamera() {
     cameraStream.getTracks().forEach(t => t.stop());
     cameraStream = null;
   }
+  window._flashOn = false;
+  var flashBtn = document.getElementById('flashToggle');
+  if (flashBtn) { flashBtn.style.display = 'none'; flashBtn.classList.remove('on'); }
 }
 
 async function submitCheckin() {
