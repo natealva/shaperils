@@ -1228,15 +1228,18 @@ async function checkTodayCheckin() {
     const data = await res.json();
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     const todayCheckins = data.checkins.filter(c => c.date === today);
+    // Store all today's checkins for cumulative drinks tracking
+    window.todayCheckins = todayCheckins;
+    // Use the first checkin as the primary target for drinks stepper
     todayCheckin = todayCheckins[0] || null;
     if (todayCheckin) {
       showCheckedInState();
-      // Show drinks tracker with current value from first check-in
+      // Show drinks tracker with CUMULATIVE value across all check-ins today
       const tracker = document.getElementById('drinksTracker');
       const input = document.getElementById('drinksInput');
-      const startVal = todayCheckin.drinks || 0;
-      input.dataset.value = startVal;
-      input.textContent = startVal;
+      const cumulativeDrinks = todayCheckins.reduce(function(sum, c) { return sum + (c.drinks || 0); }, 0);
+      input.dataset.value = cumulativeDrinks;
+      input.textContent = cumulativeDrinks;
       tracker.style.display = 'block';
       // Show/hide second check-in option
       const secondOpt = document.getElementById('secondCheckinOption');
@@ -1246,6 +1249,7 @@ async function checkTodayCheckin() {
         secondOpt.style.display = ''; // Can check in again
       }
     } else {
+      window.todayCheckins = [];
       document.getElementById('alreadyCheckedIn').classList.add('hidden');
       document.getElementById('checkinForm').classList.remove('hidden');
       document.getElementById('drinksTracker').style.display = 'none';
@@ -1276,13 +1280,20 @@ function startSecondCheckin() {
 
 function _stepHomepageDrinks(delta) {
   const input = document.getElementById('drinksInput');
-  if (!input) return;
-  const current = parseInt(input.dataset.value || '0', 10) || 0;
-  const newVal = Math.max(0, Math.min(99, current + delta));
-  if (newVal === current) return;
-  input.dataset.value = newVal;
-  input.textContent = newVal;
-  saveDrinksFromHomepage(newVal);
+  if (!input || !todayCheckin) return;
+  // Current displayed value is the cumulative total across all today's check-ins
+  const currentTotal = parseInt(input.dataset.value || '0', 10) || 0;
+  const newTotal = Math.max(0, Math.min(99, currentTotal + delta));
+  if (newTotal === currentTotal) return;
+  input.dataset.value = newTotal;
+  input.textContent = newTotal;
+  // Compute what the first checkin's drinks should be to achieve the desired total
+  // (other checkins' drinks stay the same)
+  var othersSum = (window.todayCheckins || []).reduce(function(s, c) {
+    return c.id === todayCheckin.id ? s : s + (c.drinks || 0);
+  }, 0);
+  var targetDrinks = Math.max(0, newTotal - othersSum);
+  saveDrinksFromHomepage(targetDrinks);
 }
 function incrementDrinks() { _stepHomepageDrinks(1); }
 function decrementDrinks() { _stepHomepageDrinks(-1); }
@@ -1550,7 +1561,9 @@ async function renderCalendar(calendar, userId) {
 
     let clickHandler = '';
     if (hasSelfie) {
-      const calDrinkVal = userCheckin.drinks != null ? userCheckin.drinks : '';
+      // Cumulative drinks for this user across ALL check-ins on this day
+      const dayDrinksTotal = userCheckins.reduce(function(s, c) { return s + (Number(c.drinks) || 0); }, 0);
+      const calDrinkVal = dayDrinksTotal > 0 ? dayDrinksTotal : (userCheckin.drinks != null ? userCheckin.drinks : '');
       if (multiCount > 1) {
         // Multiple check-ins on the same day → register the group and open the carousel
         const groupKey = userId + '_' + day.date;
@@ -1561,6 +1574,7 @@ async function renderCalendar(calendar, userId) {
           checkinId: c.id,
           ownerId: c.user_id,
           drinks: c.drinks != null ? c.drinks : '',
+          dayDrinks: dayDrinksTotal,
         }));
         clickHandler = 'onclick="openLightboxGroup(\'' + groupKey + '\', 0)"';
         cls += ' has-selfie has-multi';
@@ -1802,6 +1816,13 @@ async function loadAlbum() {
       grouped[p.date].push(p);
     });
 
+    // Pre-compute cumulative drinks per user per day for all photos
+    var userDayDrinks = {};
+    data.photos.forEach(function(p) {
+      var key = p.user_id + '_' + p.date;
+      userDayDrinks[key] = (userDayDrinks[key] || 0) + (Number(p.drinks) || 0);
+    });
+
     let html = '';
     const dates = Object.keys(grouped).sort().reverse();
     for (const date of dates) {
@@ -1814,7 +1835,9 @@ async function loadAlbum() {
         const isOwn = currentUser && photo.user_id === currentUser.id;
         const photoSrc = selfieUrl(photo.selfie);
         const isBroken = !photo.selfie || !photo.selfie.startsWith('http');
-        const drinkVal = photo.drinks != null ? photo.drinks : '';
+        // Use cumulative day drinks for the user instead of per-checkin
+        const dayTotal = userDayDrinks[photo.user_id + '_' + date] || 0;
+        const drinkVal = dayTotal > 0 ? dayTotal : (photo.drinks != null ? photo.drinks : '');
         html += '<div class="album-item' + (isBroken ? ' photo-missing' : '') + '" onclick="openLightbox(\'' + photoSrc + '\', \'' + escapeHtml(photo.user_name) + '\', \'' + formatted + '\', \'' + photo.id + '\', \'' + photo.user_id + '\', \'' + drinkVal + '\')">';
         if (isBroken) {
           html += '<div class="album-label">' + escapeHtml(photo.user_name) + '</div>';
@@ -1966,16 +1989,21 @@ function _renderLightboxItem() {
   document.getElementById('lightboxDelete').style.display = (isOwner || isAdmin) ? 'block' : 'none';
   document.getElementById('lightboxAdminUpload').style.display = isAdmin ? 'block' : 'none';
   // Drinks display: visible to everyone if a value exists; editable for owner & admin.
+  // Use cumulative day drinks when available (multi-checkin days), otherwise per-checkin drinks.
   const drinksSection = document.getElementById('lightboxDrinks');
   const drinksValueEl = document.getElementById('lightboxDrinksValue');
   const drinksPlus = document.getElementById('lightboxDrinksPlus');
   const drinksMinus = document.getElementById('lightboxDrinksMinus');
   const drinksLabel = document.getElementById('lightboxDrinksLabel');
   const canEdit = isOwner || isAdmin;
-  const rawDrinks = (it.drinks !== undefined && it.drinks !== '' && it.drinks !== 'undefined' && it.drinks !== null)
-    ? parseInt(it.drinks, 10)
+  // Prefer dayDrinks (cumulative across all check-ins for the day) if available
+  var displayDrinks = it.dayDrinks != null ? it.dayDrinks : it.drinks;
+  const rawDrinks = (displayDrinks !== undefined && displayDrinks !== '' && displayDrinks !== 'undefined' && displayDrinks !== null)
+    ? parseInt(displayDrinks, 10)
     : null;
   const hasValue = rawDrinks != null && !isNaN(rawDrinks);
+  // Store per-checkin drinks for stepper math
+  window._lightboxCheckinDrinks = parseInt(it.drinks, 10) || 0;
   if (canEdit || hasValue) {
     drinksSection.style.display = 'block';
     const shown = hasValue ? rawDrinks : 0;
@@ -2135,17 +2163,24 @@ async function toggleFeedCheers(messageId, btn) {
 
 async function stepLightboxDrinks(delta) {
   if (!window._currentCheckinId) return;
-  const current = parseInt(window._lightboxDrinks || 0, 10) || 0;
-  const next = Math.max(0, Math.min(99, current + delta));
-  if (next === current) return;
-  // Optimistic UI
-  window._lightboxDrinks = next;
-  document.getElementById('lightboxDrinksValue').textContent = next;
+  const currentDisplay = parseInt(window._lightboxDrinks || 0, 10) || 0;
+  const nextDisplay = Math.max(0, Math.min(99, currentDisplay + delta));
+  if (nextDisplay === currentDisplay) return;
+  // Compute what this specific checkin's drinks should be
+  var checkinCurrent = parseInt(window._lightboxCheckinDrinks || 0, 10) || 0;
+  var checkinNext = Math.max(0, checkinCurrent + delta);
+  // Optimistic UI — update the cumulative display
+  window._lightboxDrinks = nextDisplay;
+  window._lightboxCheckinDrinks = checkinNext;
+  document.getElementById('lightboxDrinksValue').textContent = nextDisplay;
   // Mirror into the open carousel item so navigating away & back keeps the value
   try {
     const items = window._lightboxItems || [];
     const it = items[window._lightboxIndex || 0];
-    if (it) it.drinks = next;
+    if (it) {
+      it.drinks = checkinNext;
+      if (it.dayDrinks != null) it.dayDrinks = nextDisplay;
+    }
   } catch (e) {}
   try {
     const headers = { 'Content-Type': 'application/json' };
@@ -2156,20 +2191,22 @@ async function stepLightboxDrinks(delta) {
     const res = await fetch(API + '/api/checkin/' + window._currentCheckinId + '/drinks', {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ drinks: next }),
+      body: JSON.stringify({ drinks: checkinNext }),
     });
     const data = await res.json();
     if (data.success) {
       loadLeaderboard();
     } else {
       // Roll back on failure
-      window._lightboxDrinks = current;
-      document.getElementById('lightboxDrinksValue').textContent = current;
+      window._lightboxDrinks = currentDisplay;
+      window._lightboxCheckinDrinks = checkinCurrent;
+      document.getElementById('lightboxDrinksValue').textContent = currentDisplay;
       showToast(data.error || 'Failed to save', 'error');
     }
   } catch (e) {
-    window._lightboxDrinks = current;
-    document.getElementById('lightboxDrinksValue').textContent = current;
+    window._lightboxDrinks = currentDisplay;
+    window._lightboxCheckinDrinks = checkinCurrent;
+    document.getElementById('lightboxDrinksValue').textContent = currentDisplay;
     showToast('Error saving drinks', 'error');
   }
 }
