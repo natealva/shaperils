@@ -551,30 +551,75 @@
       </div>
     </div>
 
-    <!-- Minimal footer under sign-in with expandable about/SMS disclosure -->
-    <div style="margin-top:18px;text-align:center;">
-      <details style="font-size:0.78rem;color:var(--text-muted);">
-        <summary style="cursor:pointer;color:var(--text-muted);list-style:none;padding:6px;user-select:none;">What's Shayprils? <span style="opacity:0.5;">(tap for info &amp; SMS details)</span></summary>
-        <div style="text-align:left;margin-top:10px;padding:14px;background:rgba(255,255,255,0.5);border:1px solid var(--border);border-radius:12px;">
-          <p style="color:var(--text-muted);font-size:0.82rem;line-height:1.5;margin:0 0 10px;">
-            Shayprils is a small, private check-in app for a group of friends meeting up at <strong>Shays</strong> bar every weekday in April 2026. You sign in with your name and phone, take a selfie when you arrive, and (if you opt in) get a text when a friend checks in so the crew can rally together.
-          </p>
-          <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:10px;padding:10px 12px;">
-            <div style="font-size:0.7rem;color:var(--brown);font-weight:600;margin-bottom:4px;">SMS opt-in</div>
-            <p style="font-size:0.76rem;color:var(--text);line-height:1.45;margin:0;">
-              After signing in, you can choose to get text alerts when friends check in. We only text you if you tap <em>Subscribe</em> in the app. Stop anytime by replying <strong>STOP</strong> or tapping <em>Unsubscribe</em>. Reply <strong>HELP</strong> for help. Typically 1–5 msgs/day. Msg &amp; data rates may apply.
-            </p>
-            <div style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;font-style:italic;">
-              Sample: "Shayprils: Nate just checked in at Shays. Come join! Reply STOP to unsubscribe."
-            </div>
-          </div>
+    <!-- ===== PUBLIC-FACING ABOUT SECTION (visible without login) ===== -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-title"><span class="icon icon-brown">?</span> About Shayprils</div>
+      <p style="color:var(--text);font-size:0.86rem;line-height:1.55;margin:0 0 10px;">
+        Shayprils is a small, private check-in app for a group of ~20 friends from Harvard Business School meeting up at <strong>Shays Pub &amp; Wine Bar</strong> in Cambridge, MA every weekday in April 2026.
+      </p>
+      <p style="color:var(--text-muted);font-size:0.84rem;line-height:1.5;margin:0 0 10px;">
+        Members sign in with their name and phone number, take a selfie when they arrive at Shays, and can optionally receive text message alerts when friends check in. The app runs for the month of April 2026 only (April 1 – April 30).
+      </p>
+      <p style="color:var(--text-muted);font-size:0.84rem;line-height:1.5;margin:0;">
+        This is a non-commercial, invite-only project with no advertising, no marketing messages, and no data sharing with third parties.
+      </p>
+    </div>
+
+    <!-- ===== STANDALONE SMS CONSENT DISCLOSURE (separate from all other agreements) ===== -->
+    <div class="card" style="margin-top:14px;border:2px solid var(--green);">
+      <div class="card-title"><span class="icon icon-green">&#9993;</span> SMS Text Message Program</div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--brown);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px;">What messages you'll receive</div>
+        <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:0;">
+          If you choose to subscribe, you will receive SMS notifications when a fellow Shayprils member checks in at Shays bar. These are purely informational alerts — no marketing, no promotions, no ads.
+        </p>
+        <div style="font-size:0.8rem;color:var(--text-dim);margin-top:8px;font-style:italic;background:var(--cream-dark);padding:8px 10px;border-radius:8px;">
+          Example: "Shayprils: Nate just checked in at Shays. Come join! Reply STOP to unsubscribe."
         </div>
-      </details>
-      <div style="margin-top:8px;font-size:0.75rem;">
-        <a href="/privacy" style="color:var(--text-muted);text-decoration:underline;">Privacy</a>
-        &nbsp;·&nbsp;
-        <a href="/terms" style="color:var(--text-muted);text-decoration:underline;">Terms</a>
       </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--brown);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px;">How you opt in (consent flow)</div>
+        <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:0;">
+          SMS is <strong>completely optional</strong>. After creating your account, you will see a "Notifications" toggle switch on the home screen. It is <strong>off by default</strong>. You must voluntarily tap this toggle to subscribe to text alerts. The app works fully without SMS — you are never required to opt in.
+        </p>
+        <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:8px 0 0;">
+          SMS consent is a <strong>standalone action</strong>, separate from account creation and separate from our Terms of Service and Privacy Policy. Creating an account does <em>not</em> enroll you in SMS messages.
+        </p>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--brown);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px;">How to opt out</div>
+        <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:0;">
+          You can unsubscribe at any time by replying <strong>STOP</strong> to any message, or by tapping the "Unsubscribe" button inside the app. Reply <strong>HELP</strong> for help. We honor all opt-out requests immediately.
+        </p>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <div style="font-size:0.78rem;color:var(--brown);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px;">Message frequency &amp; rates</div>
+        <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:0;">
+          Typically 1–5 messages per day, only on weekdays in April 2026. Message and data rates may apply. Carrier surcharges may apply.
+        </p>
+      </div>
+
+      <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:8px;padding:10px 12px;margin-top:10px;">
+        <p style="font-size:0.78rem;color:var(--green);font-weight:600;margin:0;line-height:1.45;">
+          By subscribing to SMS alerts, you consent only to receiving Shayprils check-in notifications as described above. This consent is not bundled with, or a condition of, any other service, purchase, or agreement.
+        </p>
+      </div>
+    </div>
+
+    <!-- ===== FOOTER WITH LINKS ===== -->
+    <div style="margin-top:14px;text-align:center;padding-bottom:20px;">
+      <div style="font-size:0.8rem;margin-bottom:6px;">
+        <a href="/privacy" style="color:var(--brick);text-decoration:underline;font-weight:500;">Privacy Policy</a>
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+        <a href="/terms" style="color:var(--brick);text-decoration:underline;font-weight:500;">Terms of Service</a>
+      </div>
+      <p style="font-size:0.72rem;color:var(--text-dim);margin-top:8px;">
+        Shayprils is operated by Nathan Alvarez. For questions or support, contact <a href="mailto:nalvarez@mba2026.hbs.edu" style="color:var(--text-muted);">nalvarez@mba2026.hbs.edu</a>.
+      </p>
     </div>
   </div>
 </div>
