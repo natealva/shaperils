@@ -1978,11 +1978,17 @@ async function loadFeed() {
       });
     });
     (Array.isArray(checkins) ? checkins : []).slice(0, 20).forEach(c => {
+      // Detect weekend check-ins (Sat=6, Sun=0)
+      const checkinDay = new Date(c.date + 'T12:00:00').getDay();
+      const isWeekend = (checkinDay === 0 || checkinDay === 6);
+      const feedText = isWeekend
+        ? c.user_name + ' — Weekend check-in bonus! 🎉'
+        : c.user_name + ' checked in at Shays!';
       feed.push({
         type: 'checkin',
         id: c.id,
         name: c.user_name,
-        text: c.user_name + ' checked in at Shays!',
+        text: feedText,
         time: new Date(c.created_at || c.date),
         selfie: c.selfie
       });

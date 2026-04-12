@@ -462,9 +462,13 @@ app.post('/api/checkin', authMiddleware, async (req, res) => {
   }
 
   // Note: check-ins do NOT send SMS — only Rally tab buttons trigger texts
-  const msg = checkinResult.second_checkin
-    ? `Welcome back to Shays! Second check-in for ${dateStr} saved.`
-    : `Checked in for ${dateStr}! Selfie saved.`;
+  const etDay = et.getDay(); // 0=Sun, 6=Sat
+  const isWeekend = (etDay === 0 || etDay === 6);
+  const msg = isWeekend
+    ? `Weekend check-in bonus! 🎉 Selfie saved.`
+    : checkinResult.second_checkin
+      ? `Welcome back to Shays! Second check-in for ${dateStr} saved.`
+      : `Checked in for ${dateStr}! Selfie saved.`;
   res.json({ success: true, duplicate: false, second_checkin: !!checkinResult.second_checkin, message: msg, checkin: checkinResult.checkin });
 });
 

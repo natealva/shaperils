@@ -435,8 +435,8 @@ async function getLeaderboard(testMode = false) {
       total_drinks: totalDrinks,
     };
   }).sort((a, b) => {
-    // Primary: days checked in (desc)
-    if (b.total_checkins !== a.total_checkins) return b.total_checkins - a.total_checkins;
+    // Primary: weekdays checked in (desc) — weekend bonus check-ins don't affect ranking
+    if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
     // Tiebreak 1: total cumulative drinks (desc)
     if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
     // Tiebreak 2: alphabetical by name (asc)
