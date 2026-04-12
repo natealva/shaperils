@@ -906,7 +906,8 @@
         <span id="lightboxDrinksLabel">Drinks</span>
         <button id="lightboxDrinksMinus" type="button" onclick="event.stopPropagation();stepLightboxDrinks(-1)"
           style="display:none;width:30px;height:30px;border-radius:50%;border:none;background:white;color:var(--brown);font-size:1.05rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
-        <span id="lightboxDrinksValue" style="min-width:24px;text-align:center;font-size:1.1rem;font-weight:700;color:white;">0</span>
+        <span id="lightboxDrinksValue" style="min-width:24px;text-align:center;font-size:1.1rem;font-weight:700;color:white;cursor:pointer;" onclick="event.stopPropagation();startDrinksDirectEdit()">0</span>
+        <input id="lightboxDrinksInput" type="number" min="0" max="99" style="display:none;width:50px;text-align:center;font-size:1.1rem;font-weight:700;color:var(--brown);border:2px solid var(--brown);border-radius:8px;padding:2px 4px;background:white;" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();finishDrinksDirectEdit();}" onblur="finishDrinksDirectEdit()" />
         <button id="lightboxDrinksPlus" type="button" onclick="event.stopPropagation();stepLightboxDrinks(1)"
           style="display:none;width:30px;height:30px;border-radius:50%;border:none;background:white;color:var(--brown);font-size:1.05rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
       </div>
@@ -2091,6 +2092,9 @@ function _renderLightboxItem() {
   const idx = window._lightboxIndex || 0;
   const it = items[idx];
   if (!it) return;
+  // Reset direct-edit input when switching items
+  document.getElementById('lightboxDrinksInput').style.display = 'none';
+  document.getElementById('lightboxDrinksValue').style.display = 'inline';
   document.getElementById('lightboxImg').src = it.src;
   window._currentCheckinId = it.checkinId || null;
   window._currentCheckinOwnerId = it.ownerId || null;
@@ -2321,6 +2325,61 @@ async function stepLightboxDrinks(delta) {
     window._lightboxCheckinDrinks = checkinCurrent;
     document.getElementById('lightboxDrinksValue').textContent = currentDisplay;
     showToast('Error saving drinks', 'error');
+  }
+}
+
+function startDrinksDirectEdit() {
+  // Only allow direct edit for admin
+  if (!adminPin) return;
+  const valueEl = document.getElementById('lightboxDrinksValue');
+  const inputEl = document.getElementById('lightboxDrinksInput');
+  inputEl.value = parseInt(window._lightboxDrinks || 0, 10) || 0;
+  valueEl.style.display = 'none';
+  inputEl.style.display = 'inline-block';
+  inputEl.focus();
+  inputEl.select();
+}
+
+async function finishDrinksDirectEdit() {
+  const valueEl = document.getElementById('lightboxDrinksValue');
+  const inputEl = document.getElementById('lightboxDrinksInput');
+  if (inputEl.style.display === 'none') return; // already finished
+  inputEl.style.display = 'none';
+  valueEl.style.display = 'inline';
+  const newVal = Math.max(0, Math.min(99, parseInt(inputEl.value, 10) || 0));
+  const oldDisplay = parseInt(window._lightboxDrinks || 0, 10) || 0;
+  if (newVal === oldDisplay) return;
+  // Compute delta and apply to per-checkin drinks
+  const delta = newVal - oldDisplay;
+  const checkinCurrent = parseInt(window._lightboxCheckinDrinks || 0, 10) || 0;
+  const checkinNext = Math.max(0, checkinCurrent + delta);
+  // Optimistic UI
+  window._lightboxDrinks = newVal;
+  window._lightboxCheckinDrinks = checkinNext;
+  valueEl.textContent = newVal;
+  try {
+    const items = window._lightboxItems || [];
+    const it = items[window._lightboxIndex || 0];
+    if (it) { it.drinks = checkinNext; if (it.dayDrinks != null) it.dayDrinks = newVal; }
+  } catch (e) {}
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const auth = (typeof authHeaders === 'function') ? authHeaders() : {};
+    Object.assign(headers, auth);
+    if (adminPin) headers['x-admin-pin'] = adminPin;
+    const res = await fetch(API + '/api/checkin/' + window._currentCheckinId + '/drinks', {
+      method: 'PUT', headers,
+      body: JSON.stringify({ drinks: checkinNext }),
+    });
+    const data = await res.json();
+    if (data.success) { loadLeaderboard(); }
+    else {
+      window._lightboxDrinks = oldDisplay; window._lightboxCheckinDrinks = checkinCurrent;
+      valueEl.textContent = oldDisplay; showToast(data.error || 'Failed to save', 'error');
+    }
+  } catch (e) {
+    window._lightboxDrinks = oldDisplay; window._lightboxCheckinDrinks = checkinCurrent;
+    valueEl.textContent = oldDisplay; showToast('Error saving drinks', 'error');
   }
 }
 
