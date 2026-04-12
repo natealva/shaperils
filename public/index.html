@@ -291,6 +291,20 @@
     .cal-user-btn.active { background: var(--brick); border-color: var(--brick); color: white; }
 
     /* === Leaderboard === */
+    .lb-sort-toggles {
+      display: flex; gap: 6px; margin-bottom: 12px;
+    }
+    .lb-sort-btn {
+      padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--cream); color: var(--text-muted); font-size: 0.78rem;
+      font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .lb-sort-btn.active {
+      background: var(--brown); color: #fff; border-color: var(--brown);
+    }
+    .lb-sort-btn:hover:not(.active) {
+      border-color: var(--brown); color: var(--brown);
+    }
     .lb-item {
       display: flex; align-items: center; gap: 12px;
       padding: 12px 0; border-bottom: 1px solid var(--border);
@@ -816,6 +830,11 @@
     <div id="tab-leaderboard" class="tab-content">
       <div class="card">
         <div class="card-title"><span class="icon icon-green">L</span> Leaderboard</div>
+        <div class="lb-sort-toggles">
+          <button class="lb-sort-btn active" data-sort="days">Days</button>
+          <button class="lb-sort-btn" data-sort="streak">Streak</button>
+          <button class="lb-sort-btn" data-sort="drinks">Drinks</button>
+        </div>
         <div id="leaderboardList">
           <div class="empty-state">No check-ins yet. Be the first!</div>
         </div>
@@ -2492,40 +2511,73 @@ async function submitAdminPhoto() {
 // LEADERBOARD
 /* =============================== */
 
+let leaderboardData = [];
+let leaderboardSort = 'days'; // default sort
+
 async function loadLeaderboard() {
   try {
     const res = await fetch(API + '/api/leaderboard' + testParam());
-    const data = await res.json();
-    const list = document.getElementById('leaderboardList');
-
-    if (data.length === 0) {
-      list.innerHTML = '<div class="empty-state">No check-ins yet. Be the first!</div>';
-      return;
-    }
-
-    const maxDays = Math.max(1, ...data.map(d => d.weekdays_hit + d.weekdays_missed));
-
-    list.innerHTML = data.map((entry, i) => {
-      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-      const pct = maxDays > 0 ? Math.round((entry.weekdays_hit / maxDays) * 100) : 0;
-      const drinksLabel = entry.total_drinks > 0 ? entry.total_drinks + ' drink' + (entry.total_drinks !== 1 ? 's' : '') : '';
-      return `
-        <div class="lb-item">
-          <div class="lb-rank ${rankClass}">${i + 1}</div>
-          <div class="lb-info">
-            <div class="lb-name">${escapeHtml(entry.name)}${drinksLabel ? '<span style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-left:6px;">' + drinksLabel + '</span>' : ''}</div>
-            <div class="lb-stats">
-              ${entry.weekdays_hit} days &middot; ${entry.streak} streak &middot; ${entry.weekdays_missed} missed
-            </div>
-          </div>
-          <div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct}%"></div></div>
-        </div>
-      `;
-    }).join('');
+    leaderboardData = await res.json();
+    renderLeaderboard();
   } catch (e) {
     document.getElementById('leaderboardList').innerHTML = '<div class="empty-state">Could not load</div>';
   }
 }
+
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboardList');
+  if (leaderboardData.length === 0) {
+    list.innerHTML = '<div class="empty-state">No check-ins yet. Be the first!</div>';
+    return;
+  }
+
+  // Sort a copy based on current toggle
+  const data = [...leaderboardData].sort((a, b) => {
+    if (leaderboardSort === 'streak') {
+      if (b.streak !== a.streak) return b.streak - a.streak;
+      if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
+      return a.name.localeCompare(b.name);
+    } else if (leaderboardSort === 'drinks') {
+      if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
+      if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
+      return a.name.localeCompare(b.name);
+    } else { // 'days' — default from server
+      if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
+      if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
+      return a.name.localeCompare(b.name);
+    }
+  });
+
+  const maxDays = Math.max(1, ...data.map(d => d.weekdays_hit + d.weekdays_missed));
+
+  list.innerHTML = data.map((entry, i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const pct = maxDays > 0 ? Math.round((entry.weekdays_hit / maxDays) * 100) : 0;
+    const drinksLabel = entry.total_drinks > 0 ? entry.total_drinks + ' drink' + (entry.total_drinks !== 1 ? 's' : '') : '';
+    return `
+      <div class="lb-item">
+        <div class="lb-rank ${rankClass}">${i + 1}</div>
+        <div class="lb-info">
+          <div class="lb-name">${escapeHtml(entry.name)}${drinksLabel ? '<span style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-left:6px;">' + drinksLabel + '</span>' : ''}</div>
+          <div class="lb-stats">
+            ${entry.weekdays_hit} days &middot; ${entry.streak} streak &middot; ${entry.weekdays_missed} missed
+          </div>
+        </div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Sort toggle click handlers
+document.querySelectorAll('.lb-sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    leaderboardSort = btn.dataset.sort;
+    renderLeaderboard();
+  });
+});
 
 /* =============================== */
 // UTILS
