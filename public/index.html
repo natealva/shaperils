@@ -311,8 +311,8 @@
     }
     .lb-item:last-child { border-bottom: none; }
     .lb-rank {
-      font-family: 'Playfair Display', serif; font-size: 1.3rem;
-      font-weight: 700; width: 36px; text-align: center; flex-shrink: 0;
+      font-family: 'Playfair Display', serif; font-size: 1.15rem;
+      font-weight: 700; min-width: 40px; text-align: center; flex-shrink: 0;
     }
     .lb-rank.gold { color: #D4A017; }
     .lb-rank.silver { color: #8E8E8E; }
@@ -831,7 +831,7 @@
       <div class="card">
         <div class="card-title"><span class="icon icon-green">L</span> Leaderboard</div>
         <div class="lb-sort-toggles">
-          <button class="lb-sort-btn active" data-sort="days">Days</button>
+          <button class="lb-sort-btn active" data-sort="days">Overall (Days)</button>
           <button class="lb-sort-btn" data-sort="streak">Streak</button>
           <button class="lb-sort-btn" data-sort="drinks">Drinks</button>
         </div>
@@ -2593,29 +2593,65 @@ function renderLeaderboard() {
   // Sort a copy based on current toggle
   const data = [...leaderboardData].sort((a, b) => {
     if (leaderboardSort === 'streak') {
+      // Primary: streak. Then days, drinks, alphabetical
       if (b.streak !== a.streak) return b.streak - a.streak;
       if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
+      if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
       return a.name.localeCompare(b.name);
     } else if (leaderboardSort === 'drinks') {
+      // Primary: drinks. Then days, streak, alphabetical
       if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
       if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
+      if (b.streak !== a.streak) return b.streak - a.streak;
       return a.name.localeCompare(b.name);
-    } else { // 'days' — default from server
+    } else { // 'days' — default: days, drinks, alphabetical
       if (b.weekdays_hit !== a.weekdays_hit) return b.weekdays_hit - a.weekdays_hit;
       if (b.total_drinks !== a.total_drinks) return b.total_drinks - a.total_drinks;
       return a.name.localeCompare(b.name);
     }
   });
 
+  // Determine whether two entries are "tied" based on the current sort mode.
+  // For "days": tied if days AND drinks are equal (alphabetical is the only separator)
+  // For "streak": tied if streak is equal (no tiebreaker matters for rank display)
+  // For "drinks": tied if drinks are equal (no tiebreaker matters for rank display)
+  function isTied(a, b) {
+    if (!a || !b) return false;
+    if (leaderboardSort === 'streak') return a.streak === b.streak;
+    if (leaderboardSort === 'drinks') return a.total_drinks === b.total_drinks;
+    // 'days': tied only when the alphabetical fallback is the sole differentiator
+    return a.weekdays_hit === b.weekdays_hit && a.total_drinks === b.total_drinks;
+  }
+
+  // Assign display ranks with T- prefix for ties
+  const ranks = [];
+  let currentRank = 1;
+  for (let i = 0; i < data.length; i++) {
+    if (i === 0) {
+      ranks.push(currentRank);
+    } else if (isTied(data[i], data[i - 1])) {
+      ranks.push(ranks[i - 1]); // same rank as previous
+    } else {
+      currentRank = i + 1;
+      ranks.push(currentRank);
+    }
+  }
+  // Mark which indices are part of a tie group (rank appears more than once)
+  const rankCounts = {};
+  ranks.forEach(r => { rankCounts[r] = (rankCounts[r] || 0) + 1; });
+
   const maxDays = Math.max(1, ...data.map(d => d.weekdays_hit + d.weekdays_missed));
 
   list.innerHTML = data.map((entry, i) => {
-    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const rank = ranks[i];
+    const tied = rankCounts[rank] > 1;
+    const rankLabel = tied ? 'T-' + rank : '' + rank;
+    const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
     const pct = maxDays > 0 ? Math.round((entry.weekdays_hit / maxDays) * 100) : 0;
     const drinksLabel = entry.total_drinks > 0 ? entry.total_drinks + ' drink' + (entry.total_drinks !== 1 ? 's' : '') : '';
     return `
       <div class="lb-item">
-        <div class="lb-rank ${rankClass}">${i + 1}</div>
+        <div class="lb-rank ${rankClass}">${rankLabel}</div>
         <div class="lb-info">
           <div class="lb-name">${escapeHtml(entry.name)}${drinksLabel ? '<span style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-left:6px;">' + drinksLabel + '</span>' : ''}</div>
           <div class="lb-stats">
