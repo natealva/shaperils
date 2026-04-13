@@ -1123,7 +1123,7 @@ async function start() {
       console.log(`  April is Shays month!\n`);
 
       // Keep-alive: ping ourselves every 10 minutes to prevent Render free-tier sleep
-      const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+      const RENDER_URL = process.env.RENDER_EXTERNAL_URL || 'https://shaperils.onrender.com';
       if (RENDER_URL) {
         setInterval(() => {
           fetch(RENDER_URL + '/api/health').catch(() => {});
