@@ -1121,6 +1121,15 @@ async function start() {
       console.log(`  Twilio: ${twilioClient ? 'Connected' : 'Demo Mode'}`);
       console.log(`  Database: Connected`);
       console.log(`  April is Shays month!\n`);
+
+      // Keep-alive: ping ourselves every 10 minutes to prevent Render free-tier sleep
+      const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+      if (RENDER_URL) {
+        setInterval(() => {
+          fetch(RENDER_URL + '/api/health').catch(() => {});
+        }, 10 * 60 * 1000); // every 10 minutes
+        console.log('  Keep-alive: pinging ' + RENDER_URL + ' every 10 min');
+      }
     });
   } catch (err) {
     console.error('Failed to start:', err);
