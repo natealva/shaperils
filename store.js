@@ -22,14 +22,27 @@ async function initDb() {
         id TEXT PRIMARY KEY,
         token TEXT NOT NULL,
         name TEXT NOT NULL,
-        phone TEXT NOT NULL,
+        phone TEXT,
         active BOOLEAN DEFAULT true,
-        subscribed BOOLEAN DEFAULT true,
+        subscribed BOOLEAN DEFAULT false,
         silenced_until TEXT,
         test_mode BOOLEAN DEFAULT false,
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    // Migrations: keep existing deployments in sync with the new schema
+    // (1) phone is now optional (nullable)
+    await client.query(`ALTER TABLE users ALTER COLUMN phone DROP NOT NULL`).catch(() => {});
+    // (2) default subscribed state is now OFF (explicit opt-in required)
+    await client.query(`ALTER TABLE users ALTER COLUMN subscribed SET DEFAULT false`).catch(() => {});
+    // (3) one-time: reset every existing user to un-subscribed so SMS is off by default
+    //     for the entire user base. Gated by a flag row so it only runs once.
+    const flag = await client.query(`SELECT 1 FROM schema_flags WHERE name='sms_reset_2026_04' LIMIT 1`).catch(() => null);
+    if (!flag || flag.rowCount === 0) {
+      await client.query(`CREATE TABLE IF NOT EXISTS schema_flags (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW())`).catch(() => {});
+      await client.query(`UPDATE users SET subscribed=false`).catch(() => {});
+      await client.query(`INSERT INTO schema_flags (name) VALUES ('sms_reset_2026_04') ON CONFLICT DO NOTHING`).catch(() => {});
+    }
     await client.query(`
       CREATE TABLE IF NOT EXISTS checkins (
         id TEXT PRIMARY KEY,
@@ -187,28 +200,40 @@ async function getAllUsers(testMode = false) {
   return r.rows;
 }
 
-async function createUser(name, phone, testMode = false) {
-  const normalizedPhone = normalizePhone(phone);
-  // Check if phone already exists
-  const existing = await pool.query(
-    'SELECT * FROM users WHERE phone=$1 AND test_mode=$2',
-    [normalizedPhone, !!testMode]
-  );
-  if (existing.rows.length > 0) {
-    const user = existing.rows[0];
-    if (user.name !== name.trim()) {
-      await pool.query('UPDATE users SET name=$1, active=true WHERE id=$2', [name.trim(), user.id]);
-      user.name = name.trim();
+async function createUser(name, phone, smsConsent = false, testMode = false) {
+  const normalizedPhone = phone ? normalizePhone(phone) : null;
+
+  // If a phone was provided, check whether this person already has an account
+  if (normalizedPhone) {
+    const existing = await pool.query(
+      'SELECT * FROM users WHERE phone=$1 AND test_mode=$2',
+      [normalizedPhone, !!testMode]
+    );
+    if (existing.rows.length > 0) {
+      const user = existing.rows[0];
+      if (user.name !== name.trim()) {
+        await pool.query('UPDATE users SET name=$1, active=true WHERE id=$2', [name.trim(), user.id]);
+        user.name = name.trim();
+      }
+      // Honor an explicit SMS opt-in on re-login (never auto-subscribe without consent)
+      if (smsConsent && !user.subscribed) {
+        await pool.query('UPDATE users SET subscribed=true, silenced_until=null WHERE id=$1', [user.id]);
+        user.subscribed = true;
+        user.silenced_until = null;
+      }
+      user.active = true;
+      return user;
     }
-    user.active = true;
-    return user;
   }
+
+  // SMS only enabled if the user both opted in AND provided a phone
+  const initialSubscribed = !!(smsConsent && normalizedPhone);
   const id = 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   const token = generateToken();
   const r = await pool.query(
     `INSERT INTO users (id,token,name,phone,active,subscribed,silenced_until,test_mode)
-     VALUES ($1,$2,$3,$4,true,true,null,$5) RETURNING *`,
-    [id, token, name.trim(), normalizedPhone, !!testMode]
+     VALUES ($1,$2,$3,$4,true,$5,null,$6) RETURNING *`,
+    [id, token, name.trim(), normalizedPhone, initialSubscribed, !!testMode]
   );
   return r.rows[0];
 }

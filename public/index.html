@@ -549,16 +549,33 @@
     <div class="card" style="margin-top: 24px;">
       <div class="card-title"><span class="icon icon-brick">S</span> Sign In</div>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
-        Enter your name and phone number. We'll remember you next time.
+        Enter your name to join. Phone number is optional and only needed if you want SMS check-in alerts.
       </p>
       <div class="form-group">
-        <label>Your Name</label>
-        <input type="text" id="loginName" placeholder="e.g. Nate" />
+        <label>Your Name <span style="color:var(--brick);">*</span></label>
+        <input type="text" id="loginName" placeholder="e.g. Nate" required />
       </div>
       <div class="form-group">
-        <label>Phone Number</label>
+        <label>Phone Number <span style="color:var(--text-dim);font-weight:400;font-size:0.85rem;">(Optional)</span></label>
         <input type="tel" id="loginPhone" placeholder="(555) 123-4567" />
+        <div style="font-size:0.74rem;color:var(--text-dim);margin-top:4px;">Only required if you opt in to SMS notifications below.</div>
       </div>
+
+      <!-- ===== STANDALONE CONSENT CHECKBOXES (required by Twilio TFV) ===== -->
+      <div style="margin:14px 0 6px;padding:12px 14px;background:var(--cream-dark);border:1px solid var(--border);border-radius:10px;">
+        <label for="agreeTerms" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--text);line-height:1.45;">
+          <input type="checkbox" id="agreeTerms" style="margin-top:3px;flex-shrink:0;width:16px;height:16px;cursor:pointer;" />
+          <span><span style="color:var(--brick);">*</span> I agree to the <a href="/terms" target="_blank" style="color:var(--brick);text-decoration:underline;">Terms of Service</a> and <a href="/privacy" target="_blank" style="color:var(--brick);text-decoration:underline;">Privacy Policy</a>.</span>
+        </label>
+      </div>
+
+      <div style="margin:8px 0 14px;padding:12px 14px;background:var(--green-bg);border:1px solid var(--green);border-radius:10px;">
+        <label for="agreeSms" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--text);line-height:1.45;">
+          <input type="checkbox" id="agreeSms" style="margin-top:3px;flex-shrink:0;width:16px;height:16px;cursor:pointer;" />
+          <span><strong>SMS opt-in (optional, separate consent).</strong> I agree to receive Shayprils SMS check-in alerts at the phone number above. Message frequency 1&ndash;5/day, only on weekdays in April 2026. Msg &amp; data rates may apply. Reply STOP to cancel, HELP for help. This consent is not a condition of any purchase or other agreement.</span>
+        </label>
+      </div>
+
       <button class="btn btn-primary" onclick="doLogin()">Join Shayprils</button>
       <div style="text-align:center;margin-top:14px;">
         <button onclick="enterGuestMode()" style="background:none;border:none;color:var(--text-muted);font-size:0.85rem;cursor:pointer;text-decoration:underline;font-family:inherit;">Just looking</button>
@@ -596,10 +613,10 @@
       <div style="margin-bottom:14px;">
         <div style="font-size:0.78rem;color:var(--brown);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px;">How you opt in (consent flow)</div>
         <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:0;">
-          SMS is <strong>completely optional</strong>. After creating your account, you will see a "Notifications" toggle switch on the home screen. It is <strong>off by default</strong>. You must voluntarily tap this toggle to subscribe to text alerts. The app works fully without SMS — you are never required to opt in.
+          SMS is <strong>completely optional</strong>. Providing a phone number is optional at signup, and the SMS consent checkbox on the sign-in form is <strong>unchecked by default</strong>. You must actively check it to opt in. Even after opting in, you can turn texts off any time via the "Notifications" toggle on the home screen, which defaults to <strong>off</strong> for all users.
         </p>
         <p style="color:var(--text);font-size:0.84rem;line-height:1.5;margin:8px 0 0;">
-          SMS consent is a <strong>standalone action</strong>, separate from account creation and separate from our Terms of Service and Privacy Policy. Creating an account does <em>not</em> enroll you in SMS messages.
+          SMS consent is a <strong>standalone action</strong>, collected via a separate checkbox. It is not bundled with account creation, Terms of Service, or Privacy Policy. Agreeing to Terms/Privacy does <em>not</em> enroll you in SMS messages.
         </p>
       </div>
 
@@ -987,13 +1004,20 @@ let calendarMonth = 'april';
 async function doLogin() {
   const name = document.getElementById('loginName').value.trim();
   const phone = document.getElementById('loginPhone').value.trim();
-  if (!name || !phone) return showToast('Enter your name and phone number', 'error');
+  const termsEl = document.getElementById('agreeTerms');
+  const smsEl = document.getElementById('agreeSms');
+  const agreeTerms = termsEl ? !!termsEl.checked : false;
+  const smsConsent = smsEl ? !!smsEl.checked : false;
+
+  if (!name) return showToast('Enter your name', 'error');
+  if (!agreeTerms) return showToast('Please agree to the Terms and Privacy Policy to continue', 'error');
+  if (smsConsent && !phone) return showToast('Add a phone number to opt in to SMS alerts, or uncheck the SMS box', 'error');
 
   try {
     const res = await fetch(API + '/api/auth/register' + testParam(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone }),
+      body: JSON.stringify({ name, phone, smsConsent, agreeTerms }),
     });
     const data = await res.json();
     if (data.success) {
@@ -1741,6 +1765,10 @@ function renderNotificationSettings() {
 async function toggleNotifications(turnOn) {
   try {
     if (turnOn) {
+      if (!currentUser || !currentUser.phone) {
+        renderNotificationSettings();
+        return showToast('Add a phone number to your profile to enable SMS alerts', 'error');
+      }
       const res = await fetch(API + '/api/auth/unsilence', {
         method: 'POST', headers: authHeaders()
       });

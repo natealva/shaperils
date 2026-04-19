@@ -293,10 +293,14 @@ app.post('/api/admin/photo-recover', adminAuth, async (req, res) => {
 // AUTH ROUTES
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/auth/register', async (req, res) => {
-  const { name, phone } = req.body;
-  if (!name || !phone) return res.status(400).json({ error: 'Name and phone required' });
+  const { name, phone, smsConsent, agreeTerms } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name required' });
+  if (!agreeTerms) return res.status(400).json({ error: 'You must agree to the Terms of Service and Privacy Policy' });
+  // Phone is optional. SMS opt-in requires a phone number.
+  const cleanPhone = (typeof phone === 'string' && phone.trim()) ? phone.trim() : null;
+  const wantsSms = !!smsConsent && !!cleanPhone;
   try {
-    const user = await store.createUser(name.trim(), phone, req.testMode);
+    const user = await store.createUser(name.trim(), cleanPhone, wantsSms, req.testMode);
     res.json({
       success: true, token: user.token,
       user: { id: user.id, name: user.name, phone: user.phone,
