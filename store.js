@@ -514,6 +514,22 @@ async function adminUpdateUser(userId, updates, testMode = false) {
   if (typeof updates.active === 'boolean') {
     await pool.query('UPDATE users SET active=$1 WHERE id=$2', [updates.active, userId]);
   }
+  if (typeof updates.subscribed === 'boolean') {
+    // Admin-forced SMS toggle. When turning ON, also clear any silence window
+    // so the user actually receives texts. When turning OFF, leave silence
+    // state alone — subscribed=false is sufficient to block sends.
+    if (updates.subscribed) {
+      await pool.query(
+        'UPDATE users SET subscribed=true, silenced_until=null WHERE id=$1',
+        [userId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE users SET subscribed=false WHERE id=$1',
+        [userId]
+      );
+    }
+  }
   return { success: true, user: await getUser(userId, testMode) };
 }
 

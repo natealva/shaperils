@@ -3068,7 +3068,13 @@ async function loadAdminPanel() {
       html += '<td style="padding:8px;">' + escapeHtml(u.name) + '</td>';
       html += '<td style="padding:8px;text-align:center;">' + escapeHtml(u.phone) + '</td>';
       html += '<td style="padding:8px;text-align:center;">' + (u.active ? 'Yes' : 'No') + '</td>';
-      html += '<td style="padding:8px;text-align:center;">' + (u.subscribed ? 'Yes' : 'No') + '</td>';
+      var smsOn = !!u.subscribed;
+      var smsColor = smsOn ? 'var(--green)' : '#999';
+      var smsLabel = smsOn ? 'ON' : 'OFF';
+      var smsTitle = smsOn ? 'Click to turn SMS OFF for this user' : 'Click to turn SMS ON for this user';
+      html += '<td style="padding:8px;text-align:center;">';
+      html += '<button onclick="adminToggleUserSms(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',' + smsOn + ')" title="' + smsTitle + '" style="padding:4px 10px;background:' + smsColor + ';color:white;border:none;border-radius:12px;cursor:pointer;font-weight:600;font-size:0.78rem;min-width:48px;">' + smsLabel + '</button>';
+      html += '</td>';
       html += '<td style="padding:8px;text-align:center;">';
       html += '<button onclick="adminEditUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',\'' + escapeHtml(u.phone) + '\')" style="padding:4px 8px;background:var(--brown);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Edit</button>';
       if (u.active) html += '<button onclick="adminDeactivateUser(\'' + u.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Deactivate</button>';
@@ -3116,6 +3122,25 @@ function adminEditUser(userId, name, phone) {
     if (d.success) { showToast('User updated'); loadAdminPanel(); }
     else showToast(d.error || 'Failed', 'error');
   });
+}
+
+// Admin: flip a specific user's SMS subscription on/off
+function adminToggleUserSms(userId, name, currentlyOn) {
+  const turnOn = !currentlyOn;
+  const verb = turnOn ? 'turn SMS ON for' : 'turn SMS OFF for';
+  if (!confirm('Are you sure you want to ' + verb + ' ' + name + '?')) return;
+  fetch(API + '/api/admin/users/' + userId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+    body: JSON.stringify({ subscribed: turnOn })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      showToast('SMS turned ' + (turnOn ? 'ON' : 'OFF') + ' for ' + name);
+      loadAdminPanel();
+    } else {
+      showToast(d.error || 'Failed', 'error');
+    }
+  }).catch(() => showToast('Network error', 'error'));
 }
 
 function adminDeactivateUser(userId) {
