@@ -1111,6 +1111,210 @@ h1{color:#722F37}h2{color:#722F37;margin-top:1.5em}a{color:#722F37}</style></hea
 </body></html>`);
 });
 
+// ═══════════════════════════════════════════════════════════════
+// QUESTION OF THE DAY
+// ═══════════════════════════════════════════════════════════════
+const QOTD_FALLBACKS = [
+  "What's the best gift you've ever received?",
+  "What's something you learned from your parents?",
+  "Who was your favorite teacher, and why?",
+  "Tell me about your childhood best friend.",
+  "What's the last thing that made you laugh out loud?",
+  "What's a song that always puts you in a good mood?",
+  "What was your favorite family trip growing up?",
+  "What's a compliment you've never forgotten?",
+  "What's the best meal you've had in the last year?",
+  "What's a skill you wish you had picked up as a kid?",
+  "Who was your first real crush?",
+  "What's the most beautiful place you've ever been?",
+  "What's a book or movie you keep coming back to?",
+  "What did you want to be when you grew up?",
+  "What was your favorite cartoon as a kid?",
+  "What's the best advice a stranger ever gave you?",
+  "What's a totally irrational fear you have?",
+  "What's the weirdest job you've ever had?",
+  "What's your earliest memory?",
+  "What's the best concert you've ever been to?",
+  "What was your hype song in college?",
+  "Who's the most interesting person you've ever sat next to on a plane?",
+  "What's the longest you've gone without sleep?",
+  "What's a hill you'll die on?",
+  "What's a food you hated as a kid and love now?",
+  "What was your first car, and how do you feel about it?",
+  "What's a tradition you want to carry into your family?",
+  "What's the last thing you splurged on and don't regret?",
+  "What's a talent of yours that nobody knows about?",
+  "What's the nicest thing a friend has ever done for you?",
+  "What was your worst haircut?",
+  "What's the most unexpected friendship you've made?",
+  "What's something you miss about being a kid?",
+  "What's the best wrong turn you've ever taken?",
+  "What's your go-to karaoke song?",
+  "If you could relive one year of your life, which one?",
+  "What's the nicest hotel or Airbnb you've ever stayed in?",
+  "What's a small thing that instantly makes your day better?",
+  "What's a piece of advice you'd give your 18-year-old self?",
+  "What was your favorite teacher's catchphrase?",
+  "What's the most impulsive thing you've ever done?",
+  "What's the best birthday you've ever had?",
+  "Who in your life gives the best hugs?",
+  "What's the weirdest food combination you secretly love?",
+  "What's a trip you're still planning in your head?",
+  "What was your family's holiday tradition growing up?",
+  "What's the last thing you learned that surprised you?",
+  "What's your favorite thing about where you grew up?",
+  "Who taught you how to drive, and how'd that go?",
+  "What's a story about your parents you love to tell?",
+  "What was your childhood bedroom like?",
+  "What's the best decision you've made in the last year?",
+  "What's a song that reminds you of high school?",
+  "If you had to eat one cuisine for the rest of your life, what would it be?",
+  "What's a place you've been that everyone should see once?",
+  "What's the best thing you've ever cooked?",
+  "Who's someone you'd love to have dinner with, living or not?",
+  "What's a memory from this year you want to hold onto?",
+  "What's a small risk that paid off big for you?",
+  "What's your favorite smell, and why?",
+];
+
+function qotdTodayET() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function qotdPickFallback(exclude) {
+  const set = new Set((exclude || []).map(q => (q || '').trim().toLowerCase()));
+  const pool = QOTD_FALLBACKS.filter(q => !set.has(q.trim().toLowerCase()));
+  const choices = pool.length ? pool : QOTD_FALLBACKS;
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+async function generateQotDWithClaude(recent) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const exclusions = (recent || []).map(r => `- ${r.question_text}`).join('\n') || '(none yet)';
+  const prompt = `Generate ONE conversation-starter question for a casual bar check-in app used by a group of friends. The question should be thought-provoking but casual — the kind of thing friends might actually ask each other over a beer that sparks a short story or longer conversation.
+
+Vibe examples (do not repeat, just use for tone):
+- What's the best gift you've ever received?
+- What's something you learned from your parents?
+- Who was your favorite teacher, and why?
+- Tell me about your childhood best friend.
+
+Rules:
+- Exactly one question, 15 words or fewer.
+- Warm, curious, not intrusive. No politics, religion, trauma, or sex.
+- No "would you rather" or game-show framing.
+- Not generic ("how was your day?"). Should invite a real story.
+- Avoid any of these recent questions:
+${exclusions}
+
+Respond with ONLY the question — no quotes, no preamble, no trailing commentary.`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: process.env.ANTHROPIC_QOTD_MODEL || 'claude-sonnet-4-5',
+        max_tokens: 120,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      console.error('[qotd] Anthropic API error:', r.status, body.slice(0, 200));
+      return null;
+    }
+    const j = await r.json();
+    let text = j && j.content && j.content[0] && j.content[0].text;
+    if (!text) return null;
+    text = text.trim().replace(/^["'\s]+|["'\s]+$/g, '');
+    if (text.length < 5 || text.length > 200) return null;
+    return text;
+  } catch (err) {
+    console.error('[qotd] Claude generation failed:', err.message);
+    return null;
+  }
+}
+
+async function generateQotD() {
+  const recent = await store.getRecentQotDs(30).catch(() => []);
+  const fromClaude = await generateQotDWithClaude(recent);
+  if (fromClaude) return { text: fromClaude, source: 'claude' };
+  const fallback = qotdPickFallback(recent.map(r => r.question_text));
+  return { text: fallback, source: 'fallback' };
+}
+
+// Public: get today's question. Auto-generates on first hit of the day.
+app.get('/api/question-of-day', async (req, res) => {
+  try {
+    const date = qotdTodayET();
+    let row = await store.getQotD(date);
+    if (!row) {
+      const { text, source } = await generateQotD();
+      row = await store.upsertQotD(date, text, false);
+      console.log(`[qotd] auto-generated for ${date} via ${source}: ${text}`);
+    }
+    res.json({
+      date: row.date,
+      question: row.question_text,
+      is_manual: !!row.is_manual,
+    });
+  } catch (err) {
+    console.error('[qotd] failed to load:', err);
+    res.status(500).json({ error: 'Failed to load question of the day' });
+  }
+});
+
+// Admin: regenerate today's question (AI, with fallback bank).
+app.post('/api/admin/question-of-day/refresh', adminAuth, async (req, res) => {
+  try {
+    const date = qotdTodayET();
+    const { text, source } = await generateQotD();
+    const row = await store.upsertQotD(date, text, false);
+    res.json({
+      success: true,
+      date: row.date,
+      question: row.question_text,
+      is_manual: false,
+      source,
+    });
+  } catch (err) {
+    console.error('[qotd] refresh failed:', err);
+    res.status(500).json({ error: 'Failed to refresh question' });
+  }
+});
+
+// Admin: set today's question manually.
+app.post('/api/admin/question-of-day', adminAuth, async (req, res) => {
+  try {
+    const { question } = req.body || {};
+    if (!question || typeof question !== 'string' || !question.trim()) {
+      return res.status(400).json({ error: 'Question text required' });
+    }
+    const trimmed = question.trim();
+    if (trimmed.length > 280) {
+      return res.status(400).json({ error: 'Keep it under 280 characters' });
+    }
+    const date = qotdTodayET();
+    const row = await store.upsertQotD(date, trimmed, true);
+    res.json({
+      success: true,
+      date: row.date,
+      question: row.question_text,
+      is_manual: true,
+    });
+  } catch (err) {
+    console.error('[qotd] manual set failed:', err);
+    res.status(500).json({ error: 'Failed to save question' });
+  }
+});
+
 // Serve frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

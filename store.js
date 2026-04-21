@@ -113,6 +113,16 @@ async function initDb() {
         UNIQUE(message_id, user_id)
       )
     `);
+    // Daily Question of the Day (conversation starter shown on check-in page)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS questions_of_the_day (
+        date TEXT PRIMARY KEY,
+        question_text TEXT NOT NULL,
+        is_manual BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
     console.log('Database tables initialized');
   } finally {
     client.release();
@@ -670,6 +680,34 @@ async function getCheersForMessages(messageIds) {
   return map;
 }
 
+// ─── Question of the Day ──────────────────────────────
+async function getQotD(date) {
+  const r = await pool.query('SELECT * FROM questions_of_the_day WHERE date=$1', [date]);
+  return r.rows[0] || null;
+}
+
+async function upsertQotD(date, text, isManual) {
+  const r = await pool.query(
+    `INSERT INTO questions_of_the_day (date, question_text, is_manual)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (date) DO UPDATE
+       SET question_text = EXCLUDED.question_text,
+           is_manual = EXCLUDED.is_manual,
+           updated_at = NOW()
+     RETURNING *`,
+    [date, text, !!isManual]
+  );
+  return r.rows[0];
+}
+
+async function getRecentQotDs(limit = 30) {
+  const r = await pool.query(
+    'SELECT date, question_text FROM questions_of_the_day ORDER BY date DESC LIMIT $1',
+    [limit]
+  );
+  return r.rows;
+}
+
 module.exports = {
   getUser, getUserByToken, getAllUsers, createUser, updateUserSubscription,
   getSubscribedUsers, addCheckin, getCheckinsForUser, getCheckinsForDate,
@@ -681,5 +719,6 @@ module.exports = {
   getSetting, setSetting, getAllSettings,
   toggleCheers, getCheersForCheckins,
   toggleMessageCheers, getMessageCheers, getCheersForMessages,
+  getQotD, upsertQotD, getRecentQotDs,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };
