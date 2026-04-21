@@ -247,6 +247,78 @@
     .checkin-status .big-check { font-size: 2rem; color: var(--green); font-weight: 700; }
     .checkin-status .status-text { color: var(--green); font-weight: 600; margin-top: 4px; }
 
+    /* === Question of the Day === */
+    .qotd-card {
+      background: linear-gradient(135deg, #FFF8EE 0%, #F6E9D2 100%);
+      border: 1px solid var(--tan);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(62, 39, 35, 0.05);
+    }
+    .qotd-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--brick);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .qotd-text {
+      font-size: 1.02rem;
+      line-height: 1.4;
+      color: var(--brown);
+      font-weight: 500;
+      font-style: italic;
+      min-height: 1.4em;
+    }
+    .qotd-text.qotd-loading {
+      color: var(--text-dim);
+      font-style: normal;
+      opacity: 0.7;
+    }
+    .qotd-admin {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .qotd-admin button {
+      background: #fff;
+      color: var(--brick);
+      border: 1px solid var(--brick);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .qotd-admin button:hover { background: var(--brick); color: #fff; }
+    .qotd-admin button:disabled { opacity: 0.5; cursor: wait; }
+    .qotd-editor { margin-top: 10px; text-align: left; }
+    .qotd-editor textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      resize: vertical;
+      min-height: 60px;
+      background: #fff;
+      color: var(--brown);
+    }
+    .qotd-editor-actions {
+      margin-top: 6px;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
     /* === Calendar === */
     .cal-grid {
       display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
@@ -677,6 +749,23 @@
 
     <!-- CHECK-IN TAB -->
     <div id="tab-checkin" class="tab-content active">
+      <!-- Question of the Day (conversation starter) -->
+      <div id="qotdCard" class="qotd-card">
+        <div class="qotd-label">Question of the Day</div>
+        <div id="qotdText" class="qotd-text qotd-loading">Loading today's question&hellip;</div>
+        <div id="qotdAdminControls" class="qotd-admin" style="display:none;">
+          <button type="button" id="qotdRefreshBtn" onclick="qotdRefresh()">Refresh (AI)</button>
+          <button type="button" id="qotdEditBtn" onclick="qotdStartEdit()">Write my own</button>
+        </div>
+        <div id="qotdEditor" class="qotd-editor" style="display:none;">
+          <textarea id="qotdInput" maxlength="280" placeholder="Type a question for today..."></textarea>
+          <div class="qotd-editor-actions">
+            <button type="button" onclick="qotdCancelEdit()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:6px 14px;font-size:0.78rem;cursor:pointer;font-family:inherit;">Cancel</button>
+            <button type="button" onclick="qotdSaveManual()" style="background:var(--brick);border:1px solid var(--brick);color:#fff;border-radius:8px;padding:6px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">Save</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Big "I'm heading to Shays" button -->
       <button class="heading-btn" onclick="sendHeading()">
         I'm heading to Shays!
@@ -1082,6 +1171,7 @@ function showApp() {
   document.querySelector('.user-bar').style.display = '';
   checkTodayCheckin();
   renderNotificationSettings();
+  qotdLoad();
 }
 
 function enterGuestMode() {
@@ -1144,7 +1234,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (tab === 'album') loadAlbum();
     if (tab === 'feed') loadFeed();
     if (tab === 'rally') { loadSubscriberCount(); loadLastAlert(); }
-    if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); }
+    if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); qotdLoad(); }
   });
 });
 
@@ -2815,6 +2905,108 @@ async function deleteSelfie(checkinId) {
   } catch(e) { showToast('Error deleting', 'error'); }
 }
 
+// ─── Question of the Day ──────────────────────────────
+async function qotdLoad() {
+  const textEl = document.getElementById('qotdText');
+  if (!textEl) return;
+  try {
+    const res = await fetch(API + '/api/question-of-day');
+    const data = await res.json();
+    if (data && data.question) {
+      textEl.textContent = data.question;
+      textEl.classList.remove('qotd-loading');
+    } else {
+      textEl.textContent = "What brings you to Shays tonight?";
+      textEl.classList.remove('qotd-loading');
+    }
+  } catch (e) {
+    textEl.textContent = "What brings you to Shays tonight?";
+    textEl.classList.remove('qotd-loading');
+  }
+  qotdSyncAdminControls();
+}
+
+function qotdSyncAdminControls() {
+  const ctrl = document.getElementById('qotdAdminControls');
+  if (!ctrl) return;
+  ctrl.style.display = adminPin ? 'flex' : 'none';
+  if (!adminPin) {
+    const ed = document.getElementById('qotdEditor');
+    if (ed) ed.style.display = 'none';
+  }
+}
+
+async function qotdRefresh() {
+  if (!adminPin) return;
+  const btn = document.getElementById('qotdRefreshBtn');
+  const textEl = document.getElementById('qotdText');
+  const prev = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Thinking…';
+  try {
+    const res = await fetch(API + '/api/admin/question-of-day/refresh', {
+      method: 'POST',
+      headers: { 'x-admin-pin': adminPin },
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      textEl.textContent = data.question;
+      textEl.classList.remove('qotd-loading');
+      if (typeof showToast === 'function') {
+        showToast(data.source === 'claude' ? 'New AI question loaded' : 'New question (fallback)');
+      }
+    } else if (typeof showToast === 'function') {
+      showToast('Refresh failed', 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Refresh failed', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
+  }
+}
+
+function qotdStartEdit() {
+  if (!adminPin) return;
+  const editor = document.getElementById('qotdEditor');
+  const input = document.getElementById('qotdInput');
+  input.value = document.getElementById('qotdText').textContent || '';
+  editor.style.display = 'block';
+  input.focus();
+}
+
+function qotdCancelEdit() {
+  document.getElementById('qotdEditor').style.display = 'none';
+}
+
+async function qotdSaveManual() {
+  if (!adminPin) return;
+  const input = document.getElementById('qotdInput');
+  const question = (input.value || '').trim();
+  if (!question) {
+    if (typeof showToast === 'function') showToast('Type a question first', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(API + '/api/admin/question-of-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+      body: JSON.stringify({ question }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('qotdText').textContent = data.question;
+      document.getElementById('qotdText').classList.remove('qotd-loading');
+      document.getElementById('qotdEditor').style.display = 'none';
+      if (typeof showToast === 'function') showToast('Question updated');
+    } else if (typeof showToast === 'function') {
+      showToast((data && data.error) || 'Save failed', 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Save failed', 'error');
+  }
+}
+
 // Admin functions
 let adminPin = null;
 
@@ -2830,6 +3022,7 @@ async function adminLogin() {
     if (res.ok) {
       adminPin = pin;
       showToast('Admin access granted');
+      qotdSyncAdminControls();
       loadAdminPanel();
     } else {
       showToast('Invalid PIN', 'error');
