@@ -380,7 +380,10 @@ app.post('/api/send', authMiddleware, async (req, res) => {
   }
 
   try {
-    const result = await sendToSubscribers(senderName, messageText, req.user.id, req.testMode);
+    // Include the sender in the recipient list — Nate wants the sender to
+    // also receive the text so the blast is a shared signal to the whole
+    // group, sender included.
+    const result = await sendToSubscribers(senderName, messageText, null, req.testMode);
     res.json({ success: true, message: `Message sent to ${result.sent} people!`, sent: result.sent });
   } catch (err) {
     console.error('Send error:', err);
