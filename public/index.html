@@ -319,6 +319,37 @@
       justify-content: flex-end;
     }
 
+    /* === Collapsible cards (About, SMS program) === */
+    .collapsible-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .collapsible-card summary.collapsible-summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      user-select: none;
+    }
+    .collapsible-card summary.collapsible-summary::-webkit-details-marker { display: none; }
+    .collapsible-card summary.collapsible-summary::marker { content: ''; }
+    .collapsible-card .collapsible-chevron {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+    .collapsible-card[open] .collapsible-chevron { transform: rotate(180deg); }
+    .collapsible-card .collapsible-body {
+      padding: 0 16px 16px;
+    }
+
     /* === Calendar === */
     .cal-grid {
       display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
@@ -621,16 +652,16 @@
     <div class="card" style="margin-top: 24px;">
       <div class="card-title"><span class="icon icon-brick">S</span> Sign In</div>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
-        Enter your name to join. Phone number is optional and only needed if you want SMS check-in alerts.
+        Enter your name and phone number to join. SMS check-in alerts are opt-in via the checkbox below.
       </p>
       <div class="form-group">
         <label>Your Name <span style="color:var(--brick);">*</span></label>
         <input type="text" id="loginName" placeholder="e.g. Nate" required />
       </div>
       <div class="form-group">
-        <label>Phone Number <span style="color:var(--text-dim);font-weight:400;font-size:0.85rem;">(Optional)</span></label>
-        <input type="tel" id="loginPhone" placeholder="(555) 123-4567" />
-        <div style="font-size:0.74rem;color:var(--text-dim);margin-top:4px;">Only required if you opt in to SMS notifications below.</div>
+        <label>Phone Number <span style="color:var(--brick);">*</span></label>
+        <input type="tel" id="loginPhone" placeholder="(555) 123-4567" required />
+        <div style="font-size:0.74rem;color:var(--text-dim);margin-top:4px;">Required so we can tell you apart from others with the same name. Only used for texts if you opt in below.</div>
       </div>
 
       <!-- ===== STANDALONE CONSENT CHECKBOXES (required by Twilio TFV) ===== -->
@@ -655,22 +686,31 @@
     </div>
 
     <!-- ===== PUBLIC-FACING ABOUT SECTION (visible without login) ===== -->
-    <div class="card" style="margin-top:18px;">
-      <div class="card-title"><span class="icon icon-brown">?</span> About Shayprils</div>
-      <p style="color:var(--text);font-size:0.86rem;line-height:1.55;margin:0 0 10px;">
-        Shayprils is a small, private check-in app for a group of ~20 friends from Harvard Business School meeting up at <strong>Shays Pub &amp; Wine Bar</strong> in Cambridge, MA every weekday in April 2026.
-      </p>
-      <p style="color:var(--text-muted);font-size:0.84rem;line-height:1.5;margin:0 0 10px;">
-        Members sign in with their name and phone number, take a selfie when they arrive at Shays, and can optionally receive text message alerts when friends check in. The app runs for the month of April 2026 only (April 1 – April 30).
-      </p>
-      <p style="color:var(--text-muted);font-size:0.84rem;line-height:1.5;margin:0;">
-        This is a non-commercial, invite-only project with no advertising, no marketing messages, and no data sharing with third parties.
-      </p>
-    </div>
+    <details class="collapsible-card" style="margin-top:18px;">
+      <summary class="collapsible-summary">
+        <span class="card-title" style="margin:0;"><span class="icon icon-brown">?</span> About Shayprils</span>
+        <span class="collapsible-chevron" aria-hidden="true">&#9662;</span>
+      </summary>
+      <div class="collapsible-body">
+        <p style="color:var(--text);font-size:0.86rem;line-height:1.55;margin:0 0 10px;">
+          Shayprils is a small, private check-in app for a group of ~80 friends from Harvard Business School meeting up at <strong>Shays Pub &amp; Wine Bar</strong> in Cambridge, MA every weekday in April 2026.
+        </p>
+        <p style="color:var(--text-muted);font-size:0.84rem;line-height:1.5;margin:0 0 10px;">
+          Members sign in with their name and phone number, take a selfie when they arrive at Shays, and can optionally receive text message alerts when friends check in. The app runs for the month of April 2026 only (April 1 – April 30).
+        </p>
+        <p style="color:var(--text-muted);font-size:0.84rem;line-height:1.5;margin:0;">
+          This is a non-commercial, invite-only project with no advertising, no marketing messages, and no data sharing with third parties.
+        </p>
+      </div>
+    </details>
 
     <!-- ===== STANDALONE SMS CONSENT DISCLOSURE (separate from all other agreements) ===== -->
-    <div class="card" style="margin-top:14px;border:2px solid var(--green);">
-      <div class="card-title"><span class="icon icon-green">&#9993;</span> SMS Text Message Program</div>
+    <details class="collapsible-card" style="margin-top:14px;border:2px solid var(--green);">
+      <summary class="collapsible-summary">
+        <span class="card-title" style="margin:0;"><span class="icon icon-green">&#9993;</span> SMS Text Message Program</span>
+        <span class="collapsible-chevron" aria-hidden="true">&#9662;</span>
+      </summary>
+      <div class="collapsible-body">
 
       <div style="margin-bottom:14px;">
         <div style="font-size:0.78rem;color:var(--brown);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px;">What messages you'll receive</div>
@@ -711,7 +751,8 @@
           By subscribing to SMS alerts, you consent only to receiving Shayprils check-in notifications as described above. This consent is not bundled with, or a condition of, any other service, purchase, or agreement.
         </p>
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- ===== FOOTER WITH LINKS ===== -->
     <div style="margin-top:14px;text-align:center;padding-bottom:20px;">
@@ -1099,8 +1140,8 @@ async function doLogin() {
   const smsConsent = smsEl ? !!smsEl.checked : false;
 
   if (!name) return showToast('Enter your name', 'error');
+  if (!phone) return showToast('Enter your phone number', 'error');
   if (!agreeTerms) return showToast('Please agree to the Terms and Privacy Policy to continue', 'error');
-  if (smsConsent && !phone) return showToast('Add a phone number to opt in to SMS alerts, or uncheck the SMS box', 'error');
 
   try {
     const res = await fetch(API + '/api/auth/register' + testParam(), {
@@ -3068,13 +3109,7 @@ async function loadAdminPanel() {
       html += '<td style="padding:8px;">' + escapeHtml(u.name) + '</td>';
       html += '<td style="padding:8px;text-align:center;">' + escapeHtml(u.phone) + '</td>';
       html += '<td style="padding:8px;text-align:center;">' + (u.active ? 'Yes' : 'No') + '</td>';
-      var smsOn = !!u.subscribed;
-      var smsColor = smsOn ? 'var(--green)' : '#999';
-      var smsLabel = smsOn ? 'ON' : 'OFF';
-      var smsTitle = smsOn ? 'Click to turn SMS OFF for this user' : 'Click to turn SMS ON for this user';
-      html += '<td style="padding:8px;text-align:center;">';
-      html += '<button onclick="adminToggleUserSms(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',' + smsOn + ')" title="' + smsTitle + '" style="padding:4px 10px;background:' + smsColor + ';color:white;border:none;border-radius:12px;cursor:pointer;font-weight:600;font-size:0.78rem;min-width:48px;">' + smsLabel + '</button>';
-      html += '</td>';
+      html += '<td style="padding:8px;text-align:center;">' + (u.subscribed ? 'Yes' : 'No') + '</td>';
       html += '<td style="padding:8px;text-align:center;">';
       html += '<button onclick="adminEditUser(\'' + u.id + '\',\'' + escapeHtml(u.name) + '\',\'' + escapeHtml(u.phone) + '\')" style="padding:4px 8px;background:var(--brown);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Edit</button>';
       if (u.active) html += '<button onclick="adminDeactivateUser(\'' + u.id + '\')" style="padding:4px 8px;background:var(--red-accent);color:white;border:none;border-radius:4px;cursor:pointer;margin:2px;">Deactivate</button>';
@@ -3122,25 +3157,6 @@ function adminEditUser(userId, name, phone) {
     if (d.success) { showToast('User updated'); loadAdminPanel(); }
     else showToast(d.error || 'Failed', 'error');
   });
-}
-
-// Admin: flip a specific user's SMS subscription on/off
-function adminToggleUserSms(userId, name, currentlyOn) {
-  const turnOn = !currentlyOn;
-  const verb = turnOn ? 'turn SMS ON for' : 'turn SMS OFF for';
-  if (!confirm('Are you sure you want to ' + verb + ' ' + name + '?')) return;
-  fetch(API + '/api/admin/users/' + userId, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
-    body: JSON.stringify({ subscribed: turnOn })
-  }).then(r => r.json()).then(d => {
-    if (d.success) {
-      showToast('SMS turned ' + (turnOn ? 'ON' : 'OFF') + ' for ' + name);
-      loadAdminPanel();
-    } else {
-      showToast(d.error || 'Failed', 'error');
-    }
-  }).catch(() => showToast('Network error', 'error'));
 }
 
 function adminDeactivateUser(userId) {
