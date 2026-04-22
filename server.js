@@ -296,8 +296,10 @@ app.post('/api/auth/register', async (req, res) => {
   const { name, phone, smsConsent, agreeTerms } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
   if (!agreeTerms) return res.status(400).json({ error: 'You must agree to the Terms of Service and Privacy Policy' });
-  // Phone is optional. SMS opt-in requires a phone number.
+  // Phone is now required (so we can distinguish users with the same name).
+  // SMS opt-in is still separate — the smsConsent checkbox gates actual subscription.
   const cleanPhone = (typeof phone === 'string' && phone.trim()) ? phone.trim() : null;
+  if (!cleanPhone) return res.status(400).json({ error: 'Phone number required' });
   const wantsSms = !!smsConsent && !!cleanPhone;
   try {
     const user = await store.createUser(name.trim(), cleanPhone, wantsSms, req.testMode);
