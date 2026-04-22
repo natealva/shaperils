@@ -132,7 +132,13 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null, 
     ? subscribers.filter(s => s.id !== excludeUserId)
     : subscribers;
 
-  if (recipients.length === 0) return { sent: 0, total: 0 };
+  // Always post to the in-app activity feed, even if there are no SMS
+  // recipients. The rally blast is a social signal for everyone looking at
+  // the feed, not just SMS subscribers.
+  if (recipients.length === 0) {
+    await store.logMessage(senderName, 'broadcast', messageText, 0, testMode);
+    return { sent: 0, total: 0 };
+  }
 
   const tfnFrom = process.env.TWILIO_TFN_FROM; // e.g. "+18446852640"
   const longFrom = process.env.TWILIO_PHONE_NUMBER;
