@@ -514,6 +514,16 @@ async function adminUpdateUser(userId, updates, testMode = false) {
   if (typeof updates.active === 'boolean') {
     await pool.query('UPDATE users SET active=$1 WHERE id=$2', [updates.active, userId]);
   }
+  if (typeof updates.subscribed === 'boolean') {
+    // Turning SMS on from admin also clears silenced_until so the user
+    // actually starts receiving texts again. Turning off leaves silenced_until
+    // alone so a user's own silence-until-tomorrow stays meaningful.
+    if (updates.subscribed) {
+      await pool.query('UPDATE users SET subscribed=true, silenced_until=NULL WHERE id=$1', [userId]);
+    } else {
+      await pool.query('UPDATE users SET subscribed=false WHERE id=$1', [userId]);
+    }
+  }
   return { success: true, user: await getUser(userId, testMode) };
 }
 
