@@ -31,6 +31,8 @@ const ADMIN_PIN = process.env.ADMIN_PIN || '8675';
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+// Twilio inbound SMS webhook posts application/x-www-form-urlencoded bodies.
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(store.SELFIES_DIR));
 app.use('/uploads_test', express.static(store.TEST_SELFIES_DIR));
@@ -378,6 +380,9 @@ app.post('/api/send', authMiddleware, async (req, res) => {
     default:
       messageText = `${senderName} is heading to Shays! Come through!\n${appLink}`;
   }
+
+  // Append the TOGGLE tagline so recipients can mute/unmute by reply.
+  messageText += `\n\nText TOGGLE to turn notifications on/off`;
 
   try {
     // Include the sender in the recipient list — Nate wants the sender to
@@ -1323,6 +1328,70 @@ app.post('/api/admin/question-of-day', adminAuth, async (req, res) => {
   } catch (err) {
     console.error('[qotd] manual set failed:', err);
     res.status(500).json({ error: 'Failed to save question' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TWILIO INBOUND SMS WEBHOOK
+// ═══════════════════════════════════════════════════════════════
+// Twilio POSTs here whenever someone replies to a Shayprils text. We watch
+// for "TOGGLE" and flip the sender's subscribed flag. All other words are
+// ignored (Twilio auto-handles STOP/HELP itself for compliance).
+//
+// Twilio payload fields we use:
+//   - From: "+15551234567" (E.164, always)
+//   - Body: "toggle" or whatever they typed
+//
+// Response is TwiML — a tiny XML <Response> that Twilio sends back to the
+// user as a reply SMS.
+function twiml(text) {
+  const escaped = String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Response><Message>${escaped}</Message></Response>`;
+}
+
+app.post('/api/twilio/inbound', async (req, res) => {
+  try {
+    const from = (req.body && req.body.From) || '';
+    const body = ((req.body && req.body.Body) || '').trim();
+    const cmd = body.toUpperCase();
+
+    console.log(`[inbound] from=${from} body=${JSON.stringify(body)}`);
+
+    // Only act on TOGGLE. Twilio auto-handles STOP/START/HELP on our behalf,
+    // so we don't reimplement those — they shouldn't hit this route anyway.
+    if (cmd !== 'TOGGLE') {
+      res.type('text/xml').send(twiml(
+        `Text TOGGLE to turn Shayprils notifications on/off. Reply STOP to unsubscribe, HELP for help.`
+      ));
+      return;
+    }
+
+    const user = await store.getUserByPhone(from);
+    if (!user) {
+      res.type('text/xml').send(twiml(
+        `We couldn't find a Shayprils account for this number. Sign up at https://shaperils.onrender.com`
+      ));
+      return;
+    }
+
+    const updated = await store.toggleUserSubscribed(user.id);
+    if (!updated) {
+      res.type('text/xml').send(twiml(`Something went wrong. Try again in a minute.`));
+      return;
+    }
+
+    const reply = updated.subscribed
+      ? `Shayprils notifications ON. You'll get a text when friends rally. Text TOGGLE again to turn off.`
+      : `Shayprils notifications OFF. Text TOGGLE again to turn back on.`;
+    res.type('text/xml').send(twiml(reply));
+  } catch (err) {
+    console.error('[inbound] error:', err);
+    // Still return valid TwiML so Twilio doesn't retry-spam us.
+    res.type('text/xml').send(twiml(`Shayprils is having a moment. Try again soon.`));
   }
 });
 

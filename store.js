@@ -514,22 +514,6 @@ async function adminUpdateUser(userId, updates, testMode = false) {
   if (typeof updates.active === 'boolean') {
     await pool.query('UPDATE users SET active=$1 WHERE id=$2', [updates.active, userId]);
   }
-  if (typeof updates.subscribed === 'boolean') {
-    // Admin-forced SMS toggle. When turning ON, also clear any silence window
-    // so the user actually receives texts. When turning OFF, leave silence
-    // state alone — subscribed=false is sufficient to block sends.
-    if (updates.subscribed) {
-      await pool.query(
-        'UPDATE users SET subscribed=true, silenced_until=null WHERE id=$1',
-        [userId]
-      );
-    } else {
-      await pool.query(
-        'UPDATE users SET subscribed=false WHERE id=$1',
-        [userId]
-      );
-    }
-  }
   return { success: true, user: await getUser(userId, testMode) };
 }
 
@@ -696,6 +680,35 @@ async function getCheersForMessages(messageIds) {
   return map;
 }
 
+// ─── Phone lookup (used by Twilio inbound webhook) ────────
+// Returns the first active user matching the given phone number in prod mode.
+// Phone is normalized first so "(555) 123-4567", "555-123-4567", "+15551234567"
+// all match the same stored row.
+async function getUserByPhone(phone) {
+  if (!phone) return null;
+  const normalized = normalizePhone(String(phone));
+  const r = await pool.query(
+    'SELECT * FROM users WHERE phone=$1 AND active=true AND test_mode=false LIMIT 1',
+    [normalized]
+  );
+  return r.rows[0] || null;
+}
+
+// Flip a user's subscribed flag. If turning ON, also clear silenced_until so
+// a previously silenced user who texts TOGGLE immediately re-subscribes.
+async function toggleUserSubscribed(userId) {
+  const cur = await pool.query('SELECT subscribed FROM users WHERE id=$1', [userId]);
+  if (!cur.rows[0]) return null;
+  const nextSubscribed = !cur.rows[0].subscribed;
+  const r = await pool.query(
+    `UPDATE users SET subscribed=$1,
+       silenced_until = CASE WHEN $1 THEN NULL ELSE silenced_until END
+     WHERE id=$2 RETURNING *`,
+    [nextSubscribed, userId]
+  );
+  return r.rows[0];
+}
+
 // ─── Question of the Day ──────────────────────────────
 async function getQotD(date) {
   const r = await pool.query('SELECT * FROM questions_of_the_day WHERE date=$1', [date]);
@@ -736,5 +749,6 @@ module.exports = {
   toggleCheers, getCheersForCheckins,
   toggleMessageCheers, getMessageCheers, getCheersForMessages,
   getQotD, upsertQotD, getRecentQotDs,
+  getUserByPhone, toggleUserSubscribed,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };
