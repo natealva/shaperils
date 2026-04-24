@@ -350,6 +350,163 @@
       padding: 0 16px 16px;
     }
 
+    /* === Shayprils Wrapped preview === */
+    .wrap-overlay {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #000; color: #fff;
+      display: flex; flex-direction: column;
+      font-family: inherit;
+    }
+    .wrap-overlay.hidden { display: none; }
+    .wrap-close-btn {
+      position: absolute; top: 18px; right: 18px;
+      background: rgba(255,255,255,0.14); border: none;
+      color: #fff; width: 36px; height: 36px;
+      border-radius: 50%; cursor: pointer;
+      font-size: 22px; line-height: 1; z-index: 10;
+    }
+    .wrap-close-btn:hover { background: rgba(255,255,255,0.25); }
+    .wrap-progress {
+      position: absolute; top: 14px; left: 14px; right: 70px;
+      display: flex; gap: 4px; z-index: 5;
+    }
+    .wrap-progress-bar {
+      flex: 1; height: 3px;
+      background: rgba(255,255,255,0.3); border-radius: 2px;
+    }
+    .wrap-progress-bar.active { background: #fff; }
+    .wrap-stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .wrap-slide {
+      position: absolute; inset: 0; display: none;
+      align-items: center; justify-content: center;
+      padding: 56px 28px 80px;
+      text-align: center; box-sizing: border-box;
+    }
+    .wrap-slide.active { display: flex; }
+    .wrap-slide-inner {
+      width: 100%; max-width: 420px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .wrap-nav-tap {
+      position: absolute; top: 0; bottom: 0; width: 35%;
+      background: transparent; border: none; cursor: pointer;
+      z-index: 3;
+    }
+    .wrap-nav-tap.left { left: 0; }
+    .wrap-nav-tap.right { right: 0; }
+
+    .wrap-eyebrow {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em;
+      opacity: 0.85; text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .wrap-hero {
+      font-size: 4.5rem; font-weight: 900; line-height: 0.95;
+      margin: 8px 0 18px;
+    }
+    .wrap-caption {
+      font-size: 1.1rem; font-weight: 500; opacity: 0.88;
+      line-height: 1.4;
+    }
+    .wrap-sub-stats {
+      margin-top: 28px; font-size: 1rem; line-height: 1.85;
+      opacity: 0.92;
+    }
+    .wrap-sub-stats strong { font-weight: 800; }
+
+    /* Slide backgrounds */
+    .wrap-bg-intro { background: radial-gradient(circle at 30% 20%, #9B3B3B, #3E2723); }
+    .wrap-bg-attendance { background: linear-gradient(160deg, #4A7C59 0%, #1d3a26 100%); }
+    .wrap-bg-drinks { background: linear-gradient(160deg, #C15A5A 0%, #6B2D2D 100%); }
+    .wrap-bg-crew { background: linear-gradient(160deg, #8D6E63 0%, #3E2723 100%); }
+    .wrap-bg-archetype { background: linear-gradient(160deg, #2a2a3a 0%, #0f0f1a 100%); }
+
+    .wrap-buddy-row {
+      display: flex; flex-direction: column; gap: 10px;
+      margin: 28px 0; width: 100%;
+    }
+    .wrap-buddy-item {
+      background: rgba(255,255,255,0.08);
+      padding: 12px 16px; border-radius: 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .wrap-buddy-rank {
+      font-size: 1.6rem; font-weight: 900; opacity: 0.45; min-width: 32px;
+    }
+    .wrap-buddy-name {
+      font-size: 1.3rem; font-weight: 700; flex: 1; text-align: left;
+    }
+    .wrap-superlatives {
+      margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.18);
+      padding-top: 20px;
+      font-size: 0.95rem; line-height: 1.75; text-align: left;
+      width: 100%; max-width: 320px; margin-left: auto; margin-right: auto;
+    }
+
+    /* Collage slide — 9:16 Instagram story */
+    .wrap-slide-collage {
+      padding: 20px; background: #1a0f0f;
+    }
+    .wrap-collage {
+      width: 100%; max-width: 340px;
+      aspect-ratio: 9/16; max-height: 82vh;
+      position: relative; overflow: hidden;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #9B3B3B, #3E2723);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .wrap-collage-grid {
+      position: absolute; inset: 0;
+      display: grid; gap: 2px; filter: brightness(0.42) saturate(1.1);
+    }
+    .wrap-collage-grid-3x4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .wrap-collage-grid-2x3 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .wrap-collage-grid-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+    .wrap-collage-grid img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .wrap-collage-overlay {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 28px 20px;
+      color: #fff;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.85);
+    }
+    .wrap-collage-brand {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.25em;
+      text-transform: uppercase; opacity: 0.95;
+    }
+    .wrap-collage-title {
+      font-size: 2.4rem; font-weight: 900; line-height: 1;
+      margin: 12px 0 0;
+    }
+    .wrap-collage-sub {
+      font-size: 1.8rem; font-weight: 800; line-height: 1;
+      margin: 0 0 20px;
+    }
+    .wrap-collage-name {
+      font-size: 1.3rem; font-weight: 600;
+      margin-bottom: 24px; opacity: 0.95;
+    }
+    .wrap-collage-stats {
+      font-size: 0.95rem; line-height: 1.8; opacity: 0.95;
+      margin-bottom: 20px;
+    }
+    .wrap-collage-stats strong { font-weight: 800; }
+    .wrap-collage-archetype {
+      font-size: 1.05rem; font-weight: 800;
+      padding: 6px 14px; border: 1.5px solid rgba(255,255,255,0.7);
+      border-radius: 999px; display: inline-block;
+    }
+    .wrap-collage-hint {
+      margin-top: 14px; font-size: 0.78rem; opacity: 0.6;
+      text-align: center;
+    }
+
     /* === Calendar === */
     .cal-grid {
       display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
@@ -1015,6 +1172,15 @@
 
 <!-- Admin Section -->
 <div id="adminSection" class="tab-content" style="display:none"></div>
+
+<!-- Shayprils Wrapped Preview (full-screen overlay, admin-triggered) -->
+<div id="wrapOverlay" class="wrap-overlay hidden">
+  <button class="wrap-close-btn" onclick="wrapClose()" aria-label="Close">&times;</button>
+  <div class="wrap-progress" id="wrapProgress"></div>
+  <div class="wrap-stage" id="wrapStage"></div>
+  <button class="wrap-nav-tap left" onclick="wrapPrev()" aria-label="Previous"></button>
+  <button class="wrap-nav-tap right" onclick="wrapNext()" aria-label="Next"></button>
+</div>
 
 <!-- Footer (always visible above bottom nav) -->
 <div style="text-align:center;padding:14px 16px 90px;font-size:0.72rem;color:var(--text-dim);">
@@ -3137,6 +3303,15 @@ async function loadAdminPanel() {
     });
     html += '</table></div>';
 
+    // Shayprils Wrapped preview
+    html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Shayprils Wrapped Preview</h3>';
+    html += '<div style="background:var(--cream);padding:14px;border-radius:10px;margin-bottom:16px;">';
+    html += '<p style="margin:0 0 10px;font-size:0.85rem;color:var(--text-muted);">Pick a user to preview their Wrapped experience — exactly what they\'ll see on April 30.</p>';
+    html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
+    html += '<select id="wrapUserSelect" style="flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid var(--border);background:white;font-size:0.9rem;"><option>Loading…</option></select>';
+    html += '<button onclick="wrapOpen()" style="padding:10px 18px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.88rem;font-weight:600;">Preview Wrap</button>';
+    html += '</div></div>';
+
     // Admin actions
     html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Admin Actions</h3>';
     html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
@@ -3145,6 +3320,8 @@ async function loadAdminPanel() {
 
     html += '</div>';
     section.innerHTML = html;
+    // Populate the Wrapped user dropdown (fire-and-forget)
+    wrapLoadUsers();
   } catch(e) { section.innerHTML = '<p style="color:red;padding:20px;">Error loading admin data</p>'; }
 }
 
@@ -3175,6 +3352,213 @@ function adminToggleUserSms(userId, currentlyOn) {
       loadAdminPanel();
     } else showToast(d.error || 'Failed', 'error');
   }).catch(() => showToast('Failed', 'error'));
+}
+
+// ─── Shayprils Wrapped preview (admin-only) ──────────────
+let wrapSlides = [];
+let wrapIndex = 0;
+
+async function wrapLoadUsers() {
+  const sel = document.getElementById('wrapUserSelect');
+  if (!sel || !adminPin) return;
+  try {
+    const r = await fetch(API + '/api/admin/wrap-users', { headers: { 'x-admin-pin': adminPin } });
+    const data = await r.json();
+    if (data.users && data.users.length) {
+      sel.innerHTML = data.users.map(u => '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>').join('');
+    } else {
+      sel.innerHTML = '<option>No users with check-ins yet</option>';
+    }
+  } catch (e) {
+    sel.innerHTML = '<option>Error loading users</option>';
+  }
+}
+
+async function wrapOpen() {
+  const sel = document.getElementById('wrapUserSelect');
+  const userId = sel && sel.value;
+  if (!userId) return showToast('Pick a user first', 'error');
+  try {
+    const r = await fetch(API + '/api/admin/wrap/' + userId, { headers: { 'x-admin-pin': adminPin } });
+    const data = await r.json();
+    if (!r.ok) return showToast(data.error || 'Failed to load wrap', 'error');
+    wrapRender(data);
+    document.getElementById('wrapOverlay').classList.remove('hidden');
+  } catch (e) {
+    showToast('Failed to load wrap', 'error');
+  }
+}
+
+function wrapClose() {
+  document.getElementById('wrapOverlay').classList.add('hidden');
+  document.getElementById('wrapStage').innerHTML = '';
+  document.getElementById('wrapProgress').innerHTML = '';
+  wrapSlides = []; wrapIndex = 0;
+}
+
+function wrapRender(data) {
+  wrapSlides = wrapBuildSlides(data);
+  wrapIndex = 0;
+  const stage = document.getElementById('wrapStage');
+  stage.innerHTML = wrapSlides.map(function(s, i) {
+    return '<div class="wrap-slide ' + s.bg + (i === 0 ? ' active' : '') + '"><div class="wrap-slide-inner">' + s.html + '</div></div>';
+  }).join('');
+  const prog = document.getElementById('wrapProgress');
+  prog.innerHTML = wrapSlides.map(function(_, i) {
+    return '<div class="wrap-progress-bar' + (i === 0 ? ' active' : '') + '"></div>';
+  }).join('');
+}
+
+function wrapNext() {
+  if (wrapIndex < wrapSlides.length - 1) { wrapIndex++; wrapUpdateActive(); }
+}
+function wrapPrev() {
+  if (wrapIndex > 0) { wrapIndex--; wrapUpdateActive(); }
+}
+function wrapUpdateActive() {
+  document.querySelectorAll('.wrap-slide').forEach(function(el, i) {
+    el.classList.toggle('active', i === wrapIndex);
+  });
+  document.querySelectorAll('.wrap-progress-bar').forEach(function(el, i) {
+    el.classList.toggle('active', i <= wrapIndex);
+  });
+}
+
+function wrapFormatDate(dateStr) {
+  try {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch (e) { return dateStr; }
+}
+
+function wrapBuildSlides(data) {
+  const slides = [];
+  const p = data.personal || {};
+  const a = data.archetype || {};
+  const g = data.group || {};
+  const firstName = (data.user && data.user.name || '').split(' ')[0] || data.user.name;
+  const firstNameEsc = escapeHtml(firstName);
+
+  // Slide 1: Intro
+  slides.push({
+    bg: 'wrap-bg-intro',
+    html:
+      '<div class="wrap-eyebrow">Shayprils 2026</div>' +
+      '<div class="wrap-hero" style="font-size:4.8rem;">Wrapped</div>' +
+      '<div class="wrap-caption" style="font-size:1.4rem;">Hi, <strong>' + firstNameEsc + '</strong></div>' +
+      '<div style="margin-top:36px;font-size:1rem;opacity:0.7;">Tap anywhere to start &rarr;</div>'
+  });
+
+  // Slide 2: Attendance (days, streak, time, day)
+  var attendSubs = [];
+  if (p.longestStreak) {
+    attendSubs.push('<div><strong>' + p.longestStreak + '</strong>-day longest streak</div>');
+  }
+  if (p.avgTimeStr) {
+    attendSubs.push('<div>You were a <strong>' + escapeHtml(p.avgTimeStr) + '</strong> person</div>');
+  }
+  if (p.favDay) {
+    attendSubs.push('<div>Your day was <strong>' + escapeHtml(p.favDay) + '</strong></div>');
+  }
+  slides.push({
+    bg: 'wrap-bg-attendance',
+    html:
+      '<div class="wrap-eyebrow">You showed up</div>' +
+      '<div class="wrap-hero">' + p.daysAttended + '<span style="font-size:2.2rem;opacity:0.55;font-weight:700;">/' + p.totalDays + '</span></div>' +
+      '<div class="wrap-caption">April weekdays at Shays</div>' +
+      (attendSubs.length ? '<div class="wrap-sub-stats">' + attendSubs.join('') + '</div>' : '')
+  });
+
+  // Slide 3: Drinks + peak night (conditional)
+  if (p.showDrinks) {
+    var drinksSubs = [];
+    if (p.peakNight) {
+      drinksSubs.push('<div>Your biggest night: <strong>' + wrapFormatDate(p.peakNight.date) + '</strong></div>');
+      drinksSubs.push('<div style="font-size:0.92rem;opacity:0.75;">(' + p.peakNight.drinks + ' drinks that night)</div>');
+    }
+    slides.push({
+      bg: 'wrap-bg-drinks',
+      html:
+        '<div class="wrap-eyebrow">The count</div>' +
+        '<div class="wrap-hero">' + p.totalDrinks + '</div>' +
+        '<div class="wrap-caption">drinks logged in April</div>' +
+        (drinksSubs.length ? '<div class="wrap-sub-stats">' + drinksSubs.join('') + '</div>' : '')
+    });
+  }
+
+  // Slide 4: Crew
+  if (p.topBuddies && p.topBuddies.length > 0) {
+    var buddyRows = p.topBuddies.map(function(b, i) {
+      return '<div class="wrap-buddy-item"><div class="wrap-buddy-rank">#' + (i + 1) + '</div><div class="wrap-buddy-name">' + escapeHtml(b.name) + '</div></div>';
+    }).join('');
+    var whoCount = p.totalUniqueBuddies;
+    slides.push({
+      bg: 'wrap-bg-crew',
+      html:
+        '<div class="wrap-eyebrow">Your Shayprils crew</div>' +
+        '<div class="wrap-caption" style="margin:8px 0 18px;">The friends you kept pulling up with</div>' +
+        '<div class="wrap-buddy-row">' + buddyRows + '</div>' +
+        '<div style="font-size:1rem;opacity:0.85;">You crossed paths with <strong>' + whoCount + '</strong> different ' + (whoCount === 1 ? 'friend' : 'friends') + '</div>'
+    });
+  }
+
+  // Slide 5: Archetype + group superlatives
+  var supers = [];
+  if (g.biggestNight) supers.push('<div>Biggest night: <strong>' + wrapFormatDate(g.biggestNight.date) + '</strong> (' + g.biggestNight.count + ' friends)</div>');
+  if (g.topStreaker) supers.push('<div>Streak king: <strong>' + escapeHtml(g.topStreaker.name) + '</strong> (' + g.topStreaker.days + ' days)</div>');
+  if (g.topRegular && (!g.topStreaker || g.topRegular.name !== g.topStreaker.name)) supers.push('<div>Most regular: <strong>' + escapeHtml(g.topRegular.name) + '</strong> (' + g.topRegular.days + ' days)</div>');
+  if (g.topDrinker) supers.push('<div>Top shelf: <strong>' + escapeHtml(g.topDrinker.name) + '</strong> (' + g.topDrinker.drinks + ' drinks)</div>');
+  if (g.topRallyist) supers.push('<div>Rally captain: <strong>' + escapeHtml(g.topRallyist.name) + '</strong> (' + g.topRallyist.rallies + ' alerts)</div>');
+  supers.push('<div><strong>' + g.totalCheckins + '</strong> total check-ins from <strong>' + g.totalParticipants + '</strong> friends' + (g.totalGroupDrinks > 0 ? ', <strong>' + g.totalGroupDrinks + '</strong> drinks' : '') + '</div>');
+  slides.push({
+    bg: 'wrap-bg-archetype',
+    html:
+      '<div class="wrap-eyebrow">You were&hellip;</div>' +
+      '<div class="wrap-hero" style="font-size:3rem;">' + escapeHtml(a.label || 'The Shayprils Guest') + '</div>' +
+      '<div class="wrap-caption" style="margin-top:-6px;">' + escapeHtml(a.desc || '') + '</div>' +
+      '<div class="wrap-superlatives">' +
+        '<div class="wrap-eyebrow" style="margin-bottom:10px;">The crew together</div>' +
+        supers.join('') +
+      '</div>'
+  });
+
+  // Slide 6: Collage (9:16 Instagram story)
+  var tileCount = Math.min(12, data.selfies ? data.selfies.length : 0);
+  var gridCls = 'wrap-collage-grid-3x4';
+  if (tileCount === 0) gridCls = 'wrap-collage-grid-1x1';
+  else if (tileCount <= 6) gridCls = 'wrap-collage-grid-2x3';
+  // Fill up to grid capacity by cycling through selfies
+  var tiles = [];
+  var need = tileCount === 0 ? 0 : (gridCls === 'wrap-collage-grid-3x4' ? 12 : gridCls === 'wrap-collage-grid-2x3' ? 6 : 1);
+  for (var i = 0; i < need && data.selfies && data.selfies.length > 0; i++) {
+    tiles.push(data.selfies[i % data.selfies.length]);
+  }
+  var tileHtml = tiles.map(function(u) { return '<img src="' + u + '" alt="" />'; }).join('');
+  var topBuddyName = (p.topBuddies && p.topBuddies[0]) ? p.topBuddies[0].name : null;
+  var collageStats = [];
+  collageStats.push('<div><strong>' + p.daysAttended + '</strong> of ' + p.totalDays + ' days</div>');
+  if (p.longestStreak) collageStats.push('<div><strong>' + p.longestStreak + '</strong>-day streak</div>');
+  if (p.showDrinks) collageStats.push('<div><strong>' + p.totalDrinks + '</strong> drinks</div>');
+  if (topBuddyName) collageStats.push('<div>ride or die: <strong>' + escapeHtml(topBuddyName) + '</strong></div>');
+
+  slides.push({
+    bg: 'wrap-slide-collage',
+    html:
+      '<div class="wrap-collage">' +
+        '<div class="wrap-collage-grid ' + gridCls + '">' + tileHtml + '</div>' +
+        '<div class="wrap-collage-overlay">' +
+          '<div class="wrap-collage-brand">Shayprils 2026</div>' +
+          '<div class="wrap-collage-title">I survived</div>' +
+          '<div class="wrap-collage-sub">Shayprils</div>' +
+          '<div class="wrap-collage-name">' + firstNameEsc + '</div>' +
+          '<div class="wrap-collage-stats">' + collageStats.join('') + '</div>' +
+          '<div class="wrap-collage-archetype">' + escapeHtml(a.label || '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="wrap-collage-hint">Screenshot to share &rarr;</div>'
+  });
+
+  return slides;
 }
 
 function adminDeactivateUser(userId) {
