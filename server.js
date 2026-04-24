@@ -1604,6 +1604,17 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
       .filter(c => c.selfie && c.selfie.startsWith('http'))
       .map(c => c.selfie);
 
+    // Percentile rankings — "top X%" where smaller X is better
+    function topPercent(pool, field) {
+      const sorted = [...pool].sort((a, b) => b[field] - a[field]);
+      const idx = sorted.findIndex(u => u.user_id === userId);
+      if (idx === -1) return null;
+      return { rank: idx + 1, total: sorted.length, topPercent: Math.max(1, Math.ceil((idx + 1) / sorted.length * 100)) };
+    }
+    const visitorRank = topPercent(participants, 'daysAttended');
+    const drinkerPool = participants.filter(u => u.totalDrinks > 0);
+    const drinkerRank = me && me.totalDrinks > 0 ? topPercent(drinkerPool, 'totalDrinks') : null;
+
     res.json({
       user: { id: user.id, name: user.name },
       personal: {
@@ -1613,6 +1624,8 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
         peakNight: showPeakNight ? { date: peakNightDate, drinks: peakNightDrinks } : null,
         topBuddies, totalUniqueBuddies,
         rallyCount: myRallies,
+        visitorRank,
+        drinkerRank,
       },
       archetype: myArchetype,
       group: {
