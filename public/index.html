@@ -351,44 +351,60 @@
     }
 
     /* === Shayprils Wrapped preview === */
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700;900&display=swap');
+
+    :root {
+      --wrap-cream: #F5E6D3;
+      --wrap-cream-dark: #E8D5B7;
+      --wrap-wine: #8B2B3B;
+      --wrap-wine-dark: #5B1B28;
+      --wrap-wine-soft: #A8425A;
+      --wrap-gold: #C99858;
+      --wrap-ink: #3E2723;
+    }
+
     .wrap-overlay {
       position: fixed; inset: 0; z-index: 99999;
-      background: #000; color: #fff;
+      background: var(--wrap-cream);
+      color: var(--wrap-ink);
       display: flex; flex-direction: column;
       font-family: inherit;
     }
     .wrap-overlay.hidden { display: none; }
     .wrap-close-btn {
       position: absolute; top: 18px; right: 18px;
-      background: rgba(255,255,255,0.14); border: none;
-      color: #fff; width: 36px; height: 36px;
+      background: rgba(139,43,59,0.12); border: none;
+      color: var(--wrap-wine); width: 36px; height: 36px;
       border-radius: 50%; cursor: pointer;
       font-size: 22px; line-height: 1; z-index: 10;
     }
-    .wrap-close-btn:hover { background: rgba(255,255,255,0.25); }
+    .wrap-close-btn:hover { background: rgba(139,43,59,0.25); }
     .wrap-progress {
       position: absolute; top: 14px; left: 14px; right: 70px;
       display: flex; gap: 4px; z-index: 5;
     }
     .wrap-progress-bar {
       flex: 1; height: 3px;
-      background: rgba(255,255,255,0.3); border-radius: 2px;
+      background: rgba(139,43,59,0.25); border-radius: 2px;
+      transition: background 0.3s ease;
     }
-    .wrap-progress-bar.active { background: #fff; }
+    .wrap-progress-bar.active { background: var(--wrap-wine); }
     .wrap-stage {
       flex: 1; display: flex; align-items: center; justify-content: center;
       position: relative; overflow: hidden;
     }
     .wrap-slide {
       position: absolute; inset: 0; display: none;
-      align-items: center; justify-content: center;
-      padding: 56px 28px 80px;
-      text-align: center; box-sizing: border-box;
+      align-items: flex-start; justify-content: center;
+      padding: 48px 24px 60px; text-align: center;
+      box-sizing: border-box; overflow: hidden;
     }
-    .wrap-slide.active { display: flex; }
+    .wrap-slide.active { display: flex; animation: wrapFadeIn 0.5s ease; }
     .wrap-slide-inner {
       width: 100%; max-width: 420px;
       display: flex; flex-direction: column; align-items: center;
+      position: relative; z-index: 2;
+      margin-top: 44px;
     }
     .wrap-nav-tap {
       position: absolute; top: 0; bottom: 0; width: 35%;
@@ -398,112 +414,238 @@
     .wrap-nav-tap.left { left: 0; }
     .wrap-nav-tap.right { right: 0; }
 
+    @keyframes wrapFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes wrapFloat {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.5; }
+      90% { opacity: 0.5; }
+      100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+    }
+    @keyframes wrapWiggle {
+      0%, 100% { transform: rotate(-6deg); }
+      50% { transform: rotate(6deg); }
+    }
+    @keyframes wrapPop {
+      0% { transform: scale(0.7); opacity: 0; }
+      60% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Floating emoji decoration */
+    .wrap-floats {
+      position: absolute; inset: 0; pointer-events: none;
+      overflow: hidden; z-index: 1;
+    }
+    .wrap-float {
+      position: absolute; font-size: 2rem;
+      animation: wrapFloat 9s linear infinite;
+      opacity: 0;
+    }
+
+    /* Shayprils mini-logo header on every slide */
+    .wrap-header {
+      position: absolute; top: 32px; left: 0; right: 0;
+      text-align: center; z-index: 4; pointer-events: none;
+    }
+    .wrap-header-text {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2rem; line-height: 1;
+      color: var(--wrap-wine);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+    }
+
     .wrap-eyebrow {
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em;
-      opacity: 0.85; text-transform: uppercase;
-      margin-bottom: 12px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.24em;
+      text-transform: uppercase; color: var(--wrap-wine);
+      margin-bottom: 10px; opacity: 0.85;
     }
     .wrap-hero {
-      font-size: 4.5rem; font-weight: 900; line-height: 0.95;
-      margin: 8px 0 18px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 5rem; font-weight: 900; line-height: 0.95;
+      color: var(--wrap-wine); margin: 6px 0 18px;
+      animation: wrapPop 0.7s ease;
     }
     .wrap-caption {
-      font-size: 1.1rem; font-weight: 500; opacity: 0.88;
-      line-height: 1.4;
+      font-size: 1.1rem; font-weight: 500; line-height: 1.45;
+      color: var(--wrap-ink);
     }
     .wrap-sub-stats {
       margin-top: 28px; font-size: 1rem; line-height: 1.85;
-      opacity: 0.92;
+      color: var(--wrap-ink);
     }
-    .wrap-sub-stats strong { font-weight: 800; }
+    .wrap-sub-stats strong { font-weight: 800; color: var(--wrap-wine); }
 
-    /* Slide backgrounds */
-    .wrap-bg-intro { background: radial-gradient(circle at 30% 20%, #9B3B3B, #3E2723); }
-    .wrap-bg-attendance { background: linear-gradient(160deg, #4A7C59 0%, #1d3a26 100%); }
-    .wrap-bg-drinks { background: linear-gradient(160deg, #C15A5A 0%, #6B2D2D 100%); }
-    .wrap-bg-crew { background: linear-gradient(160deg, #8D6E63 0%, #3E2723 100%); }
-    .wrap-bg-archetype { background: linear-gradient(160deg, #2a2a3a 0%, #0f0f1a 100%); }
+    /* Slide backgrounds — all warm cream variations */
+    .wrap-bg-intro { background: radial-gradient(circle at 30% 15%, #FAF0DE, var(--wrap-cream)); }
+    .wrap-bg-attendance { background: linear-gradient(160deg, #FAF0DE 0%, #F0DBC0 100%); }
+    .wrap-bg-drinks { background: linear-gradient(160deg, #F5E0C8 0%, #E8C4A8 100%); }
+    .wrap-bg-crew { background: linear-gradient(160deg, #F5E6D3 0%, #E2C9A9 100%); }
+    .wrap-bg-archetype { background: linear-gradient(160deg, #FAF0DE 0%, #D9B78F 100%); }
 
+    /* Intro slide: big Shayprils wordmark */
+    .wrap-intro-box {
+      background: var(--wrap-cream-dark);
+      border: 3px solid var(--wrap-wine);
+      border-radius: 18px;
+      padding: 32px 24px 20px;
+      margin-bottom: 22px;
+      position: relative;
+      box-shadow: 0 6px 16px rgba(91,27,40,0.15);
+    }
+    .wrap-intro-icons {
+      font-size: 2rem; margin-bottom: 4px;
+      letter-spacing: 0.4em; display: inline-block;
+      animation: wrapWiggle 3s ease-in-out infinite;
+    }
+    .wrap-intro-brand {
+      font-family: 'Great Vibes', cursive;
+      font-size: 5.5rem; color: var(--wrap-wine);
+      line-height: 1; margin: 4px 0 2px;
+    }
+    .wrap-intro-sub {
+      font-family: 'Great Vibes', cursive;
+      font-size: 1.5rem; color: var(--wrap-wine);
+      opacity: 0.85; margin-top: -4px;
+    }
+    .wrap-wrapped-label {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 4rem; font-weight: 900;
+      color: var(--wrap-wine); line-height: 1;
+      margin: 16px 0 4px;
+    }
+    .wrap-greeting {
+      font-size: 1.5rem; font-weight: 600;
+      color: var(--wrap-ink); margin-top: 14px;
+    }
+    .wrap-tap-hint {
+      margin-top: 30px; font-size: 0.95rem;
+      color: var(--wrap-wine); opacity: 0.75;
+      letter-spacing: 0.05em;
+    }
+
+    /* Crew slide buddy cards */
     .wrap-buddy-row {
       display: flex; flex-direction: column; gap: 10px;
-      margin: 28px 0; width: 100%;
+      margin: 20px 0 14px; width: 100%;
     }
     .wrap-buddy-item {
-      background: rgba(255,255,255,0.08);
-      padding: 12px 16px; border-radius: 12px;
+      background: rgba(255,255,255,0.6);
+      border: 1.5px solid var(--wrap-wine);
+      padding: 12px 16px; border-radius: 14px;
       display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 2px 6px rgba(91,27,40,0.08);
     }
     .wrap-buddy-rank {
-      font-size: 1.6rem; font-weight: 900; opacity: 0.45; min-width: 32px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.8rem; font-weight: 900;
+      color: var(--wrap-wine); opacity: 0.55;
+      min-width: 32px;
     }
     .wrap-buddy-name {
-      font-size: 1.3rem; font-weight: 700; flex: 1; text-align: left;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--wrap-ink); flex: 1; text-align: left;
     }
+
+    /* Superlatives */
     .wrap-superlatives {
-      margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.18);
-      padding-top: 20px;
-      font-size: 0.95rem; line-height: 1.75; text-align: left;
-      width: 100%; max-width: 320px; margin-left: auto; margin-right: auto;
+      margin-top: 22px;
+      border-top: 1.5px solid var(--wrap-wine);
+      padding-top: 18px;
+      font-size: 0.95rem; line-height: 1.7;
+      color: var(--wrap-ink);
+      width: 100%; max-width: 340px;
+      margin-left: auto; margin-right: auto;
+      text-align: left;
     }
+    .wrap-superlatives strong { color: var(--wrap-wine); font-weight: 800; }
+    .wrap-group-totals {
+      margin-top: 18px;
+      background: var(--wrap-wine); color: var(--wrap-cream);
+      border-radius: 14px; padding: 16px 14px;
+      text-align: center;
+    }
+    .wrap-group-totals .gt-label {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      opacity: 0.85; margin-bottom: 8px;
+    }
+    .wrap-group-totals .gt-bignum {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.6rem; font-weight: 900; line-height: 1;
+      margin-bottom: 4px;
+    }
+    .wrap-group-totals .gt-row {
+      font-size: 1rem; line-height: 1.5;
+      margin-top: 6px; opacity: 0.95;
+    }
+    .wrap-group-totals .gt-row strong { color: #F0DBC0; font-weight: 800; }
 
     /* Collage slide — 9:16 Instagram story */
     .wrap-slide-collage {
-      padding: 20px; background: #1a0f0f;
+      padding: 20px; background: var(--wrap-cream);
     }
     .wrap-collage {
-      width: 100%; max-width: 340px;
-      aspect-ratio: 9/16; max-height: 82vh;
+      width: 100%; max-width: 360px;
+      aspect-ratio: 9/16; max-height: 85vh;
       position: relative; overflow: hidden;
-      border-radius: 18px;
-      background: linear-gradient(135deg, #9B3B3B, #3E2723);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      border-radius: 20px;
+      background: var(--wrap-wine);
+      box-shadow: 0 12px 36px rgba(91,27,40,0.35);
     }
-    .wrap-collage-grid {
-      position: absolute; inset: 0;
-      display: grid; gap: 2px; filter: brightness(0.42) saturate(1.1);
-    }
-    .wrap-collage-grid-3x4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
-    .wrap-collage-grid-2x3 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .wrap-collage-grid-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
-    .wrap-collage-grid img {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-    .wrap-collage-overlay {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 28px 20px;
-      color: #fff;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.85);
+    .wrap-collage-top {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 22px 20px 16px;
+      background: linear-gradient(to bottom, rgba(139,43,59,0.9), transparent);
+      text-align: center; color: #FAF0DE;
+      z-index: 3;
     }
     .wrap-collage-brand {
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.25em;
-      text-transform: uppercase; opacity: 0.95;
+      font-family: 'Great Vibes', cursive;
+      font-size: 2.4rem; line-height: 1;
     }
-    .wrap-collage-title {
-      font-size: 2.4rem; font-weight: 900; line-height: 1;
-      margin: 12px 0 0;
+    .wrap-collage-year {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 3.2rem; font-weight: 900; line-height: 1;
+      margin-top: 2px;
     }
-    .wrap-collage-sub {
-      font-size: 1.8rem; font-weight: 800; line-height: 1;
-      margin: 0 0 20px;
+    .wrap-collage-middle {
+      position: absolute; top: 170px; bottom: 200px; left: 14px; right: 14px;
+      background: rgba(255,255,255,0.96);
+      border-radius: 16px;
+      padding: 6px;
+      display: grid; gap: 4px;
+      overflow: hidden;
+    }
+    .wrap-collage-middle img {
+      width: 100%; height: 100%;
+      object-fit: cover; /* within a small tile, cover gives best face visibility */
+      border-radius: 8px;
+    }
+    .wrap-collage-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 20px 20px 24px;
+      background: linear-gradient(to top, rgba(91,27,40,0.95), transparent);
+      text-align: center; color: #FAF0DE;
+      z-index: 3;
     }
     .wrap-collage-name {
-      font-size: 1.3rem; font-weight: 600;
-      margin-bottom: 24px; opacity: 0.95;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.6rem; font-weight: 900;
+      margin-bottom: 10px;
     }
     .wrap-collage-stats {
-      font-size: 0.95rem; line-height: 1.8; opacity: 0.95;
-      margin-bottom: 20px;
+      font-size: 0.95rem; line-height: 1.7;
+      opacity: 0.95;
     }
-    .wrap-collage-stats strong { font-weight: 800; }
-    .wrap-collage-archetype {
-      font-size: 1.05rem; font-weight: 800;
-      padding: 6px 14px; border: 1.5px solid rgba(255,255,255,0.7);
-      border-radius: 999px; display: inline-block;
+    .wrap-collage-stats strong {
+      color: #FFE3B0; font-weight: 800;
     }
     .wrap-collage-hint {
-      margin-top: 14px; font-size: 0.78rem; opacity: 0.6;
+      margin-top: 14px; font-size: 0.82rem;
+      color: var(--wrap-wine); opacity: 0.7;
       text-align: center;
     }
 
@@ -3400,13 +3542,25 @@ function wrapRender(data) {
   wrapSlides = wrapBuildSlides(data);
   wrapIndex = 0;
   const stage = document.getElementById('wrapStage');
+  // Each slide gets: floating emoji layer + header wordmark + inner content
   stage.innerHTML = wrapSlides.map(function(s, i) {
-    return '<div class="wrap-slide ' + s.bg + (i === 0 ? ' active' : '') + '"><div class="wrap-slide-inner">' + s.html + '</div></div>';
+    var showHeader = s.bg !== 'wrap-slide-collage' && s.noHeader !== true;
+    var header = showHeader
+      ? '<div class="wrap-header"><div class="wrap-header-text">Shayprils</div></div>'
+      : '';
+    var floats = s.floatsHtml ? '<div class="wrap-floats">' + s.floatsHtml + '</div>' : '';
+    return '<div class="wrap-slide ' + s.bg + (i === 0 ? ' active' : '') + '" data-idx="' + i + '">'
+      + floats
+      + header
+      + '<div class="wrap-slide-inner">' + s.html + '</div>'
+      + '</div>';
   }).join('');
   const prog = document.getElementById('wrapProgress');
   prog.innerHTML = wrapSlides.map(function(_, i) {
     return '<div class="wrap-progress-bar' + (i === 0 ? ' active' : '') + '"></div>';
   }).join('');
+  // Kick off animation for the first active slide
+  wrapAnimateActive();
 }
 
 function wrapNext() {
@@ -3422,6 +3576,30 @@ function wrapUpdateActive() {
   document.querySelectorAll('.wrap-progress-bar').forEach(function(el, i) {
     el.classList.toggle('active', i <= wrapIndex);
   });
+  wrapAnimateActive();
+}
+
+// Trigger count-up animations on any [data-count-to] elements in the active slide
+function wrapAnimateActive() {
+  var active = document.querySelector('.wrap-slide.active');
+  if (!active) return;
+  var counters = active.querySelectorAll('[data-count-to]');
+  counters.forEach(function(el) {
+    var target = parseInt(el.getAttribute('data-count-to'), 10) || 0;
+    var duration = parseInt(el.getAttribute('data-count-duration'), 10) || 1200;
+    var startTs = null;
+    function step(ts) {
+      if (startTs == null) startTs = ts;
+      var pct = Math.min(1, (ts - startTs) / duration);
+      // ease-out cubic
+      var eased = 1 - Math.pow(1 - pct, 3);
+      var val = Math.round(target * eased);
+      el.textContent = val;
+      if (pct < 1) requestAnimationFrame(step);
+      else el.textContent = target;
+    }
+    requestAnimationFrame(step);
+  });
 }
 
 function wrapFormatDate(dateStr) {
@@ -3429,6 +3607,18 @@ function wrapFormatDate(dateStr) {
     const d = new Date(dateStr + 'T12:00:00');
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   } catch (e) { return dateStr; }
+}
+
+// Build a row of floating emoji decorations (staggered animations)
+function wrapFloats(icons) {
+  var out = [];
+  for (var i = 0; i < icons.length; i++) {
+    var left = Math.round((i + 1) * (100 / (icons.length + 1)));
+    var delay = (i * 1.2) % 9;
+    var dur = 8 + (i % 3);
+    out.push('<span class="wrap-float" style="left:' + left + '%;animation-delay:-' + delay + 's;animation-duration:' + dur + 's;">' + icons[i] + '</span>');
+  }
+  return out.join('');
 }
 
 function wrapBuildSlides(data) {
@@ -3439,48 +3629,54 @@ function wrapBuildSlides(data) {
   const firstName = (data.user && data.user.name || '').split(' ')[0] || data.user.name;
   const firstNameEsc = escapeHtml(firstName);
 
-  // Slide 1: Intro
+  // Slide 1: Intro — big Shayprils wordmark
   slides.push({
     bg: 'wrap-bg-intro',
+    noHeader: true, // intro has its own giant wordmark
+    floatsHtml: wrapFloats(['🍺', '🍷', '❤️', '🍻', '🥂', '🍺']),
     html:
-      '<div class="wrap-eyebrow">Shayprils 2026</div>' +
-      '<div class="wrap-hero" style="font-size:4.8rem;">Wrapped</div>' +
-      '<div class="wrap-caption" style="font-size:1.4rem;">Hi, <strong>' + firstNameEsc + '</strong></div>' +
-      '<div style="margin-top:36px;font-size:1rem;opacity:0.7;">Tap anywhere to start &rarr;</div>'
+      '<div class="wrap-intro-box">' +
+        '<div class="wrap-intro-icons">🍷 ❤️ 🍺</div>' +
+        '<div class="wrap-intro-brand">Shayprils</div>' +
+        '<div class="wrap-intro-sub">Every Day in April</div>' +
+      '</div>' +
+      '<div class="wrap-wrapped-label">2026 Wrapped</div>' +
+      '<div class="wrap-greeting">Hi, <strong style="color:var(--wrap-wine);">' + firstNameEsc + '</strong></div>' +
+      '<div class="wrap-tap-hint">Tap to start →</div>'
   });
 
-  // Slide 2: Attendance (days, streak, time, day)
+  // Slide 2: Attendance
   var attendSubs = [];
-  if (p.longestStreak) {
-    attendSubs.push('<div><strong>' + p.longestStreak + '</strong>-day longest streak</div>');
-  }
-  if (p.avgTimeStr) {
-    attendSubs.push('<div>You were a <strong>' + escapeHtml(p.avgTimeStr) + '</strong> person</div>');
-  }
-  if (p.favDay) {
-    attendSubs.push('<div>Your day was <strong>' + escapeHtml(p.favDay) + '</strong></div>');
-  }
+  if (p.longestStreak) attendSubs.push('<div><strong>' + p.longestStreak + '</strong>-day longest streak 🔥</div>');
+  if (p.avgTimeStr) attendSubs.push('<div>You were at Shayprils most often at <strong>' + escapeHtml(p.avgTimeStr) + '</strong></div>');
+  // Per Nate: skip favorite day of week — most people go every day anyway
   slides.push({
     bg: 'wrap-bg-attendance',
+    floatsHtml: wrapFloats(['🍻', '✨', '🍺', '✨', '🍻']),
     html:
       '<div class="wrap-eyebrow">You showed up</div>' +
-      '<div class="wrap-hero">' + p.daysAttended + '<span style="font-size:2.2rem;opacity:0.55;font-weight:700;">/' + p.totalDays + '</span></div>' +
+      '<div class="wrap-hero"><span data-count-to="' + p.daysAttended + '" data-count-duration="1400">0</span>' +
+        '<span style="font-size:2.2rem;opacity:0.55;font-weight:700;">/' + p.totalDays + '</span>' +
+      '</div>' +
       '<div class="wrap-caption">April weekdays at Shays</div>' +
       (attendSubs.length ? '<div class="wrap-sub-stats">' + attendSubs.join('') + '</div>' : '')
   });
 
-  // Slide 3: Drinks + peak night (conditional)
+  // Slide 3: Drinks + peak night (conditional on ≥3 drinks)
   if (p.showDrinks) {
     var drinksSubs = [];
+    if (p.drinkerRank) {
+      drinksSubs.push('<div>Top <strong>' + p.drinkerRank.topPercent + '%</strong> of drinkers</div>');
+    }
     if (p.peakNight) {
-      drinksSubs.push('<div>Your biggest night: <strong>' + wrapFormatDate(p.peakNight.date) + '</strong></div>');
-      drinksSubs.push('<div style="font-size:0.92rem;opacity:0.75;">(' + p.peakNight.drinks + ' drinks that night)</div>');
+      drinksSubs.push('<div>Peak night: <strong>' + wrapFormatDate(p.peakNight.date) + '</strong> (' + p.peakNight.drinks + ' drinks)</div>');
     }
     slides.push({
       bg: 'wrap-bg-drinks',
+      floatsHtml: wrapFloats(['🍺', '🍻', '🍷', '🍺', '🥂']),
       html:
         '<div class="wrap-eyebrow">The count</div>' +
-        '<div class="wrap-hero">' + p.totalDrinks + '</div>' +
+        '<div class="wrap-hero"><span data-count-to="' + p.totalDrinks + '" data-count-duration="1600">0</span></div>' +
         '<div class="wrap-caption">drinks logged in April</div>' +
         (drinksSubs.length ? '<div class="wrap-sub-stats">' + drinksSubs.join('') + '</div>' : '')
     });
@@ -3494,68 +3690,81 @@ function wrapBuildSlides(data) {
     var whoCount = p.totalUniqueBuddies;
     slides.push({
       bg: 'wrap-bg-crew',
+      floatsHtml: wrapFloats(['❤️', '🍻', '✨', '❤️', '🍻']),
       html:
         '<div class="wrap-eyebrow">Your Shayprils crew</div>' +
-        '<div class="wrap-caption" style="margin:8px 0 18px;">The friends you kept pulling up with</div>' +
+        '<div class="wrap-caption" style="margin:6px 0 18px;">You racked up the most nights at Shays with&hellip;</div>' +
         '<div class="wrap-buddy-row">' + buddyRows + '</div>' +
-        '<div style="font-size:1rem;opacity:0.85;">You crossed paths with <strong>' + whoCount + '</strong> different ' + (whoCount === 1 ? 'friend' : 'friends') + '</div>'
+        '<div style="font-size:1rem;">And clinked glasses with <strong style="color:var(--wrap-wine);font-weight:800;">' + whoCount + '</strong> different ' + (whoCount === 1 ? 'friend' : 'friends') + ' total</div>'
     });
   }
 
   // Slide 5: Archetype + group superlatives
   var supers = [];
-  if (g.biggestNight) supers.push('<div>Biggest night: <strong>' + wrapFormatDate(g.biggestNight.date) + '</strong> (' + g.biggestNight.count + ' friends)</div>');
   if (g.topStreaker) supers.push('<div>Streak king: <strong>' + escapeHtml(g.topStreaker.name) + '</strong> (' + g.topStreaker.days + ' days)</div>');
   if (g.topRegular && (!g.topStreaker || g.topRegular.name !== g.topStreaker.name)) supers.push('<div>Most regular: <strong>' + escapeHtml(g.topRegular.name) + '</strong> (' + g.topRegular.days + ' days)</div>');
   if (g.topDrinker) supers.push('<div>Top shelf: <strong>' + escapeHtml(g.topDrinker.name) + '</strong> (' + g.topDrinker.drinks + ' drinks)</div>');
   if (g.topRallyist) supers.push('<div>Rally captain: <strong>' + escapeHtml(g.topRallyist.name) + '</strong> (' + g.topRallyist.rallies + ' alerts)</div>');
-  supers.push('<div><strong>' + g.totalCheckins + '</strong> total check-ins from <strong>' + g.totalParticipants + '</strong> friends' + (g.totalGroupDrinks > 0 ? ', <strong>' + g.totalGroupDrinks + '</strong> drinks' : '') + '</div>');
+  if (g.biggestNight) supers.push('<div>Biggest night: <strong>' + wrapFormatDate(g.biggestNight.date) + '</strong> (' + g.biggestNight.count + ' friends)</div>');
+
+  var groupTotalsHtml =
+    '<div class="wrap-group-totals">' +
+      '<div class="gt-label">The crew, by the numbers</div>' +
+      '<div class="gt-bignum"><span data-count-to="' + g.totalCheckins + '" data-count-duration="1800">0</span> check-ins</div>' +
+      '<div class="gt-row">from <strong><span data-count-to="' + g.totalParticipants + '" data-count-duration="1500">0</span></strong> friends' +
+      (g.totalGroupDrinks > 0 ? ', <strong><span data-count-to="' + g.totalGroupDrinks + '" data-count-duration="1800">0</span></strong> drinks strong' : '') +
+      '</div>' +
+    '</div>';
+
   slides.push({
     bg: 'wrap-bg-archetype',
+    floatsHtml: wrapFloats(['🏆', '🍻', '⭐', '🏆', '🍻']),
     html:
       '<div class="wrap-eyebrow">You were&hellip;</div>' +
-      '<div class="wrap-hero" style="font-size:3rem;">' + escapeHtml(a.label || 'The Shayprils Guest') + '</div>' +
-      '<div class="wrap-caption" style="margin-top:-6px;">' + escapeHtml(a.desc || '') + '</div>' +
-      '<div class="wrap-superlatives">' +
-        '<div class="wrap-eyebrow" style="margin-bottom:10px;">The crew together</div>' +
-        supers.join('') +
-      '</div>'
+      '<div class="wrap-hero" style="font-size:2.8rem;">' + escapeHtml(a.label || 'The Shayprils Guest') + '</div>' +
+      '<div class="wrap-caption" style="margin-top:-4px;">' + escapeHtml(a.desc || '') + '</div>' +
+      (supers.length ? '<div class="wrap-superlatives">' + '<div class="wrap-eyebrow" style="margin-bottom:8px;">The crew superlatives</div>' + supers.join('') + '</div>' : '') +
+      groupTotalsHtml
   });
 
-  // Slide 6: Collage (9:16 Instagram story)
-  var tileCount = Math.min(12, data.selfies ? data.selfies.length : 0);
-  var gridCls = 'wrap-collage-grid-3x4';
-  if (tileCount === 0) gridCls = 'wrap-collage-grid-1x1';
-  else if (tileCount <= 6) gridCls = 'wrap-collage-grid-2x3';
-  // Fill up to grid capacity by cycling through selfies
-  var tiles = [];
-  var need = tileCount === 0 ? 0 : (gridCls === 'wrap-collage-grid-3x4' ? 12 : gridCls === 'wrap-collage-grid-2x3' ? 6 : 1);
-  for (var i = 0; i < need && data.selfies && data.selfies.length > 0; i++) {
-    tiles.push(data.selfies[i % data.selfies.length]);
-  }
-  var tileHtml = tiles.map(function(u) { return '<img src="' + u + '" alt="" />'; }).join('');
-  var topBuddyName = (p.topBuddies && p.topBuddies[0]) ? p.topBuddies[0].name : null;
+  // Slide 6: Collage (9:16 Instagram story) — all selfies, no cropping
+  var selfies = data.selfies || [];
+  var n = selfies.length;
+  // Choose grid dimensions based on selfie count (square-ish)
+  var cols, rows;
+  if (n === 0) { cols = 1; rows = 1; }
+  else if (n <= 1) { cols = 1; rows = 1; }
+  else if (n <= 4) { cols = 2; rows = 2; }
+  else if (n <= 9) { cols = 3; rows = 3; }
+  else if (n <= 16) { cols = 4; rows = 4; }
+  else { cols = 5; rows = Math.ceil(n / 5); }
+  var gridStyle = 'grid-template-columns:repeat(' + cols + ',1fr);grid-template-rows:repeat(' + rows + ',1fr);';
+  var tileHtml = n === 0
+    ? '<div style="grid-column:1/-1;grid-row:1/-1;display:flex;align-items:center;justify-content:center;color:var(--wrap-wine);font-size:1rem;opacity:0.5;">No selfies yet</div>'
+    : selfies.map(function(u) { return '<img src="' + u + '" alt="" />'; }).join('');
+
   var collageStats = [];
   collageStats.push('<div><strong>' + p.daysAttended + '</strong> of ' + p.totalDays + ' days</div>');
   if (p.longestStreak) collageStats.push('<div><strong>' + p.longestStreak + '</strong>-day streak</div>');
   if (p.showDrinks) collageStats.push('<div><strong>' + p.totalDrinks + '</strong> drinks</div>');
-  if (topBuddyName) collageStats.push('<div>ride or die: <strong>' + escapeHtml(topBuddyName) + '</strong></div>');
+  if (p.visitorRank) collageStats.push('<div>Top <strong>' + p.visitorRank.topPercent + '%</strong> of visitors</div>');
 
   slides.push({
     bg: 'wrap-slide-collage',
+    noHeader: true,
     html:
       '<div class="wrap-collage">' +
-        '<div class="wrap-collage-grid ' + gridCls + '">' + tileHtml + '</div>' +
-        '<div class="wrap-collage-overlay">' +
-          '<div class="wrap-collage-brand">Shayprils 2026</div>' +
-          '<div class="wrap-collage-title">I survived</div>' +
-          '<div class="wrap-collage-sub">Shayprils</div>' +
+        '<div class="wrap-collage-top">' +
+          '<div class="wrap-collage-brand">Shayprils</div>' +
+          '<div class="wrap-collage-year">2026</div>' +
+        '</div>' +
+        '<div class="wrap-collage-middle" style="' + gridStyle + '">' + tileHtml + '</div>' +
+        '<div class="wrap-collage-bottom">' +
           '<div class="wrap-collage-name">' + firstNameEsc + '</div>' +
           '<div class="wrap-collage-stats">' + collageStats.join('') + '</div>' +
-          '<div class="wrap-collage-archetype">' + escapeHtml(a.label || '') + '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="wrap-collage-hint">Screenshot to share &rarr;</div>'
+      '<div class="wrap-collage-hint">Screenshot to share →</div>'
   });
 
   return slides;
