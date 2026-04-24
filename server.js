@@ -1332,6 +1332,308 @@ app.post('/api/admin/question-of-day', adminAuth, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// SHAYPRILS WRAPPED — admin preview
+// ═══════════════════════════════════════════════════════════════
+// Builds all personal + group stats for a user's Wrapped recap. Admin-only
+// for now — once Nate signs off on the preview, we'll add a public route
+// and the April 30 pop-up.
+
+function wrapHourMinuteET(ts) {
+  const d = new Date(ts);
+  // toLocaleString with a timeZone gives us ET wall-clock, which we then
+  // re-parse to extract hour/minute.
+  const etStr = d.toLocaleString('en-US', {
+    timeZone: 'America/New_York', hour12: false,
+    hour: '2-digit', minute: '2-digit',
+  });
+  const [h, m] = etStr.split(':').map(n => parseInt(n, 10));
+  return { hour: h % 24, minute: m };
+}
+
+function wrapFormatTime12(hour, minute) {
+  const m = (minute < 10 ? '0' : '') + minute;
+  const suffix = hour >= 12 ? 'pm' : 'am';
+  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${h12}:${m}${suffix}`;
+}
+
+function wrapDayOfWeek(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()];
+}
+
+// List users who have at least one April 2026 weekday check-in. Used for the
+// admin dropdown in the Wrapped preview.
+app.get('/api/admin/wrap-users', adminAuth, async (req, res) => {
+  try {
+    const aprilDays = new Set(store.getAprilWeekdays());
+    const [users, checkins] = await Promise.all([
+      store.getAllUsers(false),
+      store.getAllCheckins(false),
+    ]);
+    const active = new Set(
+      checkins.filter(c => aprilDays.has(c.date)).map(c => c.user_id)
+    );
+    const list = users
+      .filter(u => active.has(u.id))
+      .map(u => ({ id: u.id, name: u.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    res.json({ users: list });
+  } catch (err) {
+    console.error('[wrap-users] failed:', err);
+    res.status(500).json({ error: 'Failed to load user list' });
+  }
+});
+
+app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await store.getUser(userId, false);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const APRIL_WEEKDAYS = store.getAprilWeekdays();
+    const aprilSet = new Set(APRIL_WEEKDAYS);
+    const totalDays = APRIL_WEEKDAYS.length;
+
+    const [allUsers, allCheckins, allMessages] = await Promise.all([
+      store.getAllUsers(false),
+      store.getAllCheckins(false),
+      store.getRecentMessages(false),
+    ]);
+
+    const aprilCheckins = allCheckins.filter(c => aprilSet.has(c.date));
+    const myCheckins = aprilCheckins.filter(c => c.user_id === userId);
+
+    // ─── Personal stats ───────────────────────────────
+    const myDates = [...new Set(myCheckins.map(c => c.date))].sort();
+    const daysAttended = myDates.length;
+
+    // Longest consecutive-weekday streak
+    let longestStreak = 0, curStreak = 0;
+    for (const day of APRIL_WEEKDAYS) {
+      if (myDates.includes(day)) { curStreak++; if (curStreak > longestStreak) longestStreak = curStreak; }
+      else curStreak = 0;
+    }
+
+    // Average check-in time in ET
+    let avgHour = null, avgMinute = null, avgTimeStr = null, avgTotalMin = null;
+    if (myCheckins.length > 0) {
+      const sum = myCheckins.reduce((s, c) => {
+        const { hour, minute } = wrapHourMinuteET(c.created_at);
+        return s + hour * 60 + minute;
+      }, 0);
+      avgTotalMin = sum / myCheckins.length;
+      avgHour = Math.floor(avgTotalMin / 60);
+      avgMinute = Math.round(avgTotalMin - avgHour * 60);
+      if (avgMinute === 60) { avgHour = (avgHour + 1) % 24; avgMinute = 0; }
+      avgTimeStr = wrapFormatTime12(avgHour, avgMinute);
+    }
+
+    // Favorite day of week
+    const dowCount = {};
+    for (const c of myCheckins) {
+      const dow = wrapDayOfWeek(c.date);
+      dowCount[dow] = (dowCount[dow] || 0) + 1;
+    }
+    let favDay = null, favDayCount = 0;
+    for (const [day, count] of Object.entries(dowCount)) {
+      if (count > favDayCount) { favDay = day; favDayCount = count; }
+    }
+
+    // Drinks
+    const totalDrinks = myCheckins.reduce((s, c) => s + (Number(c.drinks) || 0), 0);
+    const showDrinks = totalDrinks >= 3;
+    const drinksByDate = {};
+    for (const c of myCheckins) {
+      drinksByDate[c.date] = (drinksByDate[c.date] || 0) + (Number(c.drinks) || 0);
+    }
+    let peakNightDate = null, peakNightDrinks = 0;
+    for (const [d, n] of Object.entries(drinksByDate)) {
+      if (n > peakNightDrinks) { peakNightDate = d; peakNightDrinks = n; }
+    }
+    const showPeakNight = peakNightDrinks >= 4;
+
+    // Drinking buddies: another user whose check-in is within ±30 min of any
+    // of mine on the same date. Rank by total overlapping check-ins.
+    const buddyByUser = {};
+    for (const mine of myCheckins) {
+      const mineTime = new Date(mine.created_at).getTime();
+      const sameDay = aprilCheckins.filter(c => c.date === mine.date && c.user_id !== userId);
+      for (const other of sameDay) {
+        const otherTime = new Date(other.created_at).getTime();
+        const diffMin = Math.abs(mineTime - otherTime) / 60000;
+        if (diffMin <= 30) {
+          if (!buddyByUser[other.user_id]) {
+            buddyByUser[other.user_id] = { user_id: other.user_id, name: other.user_name, count: 0 };
+          }
+          buddyByUser[other.user_id].count++;
+        }
+      }
+    }
+    const buddyList = Object.values(buddyByUser).sort((a, b) => b.count - a.count);
+    const topBuddies = buddyList.slice(0, 3).map(b => ({ name: b.name, count: b.count }));
+    const totalUniqueBuddies = buddyList.length;
+
+    // Rally count (broadcasts sent by this user's name)
+    const myRallies = allMessages.filter(
+      m => m.message_type === 'broadcast' && m.sender_name === user.name
+    ).length;
+
+    // ─── Group stats (for archetype + superlatives) ───
+    const byUser = {};
+    for (const u of allUsers) {
+      byUser[u.id] = {
+        user_id: u.id, name: u.name,
+        dates: new Set(), totalCheckins: 0,
+        totalDrinks: 0, buddies: new Set(),
+        rallyCount: 0, avgMin: null,
+        _timesSum: 0, _timesN: 0,
+      };
+    }
+    for (const c of aprilCheckins) {
+      const u = byUser[c.user_id]; if (!u) continue;
+      u.dates.add(c.date); u.totalCheckins++;
+      u.totalDrinks += Number(c.drinks) || 0;
+      const { hour, minute } = wrapHourMinuteET(c.created_at);
+      u._timesSum += hour * 60 + minute; u._timesN++;
+    }
+    // Buddies
+    for (const c of aprilCheckins) {
+      const u = byUser[c.user_id]; if (!u) continue;
+      const t = new Date(c.created_at).getTime();
+      const sameDay = aprilCheckins.filter(c2 => c2.date === c.date && c2.user_id !== c.user_id);
+      for (const other of sameDay) {
+        if (Math.abs(t - new Date(other.created_at).getTime()) / 60000 <= 30) {
+          u.buddies.add(other.user_id);
+        }
+      }
+    }
+    // Rallies
+    for (const m of allMessages) {
+      if (m.message_type !== 'broadcast') continue;
+      for (const u of Object.values(byUser)) {
+        if (u.name === m.sender_name) { u.rallyCount++; break; }
+      }
+    }
+    // Derived
+    for (const u of Object.values(byUser)) {
+      u.daysAttended = u.dates.size;
+      // Longest streak per user
+      let cs = 0, ls = 0;
+      for (const day of APRIL_WEEKDAYS) {
+        if (u.dates.has(day)) { cs++; if (cs > ls) ls = cs; }
+        else cs = 0;
+      }
+      u.longestStreak = ls;
+      u.avgMin = u._timesN > 0 ? u._timesSum / u._timesN : null;
+    }
+    const participants = Object.values(byUser).filter(u => u.totalCheckins > 0);
+
+    // ─── Archetype: pick the stat user ranks highest on ───
+    function rankBy(field, desc = true, filter = null) {
+      let pool = filter ? participants.filter(filter) : participants.slice();
+      pool.sort((a, b) => desc ? b[field] - a[field] : a[field] - b[field]);
+      const idx = pool.findIndex(u => u.user_id === userId);
+      return idx === -1 ? null : { rank: idx + 1, total: pool.length };
+    }
+    const me = byUser[userId];
+    const candidates = [];
+    if (me && me.longestStreak > 0) {
+      candidates.push({ label: 'The Streaker', desc: `a ${me.longestStreak}-day unbroken streak`, ...rankBy('longestStreak') });
+    }
+    if (me && me.buddies.size > 0) {
+      const r = rankBy(null);
+      // recompute manually because rankBy uses field, buddies is a Set
+      const pool = participants.slice().sort((a, b) => b.buddies.size - a.buddies.size);
+      candidates.push({
+        label: 'The Social Butterfly',
+        desc: `in the mix with ${me.buddies.size} different friends`,
+        rank: pool.findIndex(u => u.user_id === userId) + 1, total: pool.length,
+      });
+    }
+    if (me && me.daysAttended > 0) {
+      candidates.push({ label: 'The Regular', desc: `there ${me.daysAttended} of ${totalDays} days`, ...rankBy('daysAttended') });
+    }
+    if (me && me.avgMin != null) {
+      const laterPool = participants.filter(u => u.avgMin != null).slice().sort((a, b) => b.avgMin - a.avgMin);
+      const earlierPool = laterPool.slice().reverse();
+      const later = laterPool.findIndex(u => u.user_id === userId) + 1;
+      const earlier = earlierPool.findIndex(u => u.user_id === userId) + 1;
+      const timeLabel = wrapFormatTime12(Math.floor(me.avgMin / 60), Math.round(me.avgMin % 60));
+      // Only consider The Closer if avgHour >= 21 (9pm+). Only The Warmup if <= 19 (7pm).
+      const avgH = Math.floor(me.avgMin / 60);
+      if (avgH >= 21) candidates.push({ label: 'The Closer', desc: `average check-in at ${timeLabel}`, rank: later, total: laterPool.length });
+      if (avgH <= 19) candidates.push({ label: 'The Warmup', desc: `average check-in at ${timeLabel}`, rank: earlier, total: earlierPool.length });
+    }
+    if (me && me.rallyCount > 0) {
+      candidates.push({ label: 'The Rallyist', desc: `sent ${me.rallyCount} rally ${me.rallyCount === 1 ? 'alert' : 'alerts'}`, ...rankBy('rallyCount') });
+    }
+    if (me && me.totalDrinks >= 3) {
+      candidates.push({ label: 'The Top Shelf', desc: `${me.totalDrinks} drinks logged`, ...rankBy('totalDrinks') });
+    }
+    // Fallback if nothing qualified
+    if (candidates.length === 0) {
+      candidates.push({ label: 'The Shayprils Guest', desc: `came through ${daysAttended} ${daysAttended === 1 ? 'day' : 'days'}`, rank: 1, total: 1 });
+    }
+    // Normalize rank → relative strength (lower rank = stronger)
+    candidates.forEach(c => { c._score = c.rank / (c.total || 1); });
+    candidates.sort((a, b) => a._score - b._score);
+    const myArchetype = { label: candidates[0].label, desc: candidates[0].desc };
+
+    // ─── Group superlatives ───
+    const topStreaker = [...participants].sort((a, b) => b.longestStreak - a.longestStreak)[0];
+    const topRegular = [...participants].sort((a, b) => b.daysAttended - a.daysAttended)[0];
+    const topDrinker = [...participants].sort((a, b) => b.totalDrinks - a.totalDrinks)[0];
+    const topRallyist = [...participants].sort((a, b) => b.rallyCount - a.rallyCount)[0];
+    const countByDate = {};
+    const usersByDate = {};
+    for (const c of aprilCheckins) {
+      countByDate[c.date] = (countByDate[c.date] || 0) + 1;
+      if (!usersByDate[c.date]) usersByDate[c.date] = new Set();
+      usersByDate[c.date].add(c.user_id);
+    }
+    let biggestDate = null, biggestUsers = 0;
+    for (const [d, users] of Object.entries(usersByDate)) {
+      if (users.size > biggestUsers) { biggestDate = d; biggestUsers = users.size; }
+    }
+    const totalGroupDrinks = participants.reduce((s, u) => s + u.totalDrinks, 0);
+
+    // Selfie URLs for collage (Cloudinary URLs only — skip local files that
+    // may not resolve)
+    const selfies = myCheckins
+      .filter(c => c.selfie && c.selfie.startsWith('http'))
+      .map(c => c.selfie);
+
+    res.json({
+      user: { id: user.id, name: user.name },
+      personal: {
+        daysAttended, totalDays, longestStreak,
+        avgTimeStr, favDay,
+        totalDrinks, showDrinks,
+        peakNight: showPeakNight ? { date: peakNightDate, drinks: peakNightDrinks } : null,
+        topBuddies, totalUniqueBuddies,
+        rallyCount: myRallies,
+      },
+      archetype: myArchetype,
+      group: {
+        totalCheckins: aprilCheckins.length,
+        totalParticipants: participants.length,
+        totalGroupDrinks,
+        biggestNight: biggestDate ? { date: biggestDate, count: biggestUsers } : null,
+        topStreaker: topStreaker ? { name: topStreaker.name, days: topStreaker.longestStreak } : null,
+        topRegular: topRegular ? { name: topRegular.name, days: topRegular.daysAttended } : null,
+        topDrinker: topDrinker && topDrinker.totalDrinks > 0 ? { name: topDrinker.name, drinks: topDrinker.totalDrinks } : null,
+        topRallyist: topRallyist && topRallyist.rallyCount > 0 ? { name: topRallyist.name, rallies: topRallyist.rallyCount } : null,
+      },
+      selfies,
+    });
+  } catch (err) {
+    console.error('[wrap] failed:', err);
+    res.status(500).json({ error: 'Failed to build wrap' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // TWILIO INBOUND SMS WEBHOOK
 // ═══════════════════════════════════════════════════════════════
 // Twilio POSTs here whenever someone replies to a Shayprils text. We watch
