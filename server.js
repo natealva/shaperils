@@ -1604,16 +1604,48 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
       .filter(c => c.selfie && c.selfie.startsWith('http'))
       .map(c => c.selfie);
 
-    // Percentile rankings — "top X%" where smaller X is better
-    function topPercent(pool, field) {
+    // Group selfies — every Cloudinary photo from April, used for the
+    // group-wide collage slide. Random shuffle so it's not name-clumped.
+    const groupSelfiesAll = aprilCheckins
+      .filter(c => c.selfie && c.selfie.startsWith('http'))
+      .map(c => c.selfie);
+    // Shuffle (Fisher-Yates)
+    const groupSelfies = groupSelfiesAll.slice();
+    for (let i = groupSelfies.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [groupSelfies[i], groupSelfies[j]] = [groupSelfies[j], groupSelfies[i]];
+    }
+
+    // Standard "competition ranking" with ties. Returns { rank, tied,
+    // tiedCount, total } — rank is 1-based, tied=true if other people share
+    // this value.
+    function rankWithTies(pool, field) {
+      if (!pool || pool.length === 0) return null;
+      const target = pool.find(u => u.user_id === userId);
+      if (!target) return null;
+      const myValue = target[field];
+      const better = pool.filter(u => u[field] > myValue).length;
+      const tiedCount = pool.filter(u => u[field] === myValue).length;
+      return {
+        rank: better + 1,
+        tied: tiedCount > 1,
+        tiedCount,
+        total: pool.length,
+      };
+    }
+    function topPercentOf(pool, field) {
+      if (!pool || pool.length === 0) return null;
       const sorted = [...pool].sort((a, b) => b[field] - a[field]);
       const idx = sorted.findIndex(u => u.user_id === userId);
       if (idx === -1) return null;
-      return { rank: idx + 1, total: sorted.length, topPercent: Math.max(1, Math.ceil((idx + 1) / sorted.length * 100)) };
+      return Math.max(1, Math.ceil((idx + 1) / sorted.length * 100));
     }
-    const visitorRank = topPercent(participants, 'daysAttended');
+    const visitorRank = rankWithTies(participants, 'daysAttended');
     const drinkerPool = participants.filter(u => u.totalDrinks > 0);
-    const drinkerRank = me && me.totalDrinks > 0 ? topPercent(drinkerPool, 'totalDrinks') : null;
+    const drinkerRank = me && me.totalDrinks > 0 ? {
+      rank: rankWithTies(drinkerPool, 'totalDrinks'),
+      topPercent: topPercentOf(drinkerPool, 'totalDrinks'),
+    } : null;
 
     res.json({
       user: { id: user.id, name: user.name },
@@ -1639,6 +1671,7 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
         topRallyist: topRallyist && topRallyist.rallyCount > 0 ? { name: topRallyist.name, rallies: topRallyist.rallyCount } : null,
       },
       selfies,
+      groupSelfies,
     });
   } catch (err) {
     console.error('[wrap] failed:', err);
