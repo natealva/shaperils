@@ -447,14 +447,24 @@
 
     /* Shayprils mini-logo header on every slide */
     .wrap-header {
-      position: absolute; top: 32px; left: 0; right: 0;
+      position: absolute; top: 26px; left: 0; right: 0;
       text-align: center; z-index: 4; pointer-events: none;
+    }
+    .wrap-header-img {
+      height: 44px; width: auto;
+      display: inline-block;
+      filter: drop-shadow(0 1px 1px rgba(255,255,255,0.4));
     }
     .wrap-header-text {
       font-family: 'Great Vibes', cursive;
       font-size: 2rem; line-height: 1;
       color: var(--wrap-wine);
       text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .wrap-intro-img {
+      width: 100%; max-width: 320px; height: auto;
+      margin-bottom: 14px;
+      animation: wrapPop 0.7s ease;
     }
 
     .wrap-eyebrow {
@@ -583,70 +593,85 @@
     }
     .wrap-group-totals .gt-row strong { color: #F0DBC0; font-weight: 800; }
 
-    /* Collage slide — 9:16 Instagram story */
+    /* Collage slide — 9:16 Instagram story, full-bleed photo wall background */
     .wrap-slide-collage {
-      padding: 20px; background: var(--wrap-cream);
+      padding: 20px 16px 50px; background: var(--wrap-cream);
+      align-items: center;
     }
     .wrap-collage {
       width: 100%; max-width: 360px;
-      aspect-ratio: 9/16; max-height: 85vh;
+      aspect-ratio: 9/16; max-height: 86vh;
       position: relative; overflow: hidden;
       border-radius: 20px;
       background: var(--wrap-wine);
-      box-shadow: 0 12px 36px rgba(91,27,40,0.35);
+      box-shadow: 0 14px 40px rgba(91,27,40,0.4);
     }
+    /* Photo wall — fills the entire 9:16 area, no gaps, no padding */
+    .wrap-collage-wall {
+      position: absolute; inset: 0;
+      display: grid; gap: 0;
+    }
+    .wrap-collage-wall img {
+      width: 100%; height: 100%;
+      object-fit: cover; /* square-ish cells -> minimal cropping for square selfies */
+      display: block;
+    }
+    .wrap-collage-wall-empty {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--wrap-cream); opacity: 0.5; font-size: 0.95rem;
+    }
+    /* Top gradient + brand */
     .wrap-collage-top {
       position: absolute; top: 0; left: 0; right: 0;
-      padding: 22px 20px 16px;
-      background: linear-gradient(to bottom, rgba(139,43,59,0.9), transparent);
+      padding: 26px 20px 50px;
+      background: linear-gradient(to bottom, rgba(91,27,40,0.92) 0%, rgba(91,27,40,0.65) 60%, transparent 100%);
       text-align: center; color: #FAF0DE;
-      z-index: 3;
+      z-index: 3; pointer-events: none;
     }
-    .wrap-collage-brand {
-      font-family: 'Great Vibes', cursive;
-      font-size: 2.4rem; line-height: 1;
+    .wrap-collage-brand-img {
+      width: 80%; max-width: 240px; height: auto;
+      margin: 0 auto;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
     }
     .wrap-collage-year {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 3.2rem; font-weight: 900; line-height: 1;
-      margin-top: 2px;
+      font-size: 2.6rem; font-weight: 900; line-height: 1;
+      margin-top: 4px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
     }
-    .wrap-collage-middle {
-      position: absolute; top: 170px; bottom: 200px; left: 14px; right: 14px;
-      background: rgba(255,255,255,0.96);
-      border-radius: 16px;
-      padding: 6px;
-      display: grid; gap: 4px;
-      overflow: hidden;
-    }
-    .wrap-collage-middle img {
-      width: 100%; height: 100%;
-      object-fit: cover; /* within a small tile, cover gives best face visibility */
-      border-radius: 8px;
-    }
+    /* Bottom gradient + stats */
     .wrap-collage-bottom {
       position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 20px 20px 24px;
-      background: linear-gradient(to top, rgba(91,27,40,0.95), transparent);
+      padding: 60px 20px 24px;
+      background: linear-gradient(to top, rgba(91,27,40,0.95) 0%, rgba(91,27,40,0.75) 50%, transparent 100%);
       text-align: center; color: #FAF0DE;
       z-index: 3;
     }
     .wrap-collage-name {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.6rem; font-weight: 900;
-      margin-bottom: 10px;
+      font-size: 1.7rem; font-weight: 900;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
     .wrap-collage-stats {
       font-size: 0.95rem; line-height: 1.7;
-      opacity: 0.95;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
     .wrap-collage-stats strong {
       color: #FFE3B0; font-weight: 800;
     }
     .wrap-collage-hint {
-      margin-top: 14px; font-size: 0.82rem;
-      color: var(--wrap-wine); opacity: 0.7;
+      margin-top: 12px; font-size: 0.82rem;
+      color: var(--wrap-wine); opacity: 0.75;
       text-align: center;
+    }
+    .wrap-collage-flag {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(255,255,255,0.95); color: var(--wrap-wine);
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; z-index: 5;
     }
 
     /* === Calendar === */
@@ -3542,11 +3567,11 @@ function wrapRender(data) {
   wrapSlides = wrapBuildSlides(data);
   wrapIndex = 0;
   const stage = document.getElementById('wrapStage');
-  // Each slide gets: floating emoji layer + header wordmark + inner content
+  // Each slide gets: floating emoji layer + small logo header + inner content
   stage.innerHTML = wrapSlides.map(function(s, i) {
     var showHeader = s.bg !== 'wrap-slide-collage' && s.noHeader !== true;
     var header = showHeader
-      ? '<div class="wrap-header"><div class="wrap-header-text">Shayprils</div></div>'
+      ? '<div class="wrap-header"><img class="wrap-header-img" src="/shayprils-logo.png" alt="Shayprils" onerror="this.outerHTML=\'<div class=\\\'wrap-header-text\\\'>Shayprils</div>\'" /></div>'
       : '';
     var floats = s.floatsHtml ? '<div class="wrap-floats">' + s.floatsHtml + '</div>' : '';
     return '<div class="wrap-slide ' + s.bg + (i === 0 ? ' active' : '') + '" data-idx="' + i + '">'
@@ -3621,6 +3646,47 @@ function wrapFloats(icons) {
   return out.join('');
 }
 
+// "1st", "2nd", "3rd", "4th", … "21st" etc.
+function wrapOrdinal(n) {
+  var s = ['th', 'st', 'nd', 'rd'];
+  var v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+// Pick a grid (cols x rows) that fills a 9:16 area with roughly square cells.
+function wrapPickGrid(n, mode) {
+  // mode: 'personal' (looser) or 'group' (denser)
+  if (n <= 0) return { cols: 1, rows: 1 };
+  if (mode === 'group') {
+    // Always dense for group view, regardless of count
+    if (n <= 30) return { cols: 5, rows: 9 };
+    if (n <= 50) return { cols: 6, rows: 11 };
+    return { cols: 7, rows: 12 };
+  }
+  // Personal: scale to selfie count
+  if (n <= 4) return { cols: 2, rows: 4 };  // squares slightly tall
+  if (n <= 9) return { cols: 3, rows: 5 };
+  if (n <= 16) return { cols: 4, rows: 7 };
+  if (n <= 28) return { cols: 5, rows: 9 };
+  return { cols: 6, rows: 11 };
+}
+
+// Build the photo wall HTML — fills the entire collage with photos, repeating
+// if there are fewer photos than cells.
+function wrapWallHtml(photos, mode) {
+  var n = photos ? photos.length : 0;
+  if (n === 0) {
+    return '<div class="wrap-collage-wall-empty">No selfies yet</div>';
+  }
+  var grid = wrapPickGrid(n, mode);
+  var cells = grid.cols * grid.rows;
+  var imgs = [];
+  for (var i = 0; i < cells; i++) {
+    imgs.push('<img src="' + photos[i % n] + '" alt="" loading="lazy" />');
+  }
+  return '<div class="wrap-collage-wall" style="grid-template-columns:repeat(' + grid.cols + ',1fr);grid-template-rows:repeat(' + grid.rows + ',1fr);">' + imgs.join('') + '</div>';
+}
+
 function wrapBuildSlides(data) {
   const slides = [];
   const p = data.personal || {};
@@ -3629,17 +3695,13 @@ function wrapBuildSlides(data) {
   const firstName = (data.user && data.user.name || '').split(' ')[0] || data.user.name;
   const firstNameEsc = escapeHtml(firstName);
 
-  // Slide 1: Intro — big Shayprils wordmark
+  // Slide 1: Intro — uses the actual logo image
   slides.push({
     bg: 'wrap-bg-intro',
-    noHeader: true, // intro has its own giant wordmark
-    floatsHtml: wrapFloats(['🍺', '🍷', '❤️', '🍻', '🥂', '🍺']),
+    noHeader: true,
+    floatsHtml: wrapFloats(['🍺', '🍷', '🍻', '🥂', '🍺', '🍷']),
     html:
-      '<div class="wrap-intro-box">' +
-        '<div class="wrap-intro-icons">🍷 ❤️ 🍺</div>' +
-        '<div class="wrap-intro-brand">Shayprils</div>' +
-        '<div class="wrap-intro-sub">Every Day in April</div>' +
-      '</div>' +
+      '<img class="wrap-intro-img" src="/shayprils-logo.png" alt="Shayprils" onerror="this.outerHTML=\'<div class=&quot;wrap-intro-box&quot;><div class=&quot;wrap-intro-icons&quot;>&#127863; &#127866;</div><div class=&quot;wrap-intro-brand&quot;>Shayprils</div><div class=&quot;wrap-intro-sub&quot;>Every Day in April</div></div>\'" />' +
       '<div class="wrap-wrapped-label">2026 Wrapped</div>' +
       '<div class="wrap-greeting">Hi, <strong style="color:var(--wrap-wine);">' + firstNameEsc + '</strong></div>' +
       '<div class="wrap-tap-hint">Tap to start →</div>'
@@ -3690,7 +3752,7 @@ function wrapBuildSlides(data) {
     var whoCount = p.totalUniqueBuddies;
     slides.push({
       bg: 'wrap-bg-crew',
-      floatsHtml: wrapFloats(['❤️', '🍻', '✨', '❤️', '🍻']),
+      floatsHtml: wrapFloats(['🍻', '✨', '🥂', '🍻', '✨']),
       html:
         '<div class="wrap-eyebrow">Your Shayprils crew</div>' +
         '<div class="wrap-caption" style="margin:6px 0 18px;">You racked up the most nights at Shays with&hellip;</div>' +
@@ -3727,45 +3789,67 @@ function wrapBuildSlides(data) {
       groupTotalsHtml
   });
 
-  // Slide 6: Collage (9:16 Instagram story) — all selfies, no cropping
-  var selfies = data.selfies || [];
-  var n = selfies.length;
-  // Choose grid dimensions based on selfie count (square-ish)
-  var cols, rows;
-  if (n === 0) { cols = 1; rows = 1; }
-  else if (n <= 1) { cols = 1; rows = 1; }
-  else if (n <= 4) { cols = 2; rows = 2; }
-  else if (n <= 9) { cols = 3; rows = 3; }
-  else if (n <= 16) { cols = 4; rows = 4; }
-  else { cols = 5; rows = Math.ceil(n / 5); }
-  var gridStyle = 'grid-template-columns:repeat(' + cols + ',1fr);grid-template-rows:repeat(' + rows + ',1fr);';
-  var tileHtml = n === 0
-    ? '<div style="grid-column:1/-1;grid-row:1/-1;display:flex;align-items:center;justify-content:center;color:var(--wrap-wine);font-size:1rem;opacity:0.5;">No selfies yet</div>'
-    : selfies.map(function(u) { return '<img src="' + u + '" alt="" />'; }).join('');
-
-  var collageStats = [];
-  collageStats.push('<div><strong>' + p.daysAttended + '</strong> of ' + p.totalDays + ' days</div>');
-  if (p.longestStreak) collageStats.push('<div><strong>' + p.longestStreak + '</strong>-day streak</div>');
-  if (p.showDrinks) collageStats.push('<div><strong>' + p.totalDrinks + '</strong> drinks</div>');
-  if (p.visitorRank) collageStats.push('<div>Top <strong>' + p.visitorRank.topPercent + '%</strong> of visitors</div>');
-
-  slides.push({
-    bg: 'wrap-slide-collage',
-    noHeader: true,
-    html:
-      '<div class="wrap-collage">' +
-        '<div class="wrap-collage-top">' +
-          '<div class="wrap-collage-brand">Shayprils</div>' +
-          '<div class="wrap-collage-year">2026</div>' +
+  // ─── Final slides: full-bleed photo collage (personal + group) ───
+  // Helper to build either variant. Both share the same overlay structure;
+  // only the photo wall and the "flag" badge differ.
+  function collageSlide(opts) {
+    var photos = opts.photos || [];
+    var wallHtml = wrapWallHtml(photos, opts.mode);
+    var stats = opts.stats || [];
+    var flagHtml = opts.flag ? '<div class="wrap-collage-flag">' + escapeHtml(opts.flag) + '</div>' : '';
+    return {
+      bg: 'wrap-slide-collage',
+      noHeader: true,
+      html:
+        '<div class="wrap-collage">' +
+          wallHtml +
+          flagHtml +
+          '<div class="wrap-collage-top">' +
+            '<img class="wrap-collage-brand-img" src="/shayprils-logo.png" alt="Shayprils" onerror="this.outerHTML=\'<div style=&quot;font-family:Great Vibes,cursive;font-size:2.6rem;line-height:1;&quot;>Shayprils</div>\'" />' +
+            '<div class="wrap-collage-year">2026</div>' +
+          '</div>' +
+          '<div class="wrap-collage-bottom">' +
+            (opts.titleHtml || '') +
+            '<div class="wrap-collage-stats">' + stats.join('') + '</div>' +
+          '</div>' +
         '</div>' +
-        '<div class="wrap-collage-middle" style="' + gridStyle + '">' + tileHtml + '</div>' +
-        '<div class="wrap-collage-bottom">' +
-          '<div class="wrap-collage-name">' + firstNameEsc + '</div>' +
-          '<div class="wrap-collage-stats">' + collageStats.join('') + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="wrap-collage-hint">Screenshot to share →</div>'
-  });
+        '<div class="wrap-collage-hint">Screenshot to share →</div>'
+    };
+  }
+
+  // Personal stats for the personal collage
+  var personalStats = [];
+  personalStats.push('<div><strong>' + p.daysAttended + '</strong> of ' + p.totalDays + ' days</div>');
+  if (p.longestStreak) personalStats.push('<div><strong>' + p.longestStreak + '</strong>-day streak</div>');
+  if (p.showDrinks) personalStats.push('<div><strong>' + p.totalDrinks + '</strong> drinks</div>');
+  if (p.visitorRank) {
+    var prefix = p.visitorRank.tied ? 'Tied for ' : 'Ranked ';
+    personalStats.push('<div>' + prefix + '<strong>' + wrapOrdinal(p.visitorRank.rank) + '</strong> out of ' + p.visitorRank.total + ' visitors</div>');
+  }
+
+  // Personal collage
+  slides.push(collageSlide({
+    photos: data.selfies || [],
+    mode: 'personal',
+    titleHtml: '<div class="wrap-collage-name">' + firstNameEsc + '</div>',
+    stats: personalStats,
+    flag: 'Your wrap',
+  }));
+
+  // Group collage — same layout, photos from everyone in April
+  var groupStats = [];
+  groupStats.push('<div><strong>' + g.totalCheckins + '</strong> total check-ins</div>');
+  groupStats.push('<div><strong>' + g.totalParticipants + '</strong> friends pulled up</div>');
+  if (g.totalGroupDrinks > 0) groupStats.push('<div><strong>' + g.totalGroupDrinks + '</strong> drinks logged</div>');
+  if (g.biggestNight) groupStats.push('<div>Biggest night: <strong>' + wrapFormatDate(g.biggestNight.date) + '</strong></div>');
+
+  slides.push(collageSlide({
+    photos: data.groupSelfies || [],
+    mode: 'group',
+    titleHtml: '<div class="wrap-collage-name">The Crew</div>',
+    stats: groupStats,
+    flag: 'The whole crew',
+  }));
 
   return slides;
 }
