@@ -447,13 +447,13 @@
 
     /* Shayprils mini-logo header on every slide */
     .wrap-header {
-      position: absolute; top: 26px; left: 0; right: 0;
+      position: absolute; top: 22px; left: 0; right: 0;
       text-align: center; z-index: 4; pointer-events: none;
     }
     .wrap-header-img {
-      height: 44px; width: auto;
+      height: 70px; width: auto;
       display: inline-block;
-      filter: drop-shadow(0 1px 1px rgba(255,255,255,0.4));
+      mix-blend-mode: multiply; /* helps the banner blend into the cream background */
     }
     .wrap-header-text {
       font-family: 'Great Vibes', cursive;
@@ -488,12 +488,19 @@
     }
     .wrap-sub-stats strong { font-weight: 800; color: var(--wrap-wine); }
 
-    /* Slide backgrounds — all warm cream variations */
-    .wrap-bg-intro { background: radial-gradient(circle at 30% 15%, #FAF0DE, var(--wrap-cream)); }
-    .wrap-bg-attendance { background: linear-gradient(160deg, #FAF0DE 0%, #F0DBC0 100%); }
-    .wrap-bg-drinks { background: linear-gradient(160deg, #F5E0C8 0%, #E8C4A8 100%); }
-    .wrap-bg-crew { background: linear-gradient(160deg, #F5E6D3 0%, #E2C9A9 100%); }
-    .wrap-bg-archetype { background: linear-gradient(160deg, #FAF0DE 0%, #D9B78F 100%); }
+    /* Slide backgrounds — unified cream that matches the banner's tan,
+       so the logo blends instead of looking pasted on. Subtle gradient
+       per slide for visual variety. */
+    .wrap-bg-intro,
+    .wrap-bg-attendance,
+    .wrap-bg-drinks,
+    .wrap-bg-crew,
+    .wrap-bg-archetype {
+      background: linear-gradient(160deg, #EDDFC1 0%, #DCC9A4 100%);
+    }
+    .wrap-bg-intro { background: radial-gradient(circle at 30% 18%, #F0E2C5, #DCC9A4); }
+    .wrap-bg-drinks { background: linear-gradient(160deg, #EDDFC1 0%, #D4BC95 100%); }
+    .wrap-bg-archetype { background: linear-gradient(160deg, #F0E2C5 0%, #D0B68C 100%); }
 
     /* Intro slide: big Shayprils wordmark */
     .wrap-intro-box {
@@ -606,14 +613,22 @@
       background: var(--wrap-wine);
       box-shadow: 0 14px 40px rgba(91,27,40,0.4);
     }
-    /* Photo wall — fills the entire 9:16 area, no gaps, no padding */
+    /* Photo wall — fills the entire 9:16 area, no gaps. Uses contain so the
+       full selfie is visible (no awkward face crops); burgundy background of
+       the collage card shows through any letterbox bars. */
     .wrap-collage-wall {
       position: absolute; inset: 0;
       display: grid; gap: 0;
+      align-content: stretch;
+    }
+    .wrap-collage-wall .cell {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--wrap-wine);
     }
     .wrap-collage-wall img {
       width: 100%; height: 100%;
-      object-fit: cover; /* square-ish cells -> minimal cropping for square selfies */
+      object-fit: cover; /* cells force a square aspect ratio so this never crops square selfies */
       display: block;
     }
     .wrap-collage-wall-empty {
@@ -3653,38 +3668,44 @@ function wrapOrdinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-// Pick a grid (cols x rows) that fills a 9:16 area with roughly square cells.
+// Pick a grid that fits the photo count. Cells are SQUARE (CSS aspect-ratio),
+// so square selfies show fully without cropping. We size cells to fit all
+// photos within the 9:16 collage area; any leftover area shows the wine
+// background, which feels intentional with the brand bands above and below.
 function wrapPickGrid(n, mode) {
-  // mode: 'personal' (looser) or 'group' (denser)
   if (n <= 0) return { cols: 1, rows: 1 };
   if (mode === 'group') {
-    // Always dense for group view, regardless of count
-    if (n <= 30) return { cols: 5, rows: 9 };
-    if (n <= 50) return { cols: 6, rows: 11 };
-    return { cols: 7, rows: 12 };
+    // Dense walls for the group collage — many photos, tightly packed
+    if (n <= 30) return { cols: 5, rows: Math.ceil(n / 5) };
+    if (n <= 60) return { cols: 6, rows: Math.ceil(n / 6) };
+    return { cols: 7, rows: Math.ceil(n / 7) };
   }
-  // Personal: scale to selfie count
-  if (n <= 4) return { cols: 2, rows: 4 };  // squares slightly tall
-  if (n <= 9) return { cols: 3, rows: 5 };
-  if (n <= 16) return { cols: 4, rows: 7 };
-  if (n <= 28) return { cols: 5, rows: 9 };
-  return { cols: 6, rows: 11 };
+  // Personal: scale square count to actual photo count, biggest cells the
+  // count allows. Each row count below represents the rounded-up rows for
+  // the chosen column count.
+  if (n <= 1) return { cols: 1, rows: 1 };
+  if (n <= 4) return { cols: 2, rows: Math.ceil(n / 2) };
+  if (n <= 9) return { cols: 3, rows: Math.ceil(n / 3) };
+  if (n <= 16) return { cols: 4, rows: Math.ceil(n / 4) };
+  if (n <= 25) return { cols: 5, rows: Math.ceil(n / 5) };
+  return { cols: 5, rows: Math.ceil(n / 5) };
 }
 
-// Build the photo wall HTML — fills the entire collage with photos, repeating
-// if there are fewer photos than cells.
+// Build the photo wall HTML. Square cells, no repeating photos — if there
+// are fewer photos than the grid cells (rare), the bottom row gets fewer
+// items, and the burgundy card shows through. CSS `aspect-ratio: 1/1` on
+// each cell guarantees square dimensions regardless of container ratio.
 function wrapWallHtml(photos, mode) {
   var n = photos ? photos.length : 0;
   if (n === 0) {
     return '<div class="wrap-collage-wall-empty">No selfies yet</div>';
   }
   var grid = wrapPickGrid(n, mode);
-  var cells = grid.cols * grid.rows;
-  var imgs = [];
-  for (var i = 0; i < cells; i++) {
-    imgs.push('<img src="' + photos[i % n] + '" alt="" loading="lazy" />');
+  var cells = [];
+  for (var i = 0; i < n; i++) {
+    cells.push('<div class="cell" style="aspect-ratio:1/1;"><img src="' + photos[i] + '" alt="" loading="lazy" /></div>');
   }
-  return '<div class="wrap-collage-wall" style="grid-template-columns:repeat(' + grid.cols + ',1fr);grid-template-rows:repeat(' + grid.rows + ',1fr);">' + imgs.join('') + '</div>';
+  return '<div class="wrap-collage-wall" style="grid-template-columns:repeat(' + grid.cols + ',1fr);grid-auto-rows:1fr;">' + cells.join('') + '</div>';
 }
 
 function wrapBuildSlides(data) {
@@ -3755,7 +3776,7 @@ function wrapBuildSlides(data) {
       floatsHtml: wrapFloats(['🍻', '✨', '🥂', '🍻', '✨']),
       html:
         '<div class="wrap-eyebrow">Your Shayprils crew</div>' +
-        '<div class="wrap-caption" style="margin:6px 0 18px;">You racked up the most nights at Shays with&hellip;</div>' +
+        '<div class="wrap-caption" style="margin:6px 0 18px;">You racked up the most days at Shays with&hellip;</div>' +
         '<div class="wrap-buddy-row">' + buddyRows + '</div>' +
         '<div style="font-size:1rem;">And clinked glasses with <strong style="color:var(--wrap-wine);font-weight:800;">' + whoCount + '</strong> different ' + (whoCount === 1 ? 'friend' : 'friends') + ' total</div>'
     });
@@ -3785,7 +3806,7 @@ function wrapBuildSlides(data) {
       '<div class="wrap-eyebrow">You were&hellip;</div>' +
       '<div class="wrap-hero" style="font-size:2.8rem;">' + escapeHtml(a.label || 'The Shayprils Guest') + '</div>' +
       '<div class="wrap-caption" style="margin-top:-4px;">' + escapeHtml(a.desc || '') + '</div>' +
-      (supers.length ? '<div class="wrap-superlatives">' + '<div class="wrap-eyebrow" style="margin-bottom:8px;">The crew superlatives</div>' + supers.join('') + '</div>' : '') +
+      (supers.length ? '<div class="wrap-superlatives">' + '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:1.15rem;font-weight:800;color:var(--wrap-wine);margin-bottom:10px;text-align:center;">The crew superlatives</div>' + supers.join('') + '</div>' : '') +
       groupTotalsHtml
   });
 
