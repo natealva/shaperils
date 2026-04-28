@@ -1890,6 +1890,9 @@ function showApp() {
   qotdLoad();
   updateWrappedBtnVisibility();
   maybeAutoOpenWrapped();
+  // Kick off prefetch in the background so the wrap opens instantly when
+  // the user taps the button.
+  prefetchMyWrap();
 }
 
 // First-time auto-popup of Shayprils Wrapped on April 30, 2026 (ET).
@@ -3938,15 +3941,52 @@ async function wrapOpen() {
   }
 }
 
+// In-memory cache of "my wrap" — populated by prefetchMyWrap() once the
+// user is logged in so that opening the wrap is instant. We cache the
+// fresh data for ~5 minutes; older than that and we re-fetch on click so
+// the user sees up-to-date stats.
+let wrapMineCache = null;
+let wrapMineCacheTs = 0;
+const WRAP_CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function prefetchMyWrap() {
+  if (!currentUser) return;
+  const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+  if (!token) return;
+  try {
+    const r = await fetch(API + '/api/wrap/me', { headers: { 'x-auth-token': token } });
+    if (!r.ok) return;
+    const data = await r.json();
+    wrapMineCache = data;
+    wrapMineCacheTs = Date.now();
+    // Hide the home-screen button if the user has no check-ins — nothing
+    // to wrap. (Visibility is also gated on date by updateWrappedBtnVisibility.)
+    if (data.personal && data.personal.daysAttended === 0) {
+      const btn = document.getElementById('wrapMineBtn');
+      if (btn) btn.classList.add('hidden');
+    }
+  } catch (e) { /* ignore */ }
+}
+
 // Public path — any logged-in user can view their own wrap.
 async function wrapOpenMine() {
   if (!currentUser) return showToast('Sign in first', 'error');
   const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
   if (!token) return showToast('Sign in first', 'error');
+  // Use cache if fresh — opening is now instant for users who hit the
+  // home screen with the prefetch already complete.
+  const cacheAge = Date.now() - wrapMineCacheTs;
+  if (wrapMineCache && cacheAge < WRAP_CACHE_TTL_MS) {
+    wrapRender(wrapMineCache);
+    document.getElementById('wrapOverlay').classList.remove('hidden');
+    return;
+  }
   try {
     const r = await fetch(API + '/api/wrap/me', { headers: { 'x-auth-token': token } });
     const data = await r.json();
     if (!r.ok) return showToast(data.error || 'Failed to load wrap', 'error');
+    wrapMineCache = data;
+    wrapMineCacheTs = Date.now();
     wrapRender(data);
     document.getElementById('wrapOverlay').classList.remove('hidden');
   } catch (e) {
