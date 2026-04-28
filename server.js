@@ -1702,6 +1702,9 @@ async function buildWrapResponse(req, res) {
         rallyCount: myRallies,
         visitorRank,
         drinkerRank,
+        // Per-weekday attendance map for the dot-calendar viz on slide 2.
+        // Returns an array of booleans aligned with APRIL_WEEKDAYS order.
+        attendanceMap: APRIL_WEEKDAYS.map(d => myDates.includes(d)),
       },
       archetype: myArchetype,
       group: {
