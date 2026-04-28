@@ -714,12 +714,14 @@
       letter-spacing: -0.01em;
     }
 
-    /* Archetype label — Spotify-style "You were…" reveal with gold accent */
+    /* Archetype label — Spotify-style "You were…" reveal with gold accent.
+       Uses wrapCollageRise (translate + opacity) which is more robust than
+       wrapPop's scale, and a slow shine on the gradient that fills the text. */
     .wrap-archetype-label {
       font-family: 'Playfair Display', Georgia, serif;
       font-size: clamp(2.6rem, 8vw, 3.4rem);
       font-weight: 900;
-      line-height: 1.0;
+      line-height: 1.05;
       letter-spacing: -0.01em;
       margin: 4px 0 0;
       background: linear-gradient(135deg, var(--wrap-wine) 0%, var(--wrap-gold) 70%, var(--wrap-wine) 100%);
@@ -727,7 +729,9 @@
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: wrapPop 0.9s 0.1s ease both, wrapArchetypeShine 7s 0.5s ease-in-out infinite;
+      animation:
+        wrapCollageRise 0.9s 0.10s cubic-bezier(.21,.97,.32,1) both,
+        wrapArchetypeShine 7s 1s ease-in-out infinite;
     }
     @keyframes wrapArchetypeShine {
       0%, 100% { background-position: 0% 50%; }
