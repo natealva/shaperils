@@ -608,34 +608,28 @@
     .wrap-slide.wrap-slide-collage {
       padding: 0;
       background: #0E0810;
-      align-items: stretch;
-      justify-content: stretch;
+      align-items: center;
+      justify-content: center;
     }
     .wrap-slide.wrap-slide-collage .wrap-slide-inner {
       position: absolute; inset: 0;
       max-width: none; width: 100%;
       margin-top: 0;
       padding: 0;
-      display: flex; align-items: stretch; justify-content: center;
+      /* Use grid so the card sizes to its own dimensions and centers */
+      display: grid;
+      place-items: center;
     }
+    /* Card size: dictated by viewport. We pick the smaller of "fit width"
+       and "fit height" with a 9:16 ratio, then size both width and height
+       explicitly so aspect-ratio is honored without flex weirdness. */
     .wrap-collage {
       position: relative;
-      flex: 0 0 auto;
-      height: 100%;
-      aspect-ratio: 9 / 16;
-      max-width: 100%;
-      max-height: 100%;
+      width:  min(100vw, calc(100vh * 9 / 16));
+      height: min(100vh, calc(100vw * 16 / 9));
       overflow: hidden;
       background: #1A1216;
       box-shadow: 0 20px 80px rgba(0,0,0,0.4);
-    }
-    /* On viewports where the stage is wider than 9:16, the card stays
-       portrait (aspect-ratio derives width). On taller-than-9:16 viewports
-       (rare), this would let the card overflow horizontally — clamp it. */
-    @media (max-aspect-ratio: 9 / 16) {
-      .wrap-collage {
-        height: auto; width: 100%; max-width: 100%;
-      }
     }
     /* Photo wall — covers the entire viewport. Cells use object-fit: cover
        so square selfies fit cleanly; if a row would be partial, we pad with
