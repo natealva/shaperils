@@ -3965,7 +3965,31 @@ async function prefetchMyWrap() {
       const btn = document.getElementById('wrapMineBtn');
       if (btn) btn.classList.add('hidden');
     }
+    // Warm up the image cache so the collage slides paint instantly when
+    // the user reaches them. Limit to ~30 images so we don't hammer
+    // bandwidth on slow connections.
+    preloadWrapImages(data);
   } catch (e) { /* ignore */ }
+}
+
+// Kick off background <Image> loads for the user's selfies + a slice of
+// group photos. Browsers will cache them so the actual <img> tags in the
+// collage slide hit the disk cache instantly.
+function preloadWrapImages(data) {
+  if (!data) return;
+  const urls = []
+    .concat(data.selfies || [])
+    .concat((data.paddingSelfies || []).slice(0, 12))
+    .concat((data.groupSelfies || []).slice(0, 18));
+  urls.slice(0, 36).forEach(function(u) {
+    if (!u) return;
+    const i = new Image();
+    i.src = u;
+  });
+  // Also warm the peak-night hero photo if present
+  if (data.personal && data.personal.peakNight && data.personal.peakNight.selfie) {
+    const i = new Image(); i.src = data.personal.peakNight.selfie;
+  }
 }
 
 // Public path — any logged-in user can view their own wrap.
