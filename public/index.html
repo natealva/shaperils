@@ -3911,7 +3911,10 @@ function wrapUpdateActive() {
   wrapAnimateActive();
 }
 
-// Trigger count-up animations on any [data-count-to] elements in the active slide
+// Trigger count-up animations on any [data-count-to] elements in the active
+// slide. Uses requestAnimationFrame for smoothness, plus a setTimeout
+// fallback that snaps to the final target — guards against backgrounded
+// tabs where rAF stalls and the user sees a frozen "0".
 function wrapAnimateActive() {
   var active = document.querySelector('.wrap-slide.active');
   if (!active) return;
@@ -3920,17 +3923,24 @@ function wrapAnimateActive() {
     var target = parseInt(el.getAttribute('data-count-to'), 10) || 0;
     var duration = parseInt(el.getAttribute('data-count-duration'), 10) || 1200;
     var startTs = null;
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      el.textContent = target;
+    }
     function step(ts) {
+      if (done) return;
       if (startTs == null) startTs = ts;
       var pct = Math.min(1, (ts - startTs) / duration);
-      // ease-out cubic
       var eased = 1 - Math.pow(1 - pct, 3);
-      var val = Math.round(target * eased);
-      el.textContent = val;
+      el.textContent = Math.round(target * eased);
       if (pct < 1) requestAnimationFrame(step);
-      else el.textContent = target;
+      else finish();
     }
     requestAnimationFrame(step);
+    // Hard fallback in case rAF is throttled — snap to final value.
+    setTimeout(finish, duration + 200);
   });
 }
 
