@@ -4032,6 +4032,17 @@ function wrapNext() {
 function wrapPrev() {
   if (wrapIndex > 0) { wrapIndex--; wrapUpdateActive(); }
 }
+
+// Keyboard nav for the wrap overlay — arrows + Esc work the same way they
+// do on most full-screen story players. Only fires while the overlay is
+// open. Also handles the Escape key to close.
+document.addEventListener('keydown', function(e) {
+  const overlay = document.getElementById('wrapOverlay');
+  if (!overlay || overlay.classList.contains('hidden')) return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { wrapPrev(); e.preventDefault(); }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { wrapNext(); e.preventDefault(); }
+  else if (e.key === 'Escape') { wrapClose(); e.preventDefault(); }
+});
 // Restart the wrap from slide 0 — wired to the "Watch again" button on the
 // final group-collage slide.
 function wrapReplay() {
