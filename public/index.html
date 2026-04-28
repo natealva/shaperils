@@ -601,26 +601,34 @@
     .wrap-group-totals .gt-row strong { color: #F0DBC0; font-weight: 800; }
 
     /* === Collage slides — full-bleed photo wall, white text overlay ===
-       The collage takes over the entire stage (no inner card, no burgundy
-       blocks). Photos fill edge-to-edge with a soft white wash for the
-       muted/dreamy look, and a subtle dark vignette at top + bottom to
-       guarantee text legibility against any background. */
+       The collage stays in a 9:16 portrait card so it always renders the
+       way it'll be screenshotted (Instagram story aspect). On mobile the
+       card just fills the screen; on desktop it's centered with letterbox
+       margin so the preview matches what users will see. */
     .wrap-slide.wrap-slide-collage {
       padding: 0;
-      background: #1A1216;
-      align-items: stretch;
-      justify-content: stretch;
+      background: #0E0810;
+      align-items: center;
+      justify-content: center;
     }
     .wrap-slide.wrap-slide-collage .wrap-slide-inner {
+      position: absolute; inset: 0;
       max-width: none; width: 100%;
       margin-top: 0;
-      align-items: stretch;
       padding: 0;
+      display: flex; align-items: center; justify-content: center;
     }
     .wrap-collage {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
+      position: relative;
+      height: 100%;
+      aspect-ratio: 9 / 16;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
       overflow: hidden;
+      background: #1A1216;
+      /* Soft drop shadow so it pops off the dark stage on desktop */
+      box-shadow: 0 20px 80px rgba(0,0,0,0.4);
     }
     /* Photo wall — covers the entire viewport. Cells use object-fit: cover
        so square selfies fit cleanly; if a row would be partial, we pad with
