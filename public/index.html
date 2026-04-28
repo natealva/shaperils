@@ -520,15 +520,19 @@
       animation: wrapPop 0.7s ease;
       letter-spacing: -0.02em;
     }
-    /* Attendance dot calendar — 22 weekdays of April, lit dots = attended */
+    /* Attendance dot calendar — 22 weekdays of April, lit dots = attended.
+       Explicit cell size keeps the grid from collapsing under the
+       slide-inner's auto-width center alignment. */
     .wrap-cal-grid {
-      display: grid; gap: 6px;
-      grid-template-columns: repeat(11, 1fr);
-      max-width: 280px; margin: 22px auto 0;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      width: 280px; max-width: 90%;
+      justify-content: center;
+      margin: 22px auto 0;
       animation: wrapCollageRise 0.8s 0.6s cubic-bezier(.21,.97,.32,1) both;
     }
     .wrap-cal-dot {
-      aspect-ratio: 1 / 1; border-radius: 50%;
+      width: 18px; height: 18px;
+      border-radius: 50%;
       background: rgba(91,27,40,0.18);
       transition: background 0.3s ease, transform 0.3s ease;
     }
