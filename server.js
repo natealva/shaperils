@@ -1401,7 +1401,18 @@ app.get('/api/admin/wrap-users', adminAuth, async (req, res) => {
   }
 });
 
+// Public wrap endpoint — any logged-in user can fetch their OWN wrap.
+// Reuses the same data builder as the admin endpoint.
+app.get('/api/wrap/me', authMiddleware, async (req, res) => {
+  req.params.userId = req.user.id;
+  return buildWrapResponse(req, res);
+});
+
 app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
+  return buildWrapResponse(req, res);
+});
+
+async function buildWrapResponse(req, res) {
   try {
     const userId = req.params.userId;
     const user = await store.getUser(userId, false);
@@ -1711,7 +1722,7 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
     console.error('[wrap] failed:', err);
     res.status(500).json({ error: 'Failed to build wrap' });
   }
-});
+}
 
 // ═══════════════════════════════════════════════════════════════
 // TWILIO INBOUND SMS WEBHOOK
