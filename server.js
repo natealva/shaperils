@@ -1479,6 +1479,12 @@ async function buildWrapResponse(req, res) {
       if (n > peakNightDrinks) { peakNightDate = d; peakNightDrinks = n; }
     }
     const showPeakNight = peakNightDrinks >= 4;
+    // Find a selfie from the peak night to feature in the peak-night slide.
+    let peakNightSelfie = null;
+    if (showPeakNight) {
+      const peakCheckin = myCheckins.find(c => c.date === peakNightDate && c.selfie && c.selfie.startsWith('http'));
+      if (peakCheckin) peakNightSelfie = cloudinaryThumb(peakCheckin.selfie, 720);
+    }
 
     // Drinking buddies: another user whose check-in is within ±30 min of any
     // of mine on the same date. Rank by total overlapping check-ins.
@@ -1697,7 +1703,7 @@ async function buildWrapResponse(req, res) {
         daysAttended, totalDays, longestStreak,
         avgTimeStr, favDay,
         totalDrinks, showDrinks,
-        peakNight: showPeakNight ? { date: peakNightDate, drinks: peakNightDrinks } : null,
+        peakNight: showPeakNight ? { date: peakNightDate, drinks: peakNightDrinks, selfie: peakNightSelfie } : null,
         topBuddies, totalUniqueBuddies,
         rallyCount: myRallies,
         visitorRank,
