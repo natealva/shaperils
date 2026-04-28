@@ -1334,6 +1334,22 @@ app.post('/api/admin/question-of-day', adminAuth, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // SHAYPRILS WRAPPED — admin preview
 // ═══════════════════════════════════════════════════════════════
+// Cloudinary thumbnail helper. Stored selfie URLs are the raw 640×640 upload;
+// we rewrite them to ask Cloudinary for a smaller, optimized version. This
+// reduces the page weight on the collage slides by ~95% (e.g. ~80MB → ~4MB
+// for a 60-photo wall) and avoids the mobile Safari crash that was caused by
+// loading every full-res selfie at once.
+function cloudinaryThumb(url, size) {
+  if (!url || typeof url !== 'string') return url;
+  var marker = '/upload/';
+  var idx = url.indexOf(marker);
+  if (idx === -1) return url;
+  // c_fill = crop to fill, w/h = target size in CSS px (Cloudinary handles
+  // retina via f_auto), q_auto = automatic quality, f_auto = auto format
+  var transform = 'c_fill,w_' + size + ',h_' + size + ',q_auto,f_auto/';
+  return url.slice(0, idx + marker.length) + transform + url.slice(idx + marker.length);
+}
+
 // Builds all personal + group stats for a user's Wrapped recap. Admin-only
 // for now — once Nate signs off on the preview, we'll add a public route
 // and the April 30 pop-up.
@@ -1598,23 +1614,40 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
     }
     const totalGroupDrinks = participants.reduce((s, u) => s + u.totalDrinks, 0);
 
-    // Selfie URLs for collage (Cloudinary URLs only — skip local files that
-    // may not resolve)
-    const selfies = myCheckins
+    // ─── Selfie URLs for the collage slides ───
+    // Strategy:
+    //   - selfies: this user's photos, transformed to a slightly larger thumb
+    //     (480px) since they're the focal subject of their personal collage.
+    //   - groupSelfies: a random sample of up to 60 distinct group photos,
+    //     transformed to 360px. We cap the count because a full month can
+    //     produce 300+ selfies and rendering them all crashes mobile Safari.
+    //   - paddingSelfies: extra group photos (excluding this user's own)
+    //     used to fill empty cells in the personal collage if the user has
+    //     too few of their own photos to cover the screen.
+    const myUrls = myCheckins
       .filter(c => c.selfie && c.selfie.startsWith('http'))
       .map(c => c.selfie);
+    const allUrls = aprilCheckins
+      .filter(c => c.selfie && c.selfie.startsWith('http'))
+      .map(c => c.selfie);
+    const myUrlSet = new Set(myUrls);
 
-    // Group selfies — every Cloudinary photo from April, used for the
-    // group-wide collage slide. Random shuffle so it's not name-clumped.
-    const groupSelfiesAll = aprilCheckins
-      .filter(c => c.selfie && c.selfie.startsWith('http'))
-      .map(c => c.selfie);
-    // Shuffle (Fisher-Yates)
-    const groupSelfies = groupSelfiesAll.slice();
-    for (let i = groupSelfies.length - 1; i > 0; i--) {
+    // Shuffle full pool once (Fisher-Yates)
+    const shuffledAll = allUrls.slice();
+    for (let i = shuffledAll.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [groupSelfies[i], groupSelfies[j]] = [groupSelfies[j], groupSelfies[i]];
+      [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]];
     }
+
+    const GROUP_WALL_MAX = 60;     // hard ceiling — keeps the page memory-safe
+    const PADDING_POOL_MAX = 30;   // enough to fill any personal grid
+
+    const selfies = myUrls.map(u => cloudinaryThumb(u, 480));
+    const groupSelfies = shuffledAll.slice(0, GROUP_WALL_MAX).map(u => cloudinaryThumb(u, 360));
+    const paddingSelfies = shuffledAll
+      .filter(u => !myUrlSet.has(u))
+      .slice(0, PADDING_POOL_MAX)
+      .map(u => cloudinaryThumb(u, 360));
 
     // Standard "competition ranking" with ties. Returns { rank, tied,
     // tiedCount, total } — rank is 1-based, tied=true if other people share
@@ -1672,6 +1705,7 @@ app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
       },
       selfies,
       groupSelfies,
+      paddingSelfies,
     });
   } catch (err) {
     console.error('[wrap] failed:', err);
