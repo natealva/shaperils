@@ -647,17 +647,21 @@
       width: 100%; height: 100%;
       object-fit: cover;
       display: block;
-      /* Soft Ken-Burns slow zoom — keeps the wall feeling alive without
-         being distracting. Only applied when the slide is active. */
+      /* Slight brightness lift + a hair of warmth so dark indoor shots
+         still read as photos against the dark card background, while
+         well-lit shots don't blow out. */
+      filter: brightness(1.10) saturate(1.05) contrast(1.04);
+      /* Subtle Ken-Burns slow zoom — keeps the wall feeling alive
+         without being distracting. Only applied when slide is active. */
       transform: scale(1);
       transition: transform 0.6s ease-out;
     }
     .wrap-slide.wrap-slide-collage.active .wrap-collage-wall img {
-      animation: wrapKenBurns 16s ease-in-out infinite alternate;
+      animation: wrapKenBurns 18s ease-in-out infinite alternate;
     }
     @keyframes wrapKenBurns {
       0%   { transform: scale(1.00); }
-      100% { transform: scale(1.06); }
+      100% { transform: scale(1.05); }
     }
     .wrap-collage-wall-empty {
       position: absolute; inset: 0;
@@ -667,28 +671,26 @@
     /* Layered overlays:
        1) tint — subtle white wash to mute the photos and give the dreamy look
        2) vignette — dark gradients top & bottom for text contrast */
-    /* Soft white wash + slight desaturation so the photos read as a
-       textured background rather than fighting the headline. Lighter than
-       v1 — photos should still feel present, just calm. */
+    /* Very gentle white wash — keeps the muted/dreamy feel without
+       washing dark photos to invisibility. */
     .wrap-collage-tint {
       position: absolute; inset: 0;
-      background: rgba(255, 252, 248, 0.10);
+      background: rgba(255, 250, 244, 0.06);
       pointer-events: none;
       z-index: 2;
-      mix-blend-mode: lighten;
     }
-    /* Top + bottom vignette — stronger now so the white text sits cleanly
-       on top regardless of what's in the photos. */
+    /* Top + bottom vignette — calibrated for clean white text without
+       crushing the photos. */
     .wrap-collage-vignette {
       position: absolute; inset: 0;
       background:
         linear-gradient(180deg,
-          rgba(0,0,0,0.70) 0%,
-          rgba(0,0,0,0.20) 26%,
-          rgba(0,0,0,0)    44%,
-          rgba(0,0,0,0)    56%,
-          rgba(0,0,0,0.32) 78%,
-          rgba(0,0,0,0.85) 100%);
+          rgba(0,0,0,0.55) 0%,
+          rgba(0,0,0,0.15) 24%,
+          rgba(0,0,0,0)    42%,
+          rgba(0,0,0,0)    58%,
+          rgba(0,0,0,0.25) 78%,
+          rgba(0,0,0,0.70) 100%);
       pointer-events: none;
       z-index: 3;
     }
@@ -716,12 +718,12 @@
     }
     .wrap-collage-eyebrow {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(0.78rem, 2.6vw, 0.92rem);
+      font-size: clamp(0.72rem, 2.4vw, 0.84rem);
       font-weight: 700;
       letter-spacing: 0.55em;
-      margin: 8px 0 0;
+      margin: 18px 0 0;
       color: rgba(255,255,255,0.92);
-      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.7), 0 0 18px rgba(0,0,0,0.4);
       padding-left: 0.55em;
       animation: wrapCollageRise 1s 0.15s cubic-bezier(.21,.97,.32,1) both;
     }
