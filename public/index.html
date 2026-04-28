@@ -714,23 +714,46 @@
       letter-spacing: -0.01em;
     }
 
+    /* Archetype label — Spotify-style "You were…" reveal with gold accent */
+    .wrap-archetype-label {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.6rem, 8vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.01em;
+      margin: 4px 0 0;
+      background: linear-gradient(135deg, var(--wrap-wine) 0%, var(--wrap-gold) 70%, var(--wrap-wine) 100%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: wrapPop 0.9s 0.1s ease both, wrapArchetypeShine 7s 0.5s ease-in-out infinite;
+    }
+    @keyframes wrapArchetypeShine {
+      0%, 100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
     /* Superlatives */
     .wrap-superlatives {
       margin-top: 22px;
-      border-top: 1.5px solid var(--wrap-wine);
+      border-top: 1.5px solid rgba(139,43,59,0.35);
       padding-top: 18px;
       font-size: 0.95rem; line-height: 1.7;
       color: var(--wrap-ink);
       width: 100%; max-width: 340px;
       margin-left: auto; margin-right: auto;
       text-align: left;
+      animation: wrapCollageRise 0.8s 0.45s cubic-bezier(.21,.97,.32,1) both;
     }
     .wrap-superlatives strong { color: var(--wrap-wine); font-weight: 800; }
     .wrap-group-totals {
-      margin-top: 18px;
-      background: var(--wrap-wine); color: var(--wrap-cream);
-      border-radius: 14px; padding: 16px 14px;
+      margin-top: 22px;
+      background: linear-gradient(135deg, var(--wrap-wine) 0%, var(--wrap-wine-dark) 100%);
+      color: var(--wrap-cream);
+      border-radius: 16px; padding: 18px 18px;
       text-align: center;
+      box-shadow: 0 8px 22px rgba(91,27,40,0.22);
+      animation: wrapCollageRise 0.9s 0.7s cubic-bezier(.21,.97,.32,1) both;
     }
     .wrap-group-totals .gt-label {
       font-size: 0.72rem; font-weight: 700;
@@ -4123,8 +4146,8 @@ function wrapBuildSlides(data) {
     floatsHtml: wrapFloats(['🏆', '🍻', '⭐', '🏆', '🍻']),
     html:
       '<div class="wrap-eyebrow">You were&hellip;</div>' +
-      '<div class="wrap-hero" style="font-size:2.8rem;">' + escapeHtml(a.label || 'The Shayprils Guest') + '</div>' +
-      '<div class="wrap-caption" style="margin-top:-4px;">' + escapeHtml(a.desc || '') + '</div>' +
+      '<div class="wrap-archetype-label">' + escapeHtml(a.label || 'The Shayprils Guest') + '</div>' +
+      '<div class="wrap-caption" style="margin-top:6px;">' + escapeHtml(a.desc || '') + '</div>' +
       (supers.length ? '<div class="wrap-superlatives">' + '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:1.15rem;font-weight:800;color:var(--wrap-wine);margin-bottom:10px;text-align:center;">The crew superlatives</div>' + supers.join('') + '</div>' : '') +
       groupTotalsHtml
   });
