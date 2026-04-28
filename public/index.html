@@ -608,27 +608,34 @@
     .wrap-slide.wrap-slide-collage {
       padding: 0;
       background: #0E0810;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch;
+      justify-content: stretch;
     }
     .wrap-slide.wrap-slide-collage .wrap-slide-inner {
       position: absolute; inset: 0;
       max-width: none; width: 100%;
       margin-top: 0;
       padding: 0;
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: stretch; justify-content: center;
     }
     .wrap-collage {
       position: relative;
+      flex: 0 0 auto;
       height: 100%;
       aspect-ratio: 9 / 16;
       max-width: 100%;
       max-height: 100%;
-      width: auto;
       overflow: hidden;
       background: #1A1216;
-      /* Soft drop shadow so it pops off the dark stage on desktop */
       box-shadow: 0 20px 80px rgba(0,0,0,0.4);
+    }
+    /* On viewports where the stage is wider than 9:16, the card stays
+       portrait (aspect-ratio derives width). On taller-than-9:16 viewports
+       (rare), this would let the card overflow horizontally — clamp it. */
+    @media (max-aspect-ratio: 9 / 16) {
+      .wrap-collage {
+        height: auto; width: 100%; max-width: 100%;
+      }
     }
     /* Photo wall — covers the entire viewport. Cells use object-fit: cover
        so square selfies fit cleanly; if a row would be partial, we pad with
@@ -666,22 +673,28 @@
     /* Layered overlays:
        1) tint — subtle white wash to mute the photos and give the dreamy look
        2) vignette — dark gradients top & bottom for text contrast */
+    /* Soft white wash + slight desaturation so the photos read as a
+       textured background rather than fighting the headline. Lighter than
+       v1 — photos should still feel present, just calm. */
     .wrap-collage-tint {
       position: absolute; inset: 0;
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 252, 248, 0.10);
       pointer-events: none;
       z-index: 2;
+      mix-blend-mode: lighten;
     }
+    /* Top + bottom vignette — stronger now so the white text sits cleanly
+       on top regardless of what's in the photos. */
     .wrap-collage-vignette {
       position: absolute; inset: 0;
       background:
         linear-gradient(180deg,
-          rgba(0,0,0,0.55) 0%,
-          rgba(0,0,0,0.10) 22%,
-          rgba(0,0,0,0)    42%,
-          rgba(0,0,0,0)    58%,
-          rgba(0,0,0,0.20) 78%,
-          rgba(0,0,0,0.70) 100%);
+          rgba(0,0,0,0.70) 0%,
+          rgba(0,0,0,0.20) 26%,
+          rgba(0,0,0,0)    44%,
+          rgba(0,0,0,0)    56%,
+          rgba(0,0,0,0.32) 78%,
+          rgba(0,0,0,0.85) 100%);
       pointer-events: none;
       z-index: 3;
     }
