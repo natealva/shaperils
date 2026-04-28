@@ -350,6 +350,47 @@
       padding: 0 16px 16px;
     }
 
+    /* "Your Shayprils Wrapped" CTA on the home screen — appears in the
+       final week of April once each user has enough data to make a recap
+       interesting. Cream + burgundy gradient with a soft shimmer. */
+    .wrapped-btn {
+      display: block; width: 100%;
+      margin-top: 14px;
+      padding: 18px 16px 14px;
+      background: linear-gradient(135deg, #8B2B3B 0%, #5B1B28 50%, #8B2B3B 100%);
+      background-size: 200% 200%;
+      animation: wrapBtnShimmer 6s ease-in-out infinite;
+      color: #FAF0DE;
+      border: none; border-radius: 14px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.1rem; font-weight: 800;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(91,27,40,0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .wrapped-btn:hover, .wrapped-btn:active {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 28px rgba(91,27,40,0.35);
+    }
+    .wrapped-btn-spark {
+      display: inline-block; opacity: 0.85;
+      margin: 0 6px; font-size: 0.85em;
+    }
+    .wrapped-btn-sub {
+      font-family: inherit;
+      font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 0.04em;
+      opacity: 0.85;
+      margin-top: 4px;
+      font-style: italic;
+    }
+    @keyframes wrapBtnShimmer {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     /* === Shayprils Wrapped preview === */
     @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700;900&display=swap');
 
@@ -699,33 +740,38 @@
       z-index: 4;
       display: flex; flex-direction: column;
       justify-content: space-between;
-      padding: 70px 28px 56px;
+      padding: 60px 28px 50px;
       text-align: center;
       color: #FFFFFF;
     }
     .wrap-collage-top {
       pointer-events: none;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    /* Eyebrow ABOVE the cursive headline — no descender collision and
+       echoes the Spotify Wrapped layout where the small label leads. */
+    .wrap-collage-eyebrow {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(0.72rem, 2.4vw, 0.82rem);
+      font-weight: 700;
+      letter-spacing: 0.55em;
+      margin: 0 0 8px;
+      color: rgba(255,255,255,0.95);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.7), 0 0 18px rgba(0,0,0,0.4);
+      padding-left: 0.55em;
+      order: -1; /* visually first */
+      animation: wrapCollageRise 0.9s cubic-bezier(.21,.97,.32,1) both;
     }
     .wrap-collage-headline {
       font-family: 'Great Vibes', cursive;
-      font-size: clamp(3.8rem, 14vw, 5.4rem);
-      line-height: 0.95;
+      font-size: clamp(3.6rem, 13.5vw, 5.4rem);
+      line-height: 1.0;
       color: #FFFFFF;
       text-shadow: 0 4px 28px rgba(0,0,0,0.65), 0 1px 2px rgba(0,0,0,0.55), 0 0 60px rgba(255,255,255,0.10);
       letter-spacing: 0.01em;
       margin: 0;
-      animation: wrapCollageRise 0.9s cubic-bezier(.21,.97,.32,1) both;
-    }
-    .wrap-collage-eyebrow {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(0.72rem, 2.4vw, 0.84rem);
-      font-weight: 700;
-      letter-spacing: 0.55em;
-      margin: 18px 0 0;
-      color: rgba(255,255,255,0.92);
-      text-shadow: 0 2px 10px rgba(0,0,0,0.7), 0 0 18px rgba(0,0,0,0.4);
-      padding-left: 0.55em;
-      animation: wrapCollageRise 1s 0.15s cubic-bezier(.21,.97,.32,1) both;
+      padding-bottom: 0.08em; /* room for cursive descenders */
+      animation: wrapCollageRise 1s 0.10s cubic-bezier(.21,.97,.32,1) both;
     }
     @keyframes wrapCollageRise {
       from { opacity: 0; transform: translateY(14px); }
@@ -743,15 +789,24 @@
     }
     .wrap-collage-stats {
       display: flex; flex-direction: column; align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-family: 'Playfair Display', Georgia, serif;
       color: #FFFFFF;
-      font-size: clamp(1rem, 3.2vw, 1.12rem);
+      font-size: clamp(1rem, 3.2vw, 1.14rem);
       line-height: 1.4;
       font-weight: 500;
+      /* Subtle frosted backdrop for guaranteed legibility against any
+         photo behind. backdrop-filter is silently dropped on browsers
+         that don't support it — looks fine because the vignette already
+         darkens this area. */
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px) saturate(1.1);
+      -webkit-backdrop-filter: blur(6px) saturate(1.1);
     }
     .wrap-collage-stats > div {
-      text-shadow: 0 2px 12px rgba(0,0,0,0.75);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.7);
       animation: wrapCollageRise 0.8s cubic-bezier(.21,.97,.32,1) both;
     }
     /* Stagger the stat lines slightly for the Spotify-like cascade */
@@ -762,16 +817,19 @@
     .wrap-collage-stats > div:nth-child(5) { animation-delay: 0.70s; }
     .wrap-collage-stats > div:nth-child(6) { animation-delay: 0.80s; }
     .wrap-collage-stats > div:nth-child(7) { animation-delay: 0.90s; }
-    .wrap-collage-stats strong { color: #FFFFFF; font-weight: 800; }
+    .wrap-collage-stats strong {
+      color: #FFFFFF; font-weight: 800;
+      font-size: 1.1em;
+    }
     .wrap-collage-divider {
-      width: 44px; height: 1px;
-      background: rgba(255,255,255,0.45);
+      width: 38px; height: 1px;
+      background: rgba(255,255,255,0.35);
       margin: 0 auto;
       animation: wrapDividerWiden 0.6s 0.4s ease-out both;
     }
     @keyframes wrapDividerWiden {
       from { width: 0; opacity: 0; }
-      to   { width: 44px; opacity: 1; }
+      to   { width: 38px; opacity: 1; }
     }
     .wrap-collage-flag {
       position: absolute; top: 14px; right: 14px;
@@ -1167,6 +1225,14 @@
       <button class="heading-btn" onclick="sendHeading()">
         I'm heading to Shays!
         <div class="btn-subtitle">Tap to text everyone you're on your way</div>
+      </button>
+
+      <!-- Your Shayprils Wrapped — appears for the last week of April + May -->
+      <button id="wrapMineBtn" class="wrapped-btn hidden" onclick="wrapOpenMine()">
+        <span class="wrapped-btn-spark">✦</span>
+        Your 2026 Shayprils Wrapped
+        <span class="wrapped-btn-spark">✦</span>
+        <div class="wrapped-btn-sub">Tap to see your month at Shays</div>
       </button>
 
       <div id="alreadyCheckedIn" class="checkin-status hidden">
@@ -1579,6 +1645,26 @@ function showApp() {
   checkTodayCheckin();
   renderNotificationSettings();
   qotdLoad();
+  updateWrappedBtnVisibility();
+}
+
+// Decides whether to show the "Your Shayprils Wrapped" button on the home
+// screen. Only shows it for logged-in users in the final stretch of April
+// (when there's enough data to make a recap meaningful) and through May
+// so people can come back to their wrap after the fact.
+function updateWrappedBtnVisibility() {
+  const btn = document.getElementById('wrapMineBtn');
+  if (!btn) return;
+  if (!currentUser) { btn.classList.add('hidden'); return; }
+  // ET-aware date check: enable from April 25, 2026 through end of May 2026
+  const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const y = nowET.getFullYear();
+  const m = nowET.getMonth(); // 0-indexed
+  const d = nowET.getDate();
+  const visible =
+    (y === 2026 && m === 3 && d >= 25) ||  // late April
+    (y === 2026 && m === 4);                // all of May
+  btn.classList.toggle('hidden', !visible);
 }
 
 function enterGuestMode() {
@@ -3580,6 +3666,22 @@ async function wrapOpen() {
   if (!userId) return showToast('Pick a user first', 'error');
   try {
     const r = await fetch(API + '/api/admin/wrap/' + userId, { headers: { 'x-admin-pin': adminPin } });
+    const data = await r.json();
+    if (!r.ok) return showToast(data.error || 'Failed to load wrap', 'error');
+    wrapRender(data);
+    document.getElementById('wrapOverlay').classList.remove('hidden');
+  } catch (e) {
+    showToast('Failed to load wrap', 'error');
+  }
+}
+
+// Public path — any logged-in user can view their own wrap.
+async function wrapOpenMine() {
+  if (!currentUser) return showToast('Sign in first', 'error');
+  const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+  if (!token) return showToast('Sign in first', 'error');
+  try {
+    const r = await fetch(API + '/api/wrap/me', { headers: { 'x-auth-token': token } });
     const data = await r.json();
     if (!r.ok) return showToast(data.error || 'Failed to load wrap', 'error');
     wrapRender(data);
