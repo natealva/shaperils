@@ -1646,6 +1646,26 @@ function showApp() {
   renderNotificationSettings();
   qotdLoad();
   updateWrappedBtnVisibility();
+  maybeAutoOpenWrapped();
+}
+
+// First-time auto-popup of Shayprils Wrapped on April 30, 2026 (ET).
+// Each device sees the popup at most once; after that the home-screen
+// button is the way back in. We pause briefly so the home renders first
+// (avoids a jarring instant overlay on app open).
+function maybeAutoOpenWrapped() {
+  if (!currentUser) return;
+  const flagKey = 'shayprils_wrapped_2026_seen';
+  if (localStorage.getItem(flagKey)) return;
+  const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const isApril30 = nowET.getFullYear() === 2026 && nowET.getMonth() === 3 && nowET.getDate() === 30;
+  if (!isApril30) return;
+  setTimeout(function() {
+    try {
+      localStorage.setItem(flagKey, '1');
+      wrapOpenMine();
+    } catch (e) {}
+  }, 900);
 }
 
 // Decides whether to show the "Your Shayprils Wrapped" button on the home
