@@ -546,6 +546,33 @@
       margin-top: 12px;
       letter-spacing: 0.04em;
     }
+    /* Drinks slide percentile bar — Spotify-style horizontal viz */
+    .wrap-pct-wrap {
+      width: 280px; max-width: 90%;
+      margin: 24px auto 0;
+      animation: wrapCollageRise 0.8s 0.6s cubic-bezier(.21,.97,.32,1) both;
+    }
+    .wrap-pct-label {
+      font-size: 0.92rem; color: var(--wrap-ink);
+      margin-bottom: 8px; opacity: 0.85;
+    }
+    .wrap-pct-label strong { color: var(--wrap-wine); font-weight: 800; }
+    .wrap-pct-track {
+      width: 100%; height: 10px;
+      background: rgba(91,27,40,0.15);
+      border-radius: 999px; overflow: hidden;
+    }
+    .wrap-pct-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--wrap-wine), var(--wrap-wine-soft));
+      border-radius: 999px;
+      transform-origin: left center;
+      animation: wrapPctFill 1.2s 0.7s cubic-bezier(.21,.97,.32,1) both;
+    }
+    @keyframes wrapPctFill {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
     .wrap-caption {
       font-size: 1.1rem; font-weight: 500; line-height: 1.45;
       color: var(--wrap-ink);
@@ -644,27 +671,47 @@
       animation: wrapWiggle 3s ease-in-out infinite;
     }
 
-    /* Crew slide buddy cards */
+    /* Crew slide — top-3 buddies as podium-style cards */
     .wrap-buddy-row {
-      display: flex; flex-direction: column; gap: 10px;
-      margin: 20px 0 14px; width: 100%;
+      display: flex; flex-direction: column; gap: 12px;
+      margin: 22px 0 16px; width: 100%;
+      max-width: 360px; margin-left: auto; margin-right: auto;
     }
     .wrap-buddy-item {
-      background: rgba(255,255,255,0.6);
-      border: 1.5px solid var(--wrap-wine);
-      padding: 12px 16px; border-radius: 14px;
-      display: flex; align-items: center; gap: 14px;
-      box-shadow: 0 2px 6px rgba(91,27,40,0.08);
+      background: rgba(255,255,255,0.7);
+      border: 1.5px solid rgba(139,43,59,0.2);
+      padding: 14px 18px; border-radius: 16px;
+      display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 4px 14px rgba(91,27,40,0.10);
+      animation: wrapCollageRise 0.8s cubic-bezier(.21,.97,.32,1) both;
     }
+    .wrap-buddy-row .wrap-buddy-item:nth-child(1) {
+      animation-delay: 0.30s;
+      border-color: var(--wrap-wine);
+      background: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,224,180,0.55) 100%);
+      box-shadow: 0 6px 20px rgba(91,27,40,0.18);
+    }
+    .wrap-buddy-row .wrap-buddy-item:nth-child(2) { animation-delay: 0.42s; }
+    .wrap-buddy-row .wrap-buddy-item:nth-child(3) { animation-delay: 0.54s; }
     .wrap-buddy-rank {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 1.8rem; font-weight: 900;
-      color: var(--wrap-wine); opacity: 0.55;
-      min-width: 32px;
+      font-size: 2.2rem; font-weight: 900;
+      color: var(--wrap-wine); opacity: 0.6;
+      min-width: 44px; line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .wrap-buddy-row .wrap-buddy-item:nth-child(1) .wrap-buddy-rank {
+      opacity: 1;
+      background: linear-gradient(135deg, var(--wrap-wine), var(--wrap-gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .wrap-buddy-name {
-      font-size: 1.3rem; font-weight: 700;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.35rem; font-weight: 800;
       color: var(--wrap-ink); flex: 1; text-align: left;
+      letter-spacing: -0.01em;
     }
 
     /* Superlatives */
@@ -4005,11 +4052,22 @@ function wrapBuildSlides(data) {
       (attendSubs.length ? '<div class="wrap-sub-stats">' + attendSubs.join('') + '</div>' : '')
   });
 
-  // Slide 3: Drinks + peak night (conditional on ≥3 drinks)
+  // Slide 3: Drinks + peak night + percentile bar (conditional on ≥3 drinks)
   if (p.showDrinks) {
     var drinksSubs = [];
+    var percentileBar = '';
     if (p.drinkerRank) {
-      drinksSubs.push('<div>Top <strong>' + p.drinkerRank.topPercent + '%</strong> of drinkers</div>');
+      var topPct = p.drinkerRank.topPercent;
+      // Percentile bar viz — 100% wide track, fill width = 100 - topPct
+      // (i.e., higher rank = more filled)
+      var fillPct = Math.max(4, 100 - topPct);
+      percentileBar =
+        '<div class="wrap-pct-wrap">' +
+          '<div class="wrap-pct-label">Top <strong>' + topPct + '%</strong> of drinkers</div>' +
+          '<div class="wrap-pct-track">' +
+            '<div class="wrap-pct-fill" style="width:' + fillPct + '%"></div>' +
+          '</div>' +
+        '</div>';
     }
     if (p.peakNight) {
       drinksSubs.push('<div>Peak night: <strong>' + wrapFormatDate(p.peakNight.date) + '</strong> (' + p.peakNight.drinks + ' drinks)</div>');
@@ -4021,6 +4079,7 @@ function wrapBuildSlides(data) {
         '<div class="wrap-eyebrow">The count</div>' +
         '<div class="wrap-hero"><span data-count-to="' + p.totalDrinks + '" data-count-duration="1600">0</span></div>' +
         '<div class="wrap-caption">drinks logged in April</div>' +
+        percentileBar +
         (drinksSubs.length ? '<div class="wrap-sub-stats">' + drinksSubs.join('') + '</div>' : '')
     });
   }
