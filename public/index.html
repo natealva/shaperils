@@ -456,8 +456,8 @@
     .wrap-nav-tap.right { right: 0; }
 
     @keyframes wrapFadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateX(28px); }
+      to   { opacity: 1; transform: translateX(0); }
     }
     @keyframes wrapFloat {
       0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
@@ -515,9 +515,32 @@
     }
     .wrap-hero {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 5rem; font-weight: 900; line-height: 0.95;
+      font-size: clamp(5rem, 18vw, 7.5rem); font-weight: 900; line-height: 0.95;
       color: var(--wrap-wine); margin: 6px 0 18px;
       animation: wrapPop 0.7s ease;
+      letter-spacing: -0.02em;
+    }
+    /* Attendance dot calendar — 22 weekdays of April, lit dots = attended */
+    .wrap-cal-grid {
+      display: grid; gap: 6px;
+      grid-template-columns: repeat(11, 1fr);
+      max-width: 280px; margin: 22px auto 0;
+      animation: wrapCollageRise 0.8s 0.6s cubic-bezier(.21,.97,.32,1) both;
+    }
+    .wrap-cal-dot {
+      aspect-ratio: 1 / 1; border-radius: 50%;
+      background: rgba(91,27,40,0.18);
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+    .wrap-cal-dot.hit {
+      background: var(--wrap-wine);
+      box-shadow: 0 2px 6px rgba(91,27,40,0.30);
+    }
+    .wrap-cal-caption {
+      font-size: 0.82rem; color: var(--wrap-ink);
+      opacity: 0.65;
+      margin-top: 12px;
+      letter-spacing: 0.04em;
     }
     .wrap-caption {
       font-size: 1.1rem; font-weight: 500; line-height: 1.45;
@@ -543,45 +566,78 @@
     .wrap-bg-drinks { background: linear-gradient(160deg, #EDDFC1 0%, #D4BC95 100%); }
     .wrap-bg-archetype { background: linear-gradient(160deg, #F0E2C5 0%, #D0B68C 100%); }
 
-    /* Intro slide: big Shayprils wordmark */
+    /* Intro slide — title-card style hero */
+    .wrap-intro-eyebrow {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.92rem; font-weight: 700;
+      letter-spacing: 0.55em;
+      color: var(--wrap-wine);
+      opacity: 0.78;
+      padding-left: 0.55em;
+      margin-bottom: 22px;
+      animation: wrapCollageRise 0.8s 0.05s cubic-bezier(.21,.97,.32,1) both;
+    }
+    .wrap-intro-img {
+      width: 100%; max-width: 320px; height: auto;
+      margin-bottom: 18px;
+      animation: wrapPop 0.9s 0.10s ease both;
+    }
+    .wrap-intro-greeting {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 3rem; font-weight: 900;
+      color: var(--wrap-wine);
+      line-height: 1;
+      margin-top: 8px;
+      animation: wrapCollageRise 0.9s 0.25s cubic-bezier(.21,.97,.32,1) both;
+    }
+    .wrap-intro-script {
+      font-family: 'Great Vibes', cursive;
+      font-size: 3.2rem; color: var(--wrap-wine);
+      opacity: 0.92; line-height: 1;
+      margin-top: 4px; padding-bottom: 0.1em;
+      animation: wrapCollageRise 1s 0.40s cubic-bezier(.21,.97,.32,1) both;
+    }
+    .wrap-intro-summary {
+      font-size: 1.05rem; font-weight: 500;
+      color: var(--wrap-ink);
+      opacity: 0.75;
+      max-width: 320px; line-height: 1.4;
+      margin: 28px auto 0;
+      animation: wrapCollageRise 0.9s 0.55s cubic-bezier(.21,.97,.32,1) both;
+    }
+    .wrap-tap-hint {
+      margin-top: 36px; font-size: 0.92rem;
+      color: var(--wrap-wine); opacity: 0.85;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      animation: wrapPulse 2s 0.8s ease-in-out infinite both;
+    }
+    @keyframes wrapPulse {
+      0%, 100% { opacity: 0.55; transform: translateY(0); }
+      50%      { opacity: 1.0; transform: translateY(-2px); }
+    }
+
+    /* Legacy intro fallbacks (only used if logo image fails) */
     .wrap-intro-box {
       background: var(--wrap-cream-dark);
       border: 3px solid var(--wrap-wine);
       border-radius: 18px;
       padding: 32px 24px 20px;
       margin-bottom: 22px;
-      position: relative;
-      box-shadow: 0 6px 16px rgba(91,27,40,0.15);
-    }
-    .wrap-intro-icons {
-      font-size: 2rem; margin-bottom: 4px;
-      letter-spacing: 0.4em; display: inline-block;
-      animation: wrapWiggle 3s ease-in-out infinite;
     }
     .wrap-intro-brand {
       font-family: 'Great Vibes', cursive;
       font-size: 5.5rem; color: var(--wrap-wine);
-      line-height: 1; margin: 4px 0 2px;
+      line-height: 1;
     }
     .wrap-intro-sub {
       font-family: 'Great Vibes', cursive;
       font-size: 1.5rem; color: var(--wrap-wine);
-      opacity: 0.85; margin-top: -4px;
     }
-    .wrap-wrapped-label {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 4rem; font-weight: 900;
-      color: var(--wrap-wine); line-height: 1;
-      margin: 16px 0 4px;
-    }
-    .wrap-greeting {
-      font-size: 1.5rem; font-weight: 600;
-      color: var(--wrap-ink); margin-top: 14px;
-    }
-    .wrap-tap-hint {
-      margin-top: 30px; font-size: 0.95rem;
-      color: var(--wrap-wine); opacity: 0.75;
-      letter-spacing: 0.05em;
+    .wrap-intro-icons {
+      font-size: 2rem; letter-spacing: 0.4em;
+      animation: wrapWiggle 3s ease-in-out infinite;
     }
 
     /* Crew slide buddy cards */
@@ -850,6 +906,29 @@
       text-transform: uppercase;
       z-index: 5;
       pointer-events: none;
+    }
+    /* "Watch again" CTA at the end of the wrap. Sits inside the group
+       collage card, above the screenshot hint. */
+    .wrap-replay-btn {
+      position: absolute; bottom: 38px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #FFFFFF;
+      border: 1px solid rgba(255,255,255,0.4);
+      padding: 9px 18px; border-radius: 999px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.86rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer;
+      animation: wrapCollageRise 0.9s 1.0s cubic-bezier(.21,.97,.32,1) both;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .wrap-replay-btn:hover, .wrap-replay-btn:active {
+      background: rgba(255,255,255,0.28);
+      transform: translateX(-50%) translateY(-1px);
     }
 
     /* === Calendar === */
@@ -3749,6 +3828,12 @@ function wrapNext() {
 function wrapPrev() {
   if (wrapIndex > 0) { wrapIndex--; wrapUpdateActive(); }
 }
+// Restart the wrap from slide 0 — wired to the "Watch again" button on the
+// final group-collage slide.
+function wrapReplay() {
+  wrapIndex = 0;
+  wrapUpdateActive();
+}
 function wrapUpdateActive() {
   document.querySelectorAll('.wrap-slide').forEach(function(el, i) {
     el.classList.toggle('active', i === wrapIndex);
@@ -3865,23 +3950,44 @@ function wrapBuildSlides(data) {
   const firstName = (data.user && data.user.name || '').split(' ')[0] || data.user.name;
   const firstNameEsc = escapeHtml(firstName);
 
-  // Slide 1: Intro — uses the actual logo image
+  // Slide 1: Intro — title-card style hero
+  var summaryBits = [];
+  if (p.daysAttended != null) {
+    summaryBits.push(p.daysAttended + ' ' + (p.daysAttended === 1 ? 'day' : 'days') + ' at Shays');
+  }
+  if (p.totalDrinks != null && p.totalDrinks > 0) {
+    summaryBits.push(p.totalDrinks + ' ' + (p.totalDrinks === 1 ? 'drink' : 'drinks'));
+  }
+  if (g.totalParticipants) {
+    summaryBits.push(g.totalParticipants + ' friends');
+  }
+  var introSummary = summaryBits.length ? summaryBits.join(' · ') : '';
   slides.push({
     bg: 'wrap-bg-intro',
     noHeader: true,
     floatsHtml: wrapFloats(['🍺', '🍷', '🍻', '🥂', '🍺', '🍷']),
     html:
+      '<div class="wrap-intro-eyebrow">2026 — WRAPPED</div>' +
       '<img class="wrap-intro-img" src="/shayprils-logo.png" alt="Shayprils" onerror="this.outerHTML=\'<div class=&quot;wrap-intro-box&quot;><div class=&quot;wrap-intro-icons&quot;>&#127863; &#127866;</div><div class=&quot;wrap-intro-brand&quot;>Shayprils</div><div class=&quot;wrap-intro-sub&quot;>Every Day in April</div></div>\'" />' +
-      '<div class="wrap-wrapped-label">2026 Wrapped</div>' +
-      '<div class="wrap-greeting">Hi, <strong style="color:var(--wrap-wine);">' + firstNameEsc + '</strong></div>' +
-      '<div class="wrap-tap-hint">Tap to start →</div>'
+      '<div class="wrap-intro-greeting">Hi, ' + firstNameEsc + '.</div>' +
+      '<div class="wrap-intro-script">your month at Shays</div>' +
+      (introSummary ? '<div class="wrap-intro-summary">' + introSummary + '</div>' : '') +
+      '<div class="wrap-tap-hint">Tap to begin →</div>'
   });
 
-  // Slide 2: Attendance
+  // Slide 2: Attendance — big number + dot calendar of attended days
   var attendSubs = [];
   if (p.longestStreak) attendSubs.push('<div><strong>' + p.longestStreak + '</strong>-day longest streak 🔥</div>');
   if (p.avgTimeStr) attendSubs.push('<div>You were at Shayprils most often at <strong>' + escapeHtml(p.avgTimeStr) + '</strong></div>');
-  // Per Nate: skip favorite day of week — most people go every day anyway
+  var calHtml = '';
+  if (Array.isArray(p.attendanceMap) && p.attendanceMap.length) {
+    var dots = p.attendanceMap.map(function(hit) {
+      return '<div class="wrap-cal-dot' + (hit ? ' hit' : '') + '"></div>';
+    }).join('');
+    calHtml =
+      '<div class="wrap-cal-grid">' + dots + '</div>' +
+      '<div class="wrap-cal-caption">every weekday in April</div>';
+  }
   slides.push({
     bg: 'wrap-bg-attendance',
     floatsHtml: wrapFloats(['🍻', '✨', '🍺', '✨', '🍻']),
@@ -3891,6 +3997,7 @@ function wrapBuildSlides(data) {
         '<span style="font-size:2.2rem;opacity:0.55;font-weight:700;">/' + p.totalDays + '</span>' +
       '</div>' +
       '<div class="wrap-caption">April weekdays at Shays</div>' +
+      calHtml +
       (attendSubs.length ? '<div class="wrap-sub-stats">' + attendSubs.join('') + '</div>' : '')
   });
 
@@ -3989,6 +4096,9 @@ function wrapBuildSlides(data) {
         (opts.subName ? '<div class="wrap-collage-name">' + opts.subName + '</div>' : '') +
         statsHtml +
       '</div>';
+    var replayHtml = opts.replay
+      ? '<button class="wrap-replay-btn" onclick="wrapReplay()">↻ Watch again</button>'
+      : '';
     return {
       bg: 'wrap-slide-collage',
       noHeader: true,
@@ -4002,6 +4112,7 @@ function wrapBuildSlides(data) {
             topHtml +
             bottomHtml +
           '</div>' +
+          replayHtml +
           '<div class="wrap-collage-hint">screenshot to share</div>' +
         '</div>'
     };
@@ -4044,6 +4155,7 @@ function wrapBuildSlides(data) {
     subName: '',
     stats: groupStats,
     flag: 'The whole crew',
+    replay: true,
   }));
 
   return slides;
