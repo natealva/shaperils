@@ -1913,6 +1913,108 @@ async function buildWrapResponse(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ANONYMOUS CHAT (Yik-Yak style)
+// ═══════════════════════════════════════════════════════════════
+//
+// Posts are anonymous in the UI — the API never returns the author's
+// user_id. Server keeps it for moderation. Cheer is a toggle (one per
+// user per post). Sort modes:
+//   - "hot" (default): cheer-weighted, decays with age
+//   - "new": pure chronological
+//
+// Rate limit: 1 post per 30s per user.
+
+const CHAT_MAX_LEN = 240;
+const CHAT_POST_COOLDOWN_SEC = 30;
+
+// List posts. Auth is OPTIONAL — guests can read but won't see "mine"
+// (cheered) flags or "isAuthor" delete buttons.
+app.get('/api/chat/posts', async (req, res) => {
+  try {
+    const sort = req.query.sort === 'new' ? 'new' : 'hot';
+    const testMode = req.query.test === '1';
+    // Try to auth, but don't 401 — guests are allowed to read.
+    let viewerId = null;
+    const token = req.headers['x-auth-token'];
+    if (token) {
+      const u = await store.getUserByToken(token, testMode);
+      if (u) viewerId = u.id;
+    }
+    const posts = await store.getChatPosts({ sort, viewerId, testMode });
+    res.json({ posts, viewerId: !!viewerId });
+  } catch (err) {
+    console.error('[chat/posts]', err);
+    res.status(500).json({ error: 'Failed to load chat' });
+  }
+});
+
+// Create a post. Auth required, body validated, rate-limited.
+app.post('/api/chat/post', authMiddleware, async (req, res) => {
+  try {
+    const body = ((req.body && req.body.body) || '').trim();
+    if (!body) return res.status(400).json({ error: 'Post is empty' });
+    if (body.length > CHAT_MAX_LEN) {
+      return res.status(400).json({ error: 'Post is too long', max: CHAT_MAX_LEN });
+    }
+    const since = await store.secondsSinceLastChatPost(req.user.id);
+    if (since < CHAT_POST_COOLDOWN_SEC) {
+      return res.status(429).json({
+        error: 'Slow down — wait ' + (CHAT_POST_COOLDOWN_SEC - since) + 's before posting again.',
+        retryAfter: CHAT_POST_COOLDOWN_SEC - since,
+      });
+    }
+    await store.createChatPost(req.user.id, body, req.testMode);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[chat/post]', err);
+    res.status(500).json({ error: 'Failed to post' });
+  }
+});
+
+// Toggle a cheer.
+app.post('/api/chat/cheer/:postId', authMiddleware, async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const post = await store.getChatPost(postId, req.testMode);
+    if (!post || post.deleted) return res.status(404).json({ error: 'Post not found' });
+    const r = await store.toggleChatCheer(postId, req.user.id);
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    console.error('[chat/cheer]', err);
+    res.status(500).json({ error: 'Failed to toggle cheer' });
+  }
+});
+
+// Delete a post. Two paths in: (1) the author can delete their own, OR
+// (2) admin (with x-admin-pin) can delete anyone's. We accept EITHER
+// auth method on this single endpoint to keep the client simple.
+app.delete('/api/chat/post/:postId', async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const testMode = req.query.test === '1';
+    const post = await store.getChatPost(postId, testMode);
+    if (!post || post.deleted) return res.status(404).json({ error: 'Post not found' });
+
+    // Path 1: admin pin
+    if (req.headers['x-admin-pin'] === ADMIN_PIN) {
+      await store.deleteChatPost(postId, 'admin');
+      return res.json({ ok: true, by: 'admin' });
+    }
+    // Path 2: author with auth token
+    const token = req.headers['x-auth-token'];
+    if (!token) return res.status(401).json({ error: 'Auth required' });
+    const u = await store.getUserByToken(token, testMode);
+    if (!u) return res.status(401).json({ error: 'Invalid session' });
+    if (u.id !== post.user_id) return res.status(403).json({ error: 'Not your post' });
+    await store.deleteChatPost(postId, u.id);
+    res.json({ ok: true, by: 'author' });
+  } catch (err) {
+    console.error('[chat/delete]', err);
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // TWILIO INBOUND SMS WEBHOOK
 // ═══════════════════════════════════════════════════════════════
 // Twilio POSTs here whenever someone replies to a Shayprils text. We watch
