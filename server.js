@@ -1452,8 +1452,10 @@ app.get('/api/admin/wrap-launch-preview', adminAuth, async (req, res) => {
 
 // Default SMS body for the launch blast. The admin UI shows this and
 // allows overriding via a `messageText` field on the release request.
+// The ?openWrap=1 deep-link tells the app to pop the wrap open
+// automatically when the user taps the link from their text.
 const DEFAULT_WRAP_SMS =
-  "🍻 Your Shayprils Wrapped is here. Open the app — your 2026 month at Shays in screenshot-shareable form. https://shaperils.onrender.com";
+  "🍻 Your Shayprils Wrapped is here. Tap to see your 2026 month at Shays — screenshot-ready: https://shaperils.onrender.com/?openWrap=1";
 
 // Admin trigger — flips the release flag and SMS-blasts everyone with the
 // link to come check out their Wrapped. Idempotent: subsequent calls just
