@@ -1888,49 +1888,33 @@ function showApp() {
   checkTodayCheckin();
   renderNotificationSettings();
   qotdLoad();
+  // The "Your Shayprils Wrapped" home-screen button is hidden until admin
+  // hits "Send Wrapped". updateWrappedBtnVisibility checks the server
+  // flag and prefetches data once we know it's released.
   updateWrappedBtnVisibility();
-  maybeAutoOpenWrapped();
-  // Kick off prefetch in the background so the wrap opens instantly when
-  // the user taps the button.
-  prefetchMyWrap();
 }
 
-// First-time auto-popup of Shayprils Wrapped on April 30, 2026 (ET).
-// Each device sees the popup at most once; after that the home-screen
-// button is the way back in. We pause briefly so the home renders first
-// (avoids a jarring instant overlay on app open).
-function maybeAutoOpenWrapped() {
-  if (!currentUser) return;
-  const flagKey = 'shayprils_wrapped_2026_seen';
-  if (localStorage.getItem(flagKey)) return;
-  const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  const isApril30 = nowET.getFullYear() === 2026 && nowET.getMonth() === 3 && nowET.getDate() === 30;
-  if (!isApril30) return;
-  setTimeout(function() {
-    try {
-      localStorage.setItem(flagKey, '1');
-      wrapOpenMine();
-    } catch (e) {}
-  }, 900);
-}
-
-// Decides whether to show the "Your Shayprils Wrapped" button on the home
-// screen. Only shows it for logged-in users in the final stretch of April
-// (when there's enough data to make a recap meaningful) and through May
-// so people can come back to their wrap after the fact.
-function updateWrappedBtnVisibility() {
+// Decides whether to show the home-screen Wrapped button. Hidden by
+// default; only visible after admin hits "Send Wrapped" in the admin
+// panel (which sets the wrapped_released_at flag and SMS-blasts everyone).
+async function updateWrappedBtnVisibility() {
   const btn = document.getElementById('wrapMineBtn');
   if (!btn) return;
   if (!currentUser) { btn.classList.add('hidden'); return; }
-  // ET-aware date check: enable from April 25, 2026 through end of May 2026
-  const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  const y = nowET.getFullYear();
-  const m = nowET.getMonth(); // 0-indexed
-  const d = nowET.getDate();
-  const visible =
-    (y === 2026 && m === 3 && d >= 25) ||  // late April
-    (y === 2026 && m === 4);                // all of May
-  btn.classList.toggle('hidden', !visible);
+  try {
+    const r = await fetch(API + '/api/wrap/status');
+    const d = await r.json();
+    if (d && d.released) {
+      btn.classList.remove('hidden');
+      // Now that we know wrap is released, prefetch the data so opening
+      // is instant.
+      prefetchMyWrap();
+    } else {
+      btn.classList.add('hidden');
+    }
+  } catch (e) {
+    btn.classList.add('hidden');
+  }
 }
 
 function enterGuestMode() {
@@ -3858,10 +3842,21 @@ async function loadAdminPanel() {
     // Shayprils Wrapped preview
     html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Shayprils Wrapped Preview</h3>';
     html += '<div style="background:var(--cream);padding:14px;border-radius:10px;margin-bottom:16px;">';
-    html += '<p style="margin:0 0 10px;font-size:0.85rem;color:var(--text-muted);">Pick a user to preview their Wrapped experience — exactly what they\'ll see on April 30.</p>';
+    html += '<p style="margin:0 0 10px;font-size:0.85rem;color:var(--text-muted);">Pick a user to preview their Wrapped — exactly what they\'ll see when you release it.</p>';
     html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
     html += '<select id="wrapUserSelect" style="flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid var(--border);background:white;font-size:0.9rem;"><option>Loading…</option></select>';
     html += '<button onclick="wrapOpen()" style="padding:10px 18px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.88rem;font-weight:600;">Preview Wrap</button>';
+    html += '</div></div>';
+
+    // Send Shayprils Wrapped — release flag + SMS blast
+    html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Send Shayprils Wrapped</h3>';
+    html += '<div id="wrapReleaseBox" style="background:var(--cream);padding:16px;border-radius:10px;margin-bottom:16px;border:1.5px solid var(--brick);">';
+    html += '<p style="margin:0 0 10px;font-size:0.88rem;color:var(--brown);">Tapping <strong>Send</strong> drops the Wrapped button onto every user\'s home screen <em>and</em> sends an SMS blast to every subscriber.</p>';
+    html += '<p style="margin:0 0 14px;font-size:0.78rem;color:var(--text-muted);">There\'s no timer — nothing goes out until you tap. You can preview as many users as you want first.</p>';
+    html += '<div id="wrapReleaseStatus" style="margin-bottom:12px;font-size:0.82rem;color:var(--text-muted);">Loading status…</div>';
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    html += '<button id="wrapReleaseBtn" onclick="adminReleaseWrap()" style="padding:12px 22px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;">Send Shayprils Wrapped</button>';
+    html += '<button id="wrapUnreleaseBtn" onclick="adminUnreleaseWrap()" style="padding:12px 18px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.85rem;display:none;">Hide again (testing)</button>';
     html += '</div></div>';
 
     // Admin actions
@@ -3874,7 +3869,96 @@ async function loadAdminPanel() {
     section.innerHTML = html;
     // Populate the Wrapped user dropdown (fire-and-forget)
     wrapLoadUsers();
+    // Load + render the Wrapped release status
+    refreshWrapReleaseStatus();
   } catch(e) { section.innerHTML = '<p style="color:red;padding:20px;">Error loading admin data</p>'; }
+}
+
+// Render the current Wrapped release state in the admin panel: shows a
+// timestamp + "already released" if it's out, or a fresh-and-ready
+// indicator if it hasn't been sent.
+async function refreshWrapReleaseStatus() {
+  const statusEl = document.getElementById('wrapReleaseStatus');
+  const sendBtn = document.getElementById('wrapReleaseBtn');
+  const unBtn = document.getElementById('wrapUnreleaseBtn');
+  if (!statusEl) return;
+  try {
+    const r = await fetch(API + '/api/wrap/status');
+    const d = await r.json();
+    if (d.released) {
+      const when = d.releasedAt ? new Date(d.releasedAt).toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET' : 'earlier';
+      statusEl.innerHTML = '✓ <strong>Released ' + escapeHtml(when) + '</strong> — Wrapped is live for everyone.';
+      statusEl.style.color = 'var(--green)';
+      if (sendBtn) {
+        sendBtn.textContent = 'Already sent';
+        sendBtn.disabled = true;
+        sendBtn.style.background = 'var(--text-muted)';
+        sendBtn.style.cursor = 'default';
+      }
+      if (unBtn) unBtn.style.display = '';
+    } else {
+      statusEl.innerHTML = 'Not yet released. Send when you\'re ready.';
+      statusEl.style.color = 'var(--text-muted)';
+      if (sendBtn) { sendBtn.textContent = 'Send Shayprils Wrapped'; sendBtn.disabled = false; sendBtn.style.background = 'var(--brick)'; sendBtn.style.cursor = 'pointer'; }
+      if (unBtn) unBtn.style.display = 'none';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Status unavailable';
+  }
+}
+
+async function adminReleaseWrap() {
+  const ok = confirm(
+    "Send Shayprils Wrapped to everyone right now?\n\n" +
+    "• Drops the 'Your 2026 Shayprils Wrapped' button onto every home screen\n" +
+    "• Sends an SMS to every subscriber\n\n" +
+    "This is one-shot — once sent, it can't be unsent (you can hide locally for testing, but the SMS goes out)."
+  );
+  if (!ok) return;
+  const btn = document.getElementById('wrapReleaseBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  try {
+    const r = await fetch(API + '/api/admin/wrap-release', {
+      method: 'POST',
+      headers: { 'x-admin-pin': adminPin },
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      showToast(d.error || 'Failed to release', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Send Shayprils Wrapped'; }
+      return;
+    }
+    if (d.alreadyReleased) {
+      showToast('Wrapped was already released — no SMS sent.');
+    } else {
+      var summary = 'Wrapped released. ';
+      if (d.smsBlast) {
+        if (d.smsBlast.blocked) summary += 'SMS blast was blocked (campaign not approved).';
+        else summary += 'Sent SMS to ' + (d.smsBlast.sent || 0) + ' of ' + (d.smsBlast.total || 0) + ' subscribers.';
+      }
+      showToast(summary);
+    }
+    refreshWrapReleaseStatus();
+  } catch (e) {
+    showToast('Failed to release', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Shayprils Wrapped'; }
+  }
+}
+
+async function adminUnreleaseWrap() {
+  if (!confirm('Hide the Wrapped button from all users again? (Just toggles the flag — does not undo any SMS already sent.)')) return;
+  try {
+    const r = await fetch(API + '/api/admin/wrap-unrelease', {
+      method: 'POST',
+      headers: { 'x-admin-pin': adminPin },
+    });
+    const d = await r.json();
+    if (!r.ok) return showToast(d.error || 'Failed', 'error');
+    showToast('Wrapped hidden. Button is gone for everyone.');
+    refreshWrapReleaseStatus();
+  } catch (e) {
+    showToast('Failed', 'error');
+  }
 }
 
 function adminEditUser(userId, name, phone) {
