@@ -1401,11 +1401,78 @@ app.get('/api/admin/wrap-users', adminAuth, async (req, res) => {
   }
 });
 
+// Lightweight public status endpoint — tells the client whether Wrapped
+// has been released by admin yet. The home-screen CTA + auto-popup all
+// gate on this. Cheaper than hitting /api/wrap/me on every app open.
+app.get('/api/wrap/status', async (req, res) => {
+  try {
+    const released = await store.getSetting('wrapped_released_at');
+    res.json({ released: !!released, releasedAt: released || null });
+  } catch (err) {
+    console.error('[wrap/status]', err);
+    res.json({ released: false });
+  }
+});
+
 // Public wrap endpoint — any logged-in user can fetch their OWN wrap.
-// Reuses the same data builder as the admin endpoint.
+// Returns 423 (locked) if Wrapped hasn't been released by admin yet, so
+// curious users who guess the URL can't peek before everyone else.
 app.get('/api/wrap/me', authMiddleware, async (req, res) => {
+  const released = await store.getSetting('wrapped_released_at');
+  if (!released) {
+    return res.status(423).json({ error: 'Wrapped not released yet', released: false });
+  }
   req.params.userId = req.user.id;
   return buildWrapResponse(req, res);
+});
+
+// Admin trigger — flips the release flag and SMS-blasts everyone with the
+// link to come check out their Wrapped. Idempotent: subsequent calls just
+// return the existing release timestamp without re-blasting.
+app.post('/api/admin/wrap-release', adminAuth, async (req, res) => {
+  try {
+    const existing = await store.getSetting('wrapped_released_at');
+    if (existing) {
+      return res.json({
+        ok: true,
+        alreadyReleased: true,
+        releasedAt: existing,
+        message: 'Wrapped is already released — no SMS sent.',
+      });
+    }
+    const now = new Date().toISOString();
+    await store.setSetting('wrapped_released_at', now);
+
+    const messageText =
+      "🍻 Your Shayprils Wrapped is here. Open the app — your 2026 month at Shays in screenshot-shareable form. https://shaperils.onrender.com";
+    let blast = { sent: 0, total: 0 };
+    try {
+      blast = await sendToSubscribers('Shayprils', messageText);
+    } catch (err) {
+      console.error('[wrap-release] SMS blast failed:', err);
+    }
+
+    res.json({
+      ok: true,
+      releasedAt: now,
+      smsBlast: blast,
+    });
+  } catch (err) {
+    console.error('[wrap-release] failed:', err);
+    res.status(500).json({ error: 'Failed to release Wrapped' });
+  }
+});
+
+// Admin — undo the release (for testing / re-runs). Resets the flag so
+// the home-screen button hides again. Does NOT send any SMS.
+app.post('/api/admin/wrap-unrelease', adminAuth, async (req, res) => {
+  try {
+    await store.setSetting('wrapped_released_at', null);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[wrap-unrelease]', err);
+    res.status(500).json({ error: 'Failed to unrelease' });
+  }
 });
 
 app.get('/api/admin/wrap/:userId', adminAuth, async (req, res) => {
