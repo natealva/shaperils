@@ -3877,7 +3877,19 @@ async function loadAdminPanel() {
     html += '<div style="background:white;padding:14px;border-radius:8px;margin-bottom:12px;border:1px solid rgba(155,59,59,0.25);">';
     html += '<div style="font-size:0.92rem;font-weight:700;color:var(--brick);margin-bottom:6px;">⚡ Real launch</div>';
     html += '<p style="margin:0 0 12px;font-size:0.82rem;color:var(--brown);line-height:1.5;">Drops the Wrapped button on every home screen <strong>and</strong> SMS-blasts every subscriber. One-shot — no timers, no auto-popup. Once you tap, the SMS goes out.</p>';
-    html += '<div id="wrapLaunchPreview" style="margin:0 0 12px;padding:10px 12px;background:var(--cream);border-radius:6px;font-size:0.78rem;color:var(--brown);line-height:1.6;">Loading launch preview…</div>';
+    html += '<div id="wrapLaunchPreview" style="margin:0 0 10px;padding:10px 12px;background:var(--cream);border-radius:6px;font-size:0.78rem;color:var(--brown);line-height:1.6;">Loading launch preview…</div>';
+
+    // Editable SMS body — admin can tweak the message before launching.
+    html += '<label style="display:block;font-size:0.78rem;font-weight:600;color:var(--brown);margin-bottom:4px;">SMS message (edit if you want):</label>';
+    html += '<textarea id="wrapSmsText" rows="3" maxlength="480" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:0.85rem;line-height:1.4;color:var(--brown);background:var(--cream);resize:vertical;box-sizing:border-box;margin-bottom:4px;" placeholder="Loading default…"></textarea>';
+    html += '<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:10px;"><span id="wrapSmsCharCount">0</span>/480 chars · <span id="wrapSmsSegments">1</span> SMS segment(s)</div>';
+
+    // Test send to one phone — verify SMS body before blasting
+    html += '<div style="display:flex;gap:6px;margin-bottom:12px;">';
+    html += '<input id="wrapTestPhone" type="tel" placeholder="+15551234567" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;color:var(--brown);background:white;" />';
+    html += '<button onclick="adminTestWrapSms()" style="padding:8px 14px;background:var(--brown);color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;white-space:nowrap;">Send 1 test SMS</button>';
+    html += '</div>';
+
     html += '<button id="wrapReleaseBtn" onclick="adminReleaseWrap()" style="width:100%;padding:14px 22px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:800;letter-spacing:0.04em;">🚀 Launch Shayprils Wrapped</button>';
     html += '</div>';
 
@@ -3911,6 +3923,7 @@ async function loadAdminPanel() {
 
 async function loadWrapLaunchPreview() {
   const el = document.getElementById('wrapLaunchPreview');
+  const ta = document.getElementById('wrapSmsText');
   if (!el) return;
   try {
     const r = await fetch(API + '/api/admin/wrap-launch-preview', {
@@ -3920,12 +3933,53 @@ async function loadWrapLaunchPreview() {
     if (!r.ok) { el.textContent = 'Could not load preview'; return; }
     el.innerHTML =
       '<div><strong>Button</strong> drops on <strong>' + (d.activeUserCount || 0) + '</strong> active users\' home screens.</div>' +
-      '<div><strong>SMS</strong> goes to <strong>' + (d.subscriberCount || 0) + '</strong> subscribers.</div>' +
-      '<div style="margin-top:8px;padding:8px 10px;background:white;border-radius:4px;border-left:3px solid var(--brick);font-style:italic;color:var(--text-muted);">' +
-        escapeHtml(d.sampleMessage || '') +
-      '</div>';
+      '<div><strong>SMS</strong> goes to <strong>' + (d.subscriberCount || 0) + '</strong> subscribers.</div>';
+    // Pre-fill the editable SMS textarea with the default copy.
+    if (ta && !ta.value) {
+      ta.value = d.sampleMessage || '';
+      updateWrapSmsCounter();
+    }
   } catch (e) {
     el.textContent = 'Could not load preview';
+  }
+}
+
+// Live char/segment counter for the editable SMS body.
+function updateWrapSmsCounter() {
+  const ta = document.getElementById('wrapSmsText');
+  const charEl = document.getElementById('wrapSmsCharCount');
+  const segEl = document.getElementById('wrapSmsSegments');
+  if (!ta || !charEl || !segEl) return;
+  const len = ta.value.length;
+  charEl.textContent = len;
+  // Rough segment count: GSM-7 = 160 chars; UCS-2 (with emoji) = 70.
+  const isUnicode = /[^\x00-\x7F]/.test(ta.value);
+  const limit = isUnicode ? 70 : 160;
+  segEl.textContent = Math.max(1, Math.ceil(len / limit));
+}
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'wrapSmsText') updateWrapSmsCounter();
+});
+
+async function adminTestWrapSms() {
+  const phoneEl = document.getElementById('wrapTestPhone');
+  const taEl = document.getElementById('wrapSmsText');
+  const phone = (phoneEl?.value || '').trim();
+  const messageText = (taEl?.value || '').trim();
+  if (!phone) return showToast('Type a phone number first', 'error');
+  if (!confirm('Send 1 test SMS to ' + phone + '?')) return;
+  try {
+    const r = await fetch(API + '/api/admin/wrap-test-sms', {
+      method: 'POST',
+      headers: { 'x-admin-pin': adminPin, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, messageText }),
+    });
+    const d = await r.json();
+    if (!r.ok) return showToast(d.error || 'Failed', 'error');
+    if (d.simulated) showToast('Twilio not configured — simulated send. Body looks good though.');
+    else showToast('Sent test SMS to ' + d.to);
+  } catch (e) {
+    showToast('Failed to send test SMS', 'error');
   }
 }
 
@@ -3984,10 +4038,13 @@ async function adminReleaseWrap() {
   }
   const btn = document.getElementById('wrapReleaseBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Launching…'; }
+  // Pull the (possibly edited) SMS body so the admin's tweaks go out.
+  const customText = (document.getElementById('wrapSmsText')?.value || '').trim();
   try {
     const r = await fetch(API + '/api/admin/wrap-release', {
       method: 'POST',
-      headers: { 'x-admin-pin': adminPin },
+      headers: { 'x-admin-pin': adminPin, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageText: customText }),
     });
     const d = await r.json();
     if (!r.ok) {
