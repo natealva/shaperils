@@ -3877,6 +3877,7 @@ async function loadAdminPanel() {
     html += '<div style="background:white;padding:14px;border-radius:8px;margin-bottom:12px;border:1px solid rgba(155,59,59,0.25);">';
     html += '<div style="font-size:0.92rem;font-weight:700;color:var(--brick);margin-bottom:6px;">⚡ Real launch</div>';
     html += '<p style="margin:0 0 12px;font-size:0.82rem;color:var(--brown);line-height:1.5;">Drops the Wrapped button on every home screen <strong>and</strong> SMS-blasts every subscriber. One-shot — no timers, no auto-popup. Once you tap, the SMS goes out.</p>';
+    html += '<div id="wrapLaunchPreview" style="margin:0 0 12px;padding:10px 12px;background:var(--cream);border-radius:6px;font-size:0.78rem;color:var(--brown);line-height:1.6;">Loading launch preview…</div>';
     html += '<button id="wrapReleaseBtn" onclick="adminReleaseWrap()" style="width:100%;padding:14px 22px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:800;letter-spacing:0.04em;">🚀 Launch Shayprils Wrapped</button>';
     html += '</div>';
 
@@ -3903,7 +3904,29 @@ async function loadAdminPanel() {
     wrapLoadUsers();
     // Load + render the Wrapped release status
     refreshWrapReleaseStatus();
+    // Load the launch preview numbers (subscriber count, SMS preview)
+    loadWrapLaunchPreview();
   } catch(e) { section.innerHTML = '<p style="color:red;padding:20px;">Error loading admin data</p>'; }
+}
+
+async function loadWrapLaunchPreview() {
+  const el = document.getElementById('wrapLaunchPreview');
+  if (!el) return;
+  try {
+    const r = await fetch(API + '/api/admin/wrap-launch-preview', {
+      headers: { 'x-admin-pin': adminPin },
+    });
+    const d = await r.json();
+    if (!r.ok) { el.textContent = 'Could not load preview'; return; }
+    el.innerHTML =
+      '<div><strong>Button</strong> drops on <strong>' + (d.activeUserCount || 0) + '</strong> active users\' home screens.</div>' +
+      '<div><strong>SMS</strong> goes to <strong>' + (d.subscriberCount || 0) + '</strong> subscribers.</div>' +
+      '<div style="margin-top:8px;padding:8px 10px;background:white;border-radius:4px;border-left:3px solid var(--brick);font-style:italic;color:var(--text-muted);">' +
+        escapeHtml(d.sampleMessage || '') +
+      '</div>';
+  } catch (e) {
+    el.textContent = 'Could not load preview';
+  }
 }
 
 // Render the current Wrapped release state in the admin panel: shows a
