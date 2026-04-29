@@ -1466,6 +1466,28 @@ app.post('/api/admin/wrap-release', adminAuth, async (req, res) => {
   }
 });
 
+// Admin — DRY-RUN release. Same as wrap-release except it does NOT send
+// SMS to anyone. Use this to preview the home-screen button experience
+// on your own phone before doing the real launch. The flag is set the
+// same way (so /api/wrap/status returns released:true), so you can pair
+// this with wrap-unrelease to toggle the public-facing UI on/off without
+// touching the SMS path.
+app.post('/api/admin/wrap-release-dryrun', adminAuth, async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+    await store.setSetting('wrapped_released_at', now);
+    res.json({
+      ok: true,
+      releasedAt: now,
+      smsBlast: { sent: 0, total: 0, skipped: 'dry-run' },
+      dryRun: true,
+    });
+  } catch (err) {
+    console.error('[wrap-release-dryrun] failed:', err);
+    res.status(500).json({ error: 'Failed to dry-run release' });
+  }
+});
+
 // Admin — undo the release. Hides the home-screen button on every device
 // (the next /api/wrap/status poll returns released:false). Does NOT undo
 // any SMS that already went out — those are gone-gone.
