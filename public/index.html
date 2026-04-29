@@ -989,16 +989,20 @@
       display: flex; flex-direction: column; align-items: center;
     }
     /* Eyebrow ABOVE the cursive headline — no descender collision and
-       echoes the Spotify Wrapped layout where the small label leads. */
+       echoes the Spotify Wrapped layout where the small label leads.
+       Bigger + bolder so it reads cleanly over busy photo backgrounds. */
     .wrap-collage-eyebrow {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(0.72rem, 2.4vw, 0.82rem);
-      font-weight: 700;
-      letter-spacing: 0.55em;
-      margin: 0 0 8px;
-      color: rgba(255,255,255,0.95);
-      text-shadow: 0 2px 10px rgba(0,0,0,0.7), 0 0 18px rgba(0,0,0,0.4);
-      padding-left: 0.55em;
+      font-size: clamp(1rem, 3.4vw, 1.18rem);
+      font-weight: 800;
+      letter-spacing: 0.42em;
+      margin: 0 0 12px;
+      color: #FFFFFF;
+      text-shadow:
+        0 2px 6px rgba(0,0,0,0.85),
+        0 4px 20px rgba(0,0,0,0.7),
+        0 0 32px rgba(0,0,0,0.5);
+      padding-left: 0.42em;
       order: -1; /* visually first */
       animation: wrapCollageRise 0.9s cubic-bezier(.21,.97,.32,1) both;
     }
@@ -1007,7 +1011,12 @@
       font-size: clamp(3.6rem, 13.5vw, 5.4rem);
       line-height: 1.0;
       color: #FFFFFF;
-      text-shadow: 0 4px 28px rgba(0,0,0,0.65), 0 1px 2px rgba(0,0,0,0.55), 0 0 60px rgba(255,255,255,0.10);
+      /* Layered shadows for stronger contrast over any photo */
+      text-shadow:
+        0 2px 6px rgba(0,0,0,0.85),
+        0 4px 28px rgba(0,0,0,0.7),
+        0 1px 2px rgba(0,0,0,0.65),
+        0 0 60px rgba(0,0,0,0.5);
       letter-spacing: 0.01em;
       margin: 0;
       padding-bottom: 0.08em; /* room for cursive descenders */
@@ -4663,7 +4672,7 @@ function wrapBuildSlides(data) {
     personalStats.push('<div>' + prefix + '<strong>' + wrapOrdinal(p.visitorRank.rank) + '</strong> of ' + p.visitorRank.total + ' visitors</div>');
   }
 
-  // Personal collage
+  // Personal collage — no flag pill (cleaner for screenshots)
   slides.push(collageSlide({
     photos: data.selfies || [],
     padding: data.paddingSelfies || [],
@@ -4672,10 +4681,10 @@ function wrapBuildSlides(data) {
     eyebrow: '2026 WRAPPED',
     subName: '',
     stats: personalStats,
-    flag: 'Your wrap',
   }));
 
-  // Group collage — same layout, photos from everyone in April
+  // Group collage — same template + same eyebrow text. No replay button,
+  // no top-right pill — keeps the screenshot uncluttered.
   var groupStats = [];
   groupStats.push('<div><strong>' + g.totalCheckins + '</strong> total check-ins</div>');
   groupStats.push('<div><strong>' + g.totalParticipants + '</strong> friends pulled up</div>');
@@ -4686,11 +4695,9 @@ function wrapBuildSlides(data) {
     photos: data.groupSelfies || [],
     mode: 'group',
     headline: 'Our Shayprils',
-    eyebrow: '2026 — THE CREW',
+    eyebrow: '2026 WRAPPED',
     subName: '',
     stats: groupStats,
-    flag: 'The whole crew',
-    replay: true,
   }));
 
   return slides;
