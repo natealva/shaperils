@@ -3848,16 +3848,28 @@ async function loadAdminPanel() {
     html += '<button onclick="wrapOpen()" style="padding:10px 18px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.88rem;font-weight:600;">Preview Wrap</button>';
     html += '</div></div>';
 
-    // Send Shayprils Wrapped — release flag + SMS blast
-    html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Send Shayprils Wrapped</h3>';
+    // Launch Shayprils Wrapped — release flag + SMS blast
+    html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Launch Shayprils Wrapped</h3>';
     html += '<div id="wrapReleaseBox" style="background:var(--cream);padding:16px;border-radius:10px;margin-bottom:16px;border:1.5px solid var(--brick);">';
-    html += '<p style="margin:0 0 10px;font-size:0.88rem;color:var(--brown);">Tapping <strong>Send</strong> drops the Wrapped button onto every user\'s home screen <em>and</em> sends an SMS blast to every subscriber.</p>';
-    html += '<p style="margin:0 0 14px;font-size:0.78rem;color:var(--text-muted);">There\'s no timer — nothing goes out until you tap. You can preview as many users as you want first.</p>';
-    html += '<div id="wrapReleaseStatus" style="margin-bottom:12px;font-size:0.82rem;color:var(--text-muted);">Loading status…</div>';
+    html += '<div id="wrapReleaseStatus" style="margin-bottom:14px;font-size:0.86rem;color:var(--text-muted);font-weight:600;">Loading status…</div>';
+
+    // Section: real launch (one big button, prominent)
+    html += '<div style="background:white;padding:14px;border-radius:8px;margin-bottom:12px;border:1px solid rgba(155,59,59,0.25);">';
+    html += '<div style="font-size:0.92rem;font-weight:700;color:var(--brick);margin-bottom:6px;">⚡ Real launch</div>';
+    html += '<p style="margin:0 0 12px;font-size:0.82rem;color:var(--brown);line-height:1.5;">Drops the Wrapped button on every home screen <strong>and</strong> SMS-blasts every subscriber. One-shot — no timers, no auto-popup. Once you tap, the SMS goes out.</p>';
+    html += '<button id="wrapReleaseBtn" onclick="adminReleaseWrap()" style="width:100%;padding:14px 22px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:800;letter-spacing:0.04em;">🚀 Launch Shayprils Wrapped</button>';
+    html += '</div>';
+
+    // Section: dry-run (no SMS) — for preview only
+    html += '<div style="background:rgba(255,255,255,0.5);padding:14px;border-radius:8px;margin-bottom:12px;border:1px dashed var(--border);">';
+    html += '<div style="font-size:0.86rem;font-weight:700;color:var(--brown);margin-bottom:6px;">🧪 Preview only — no SMS</div>';
+    html += '<p style="margin:0 0 10px;font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Flips the flag so the home-screen Wrapped button appears for everyone, but does <strong>not</strong> text anyone. Safe for previewing on your own phone. Tap "Hide again" to retract.</p>';
     html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    html += '<button id="wrapReleaseBtn" onclick="adminReleaseWrap()" style="padding:12px 22px;background:var(--brick);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;font-weight:700;letter-spacing:0.04em;">Send Shayprils Wrapped</button>';
-    html += '<button id="wrapUnreleaseBtn" onclick="adminUnreleaseWrap()" style="padding:12px 18px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.85rem;display:none;">Hide again (testing)</button>';
+    html += '<button id="wrapDryRunBtn" onclick="adminDryRunWrap()" style="padding:10px 16px;background:var(--brown);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;">Preview release (no SMS)</button>';
+    html += '<button id="wrapUnreleaseBtn" onclick="adminUnreleaseWrap()" style="padding:10px 16px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.85rem;">Hide again</button>';
     html += '</div></div>';
+
+    html += '</div>';
 
     // Admin actions
     html += '<h3 style="color:var(--brick);margin:24px 0 8px;">Admin Actions</h3>';
@@ -3880,27 +3892,30 @@ async function loadAdminPanel() {
 async function refreshWrapReleaseStatus() {
   const statusEl = document.getElementById('wrapReleaseStatus');
   const sendBtn = document.getElementById('wrapReleaseBtn');
-  const unBtn = document.getElementById('wrapUnreleaseBtn');
+  const dryBtn = document.getElementById('wrapDryRunBtn');
   if (!statusEl) return;
   try {
     const r = await fetch(API + '/api/wrap/status');
     const d = await r.json();
     if (d.released) {
       const when = d.releasedAt ? new Date(d.releasedAt).toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET' : 'earlier';
-      statusEl.innerHTML = '✓ <strong>Released ' + escapeHtml(when) + '</strong> — Wrapped is live for everyone.';
+      statusEl.innerHTML = '🟢 <strong>Wrapped is LIVE</strong> — released ' + escapeHtml(when);
       statusEl.style.color = 'var(--green)';
       if (sendBtn) {
-        sendBtn.textContent = 'Already sent';
+        sendBtn.textContent = '✓ Already launched';
         sendBtn.disabled = true;
         sendBtn.style.background = 'var(--text-muted)';
         sendBtn.style.cursor = 'default';
       }
-      if (unBtn) unBtn.style.display = '';
+      if (dryBtn) {
+        dryBtn.disabled = true;
+        dryBtn.style.opacity = '0.5';
+      }
     } else {
-      statusEl.innerHTML = 'Not yet released. Send when you\'re ready.';
+      statusEl.innerHTML = '⚫ <strong>Not launched</strong> — Wrapped is hidden from everyone.';
       statusEl.style.color = 'var(--text-muted)';
-      if (sendBtn) { sendBtn.textContent = 'Send Shayprils Wrapped'; sendBtn.disabled = false; sendBtn.style.background = 'var(--brick)'; sendBtn.style.cursor = 'pointer'; }
-      if (unBtn) unBtn.style.display = 'none';
+      if (sendBtn) { sendBtn.textContent = '🚀 Launch Shayprils Wrapped'; sendBtn.disabled = false; sendBtn.style.background = 'var(--brick)'; sendBtn.style.cursor = 'pointer'; }
+      if (dryBtn) { dryBtn.disabled = false; dryBtn.style.opacity = '1'; }
     }
   } catch (e) {
     statusEl.textContent = 'Status unavailable';
@@ -3908,15 +3923,24 @@ async function refreshWrapReleaseStatus() {
 }
 
 async function adminReleaseWrap() {
+  // Two-step confirmation. First a strong yes/no, then a typed confirmation
+  // so accidentally tapping the button can't trigger a real SMS blast.
   const ok = confirm(
-    "Send Shayprils Wrapped to everyone right now?\n\n" +
-    "• Drops the 'Your 2026 Shayprils Wrapped' button onto every home screen\n" +
-    "• Sends an SMS to every subscriber\n\n" +
-    "This is one-shot — once sent, it can't be unsent (you can hide locally for testing, but the SMS goes out)."
+    "🚀 LAUNCH Shayprils Wrapped to everyone?\n\n" +
+    "This will:\n" +
+    "  1. Drop the 'Your 2026 Shayprils Wrapped' button onto EVERY home screen\n" +
+    "  2. SEND AN SMS TO EVERY SUBSCRIBER\n\n" +
+    "Tip: use 'Preview release (no SMS)' first to test on your own phone.\n\n" +
+    "This is one-shot. SMS cannot be recalled. Continue?"
   );
   if (!ok) return;
+  const typed = prompt('Type LAUNCH (all caps) to confirm the SMS blast goes out now.');
+  if (typed !== 'LAUNCH') {
+    showToast('Cancelled — type LAUNCH exactly to confirm.');
+    return;
+  }
   const btn = document.getElementById('wrapReleaseBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Launching…'; }
   try {
     const r = await fetch(API + '/api/admin/wrap-release', {
       method: 'POST',
@@ -3924,14 +3948,14 @@ async function adminReleaseWrap() {
     });
     const d = await r.json();
     if (!r.ok) {
-      showToast(d.error || 'Failed to release', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Send Shayprils Wrapped'; }
+      showToast(d.error || 'Failed to launch', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Launch Shayprils Wrapped'; }
       return;
     }
     if (d.alreadyReleased) {
       showToast('Wrapped was already released — no SMS sent.');
     } else {
-      var summary = 'Wrapped released. ';
+      var summary = 'Wrapped launched! ';
       if (d.smsBlast) {
         if (d.smsBlast.blocked) summary += 'SMS blast was blocked (campaign not approved).';
         else summary += 'Sent SMS to ' + (d.smsBlast.sent || 0) + ' of ' + (d.smsBlast.total || 0) + ' subscribers.';
@@ -3940,8 +3964,31 @@ async function adminReleaseWrap() {
     }
     refreshWrapReleaseStatus();
   } catch (e) {
-    showToast('Failed to release', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Send Shayprils Wrapped'; }
+    showToast('Failed to launch', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Launch Shayprils Wrapped'; }
+  }
+}
+
+// Dry-run release — flips the flag so the home button shows up everywhere,
+// but does NOT send any SMS. Use this to preview on your own phone before
+// the real launch.
+async function adminDryRunWrap() {
+  if (!confirm('Preview release (no SMS)?\n\nThis flips the flag so the Wrapped button shows on every home screen. NO TEXTS go out. You can hide it again with the "Hide again" button.')) return;
+  const btn = document.getElementById('wrapDryRunBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const r = await fetch(API + '/api/admin/wrap-release-dryrun', {
+      method: 'POST',
+      headers: { 'x-admin-pin': adminPin },
+    });
+    const d = await r.json();
+    if (!r.ok) { showToast(d.error || 'Failed', 'error'); return; }
+    showToast('Wrapped flag is ON (no SMS sent). Refresh the home screen to see the button.');
+    refreshWrapReleaseStatus();
+  } catch (e) {
+    showToast('Failed', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Preview release (no SMS)'; }
   }
 }
 
