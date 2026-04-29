@@ -1407,7 +1407,10 @@ app.get('/api/admin/wrap-users', adminAuth, async (req, res) => {
 app.get('/api/wrap/status', async (req, res) => {
   try {
     const released = await store.getSetting('wrapped_released_at');
-    res.json({ released: !!released, releasedAt: released || null });
+    // Treat missing OR empty string as not-released (we use empty string
+    // as a "deleted" sentinel because the value column is NOT NULL).
+    const isReleased = !!(released && released !== '');
+    res.json({ released: isReleased, releasedAt: isReleased ? released : null });
   } catch (err) {
     console.error('[wrap/status]', err);
     res.json({ released: false });
@@ -1463,15 +1466,25 @@ app.post('/api/admin/wrap-release', adminAuth, async (req, res) => {
   }
 });
 
-// Admin — undo the release (for testing / re-runs). Resets the flag so
-// the home-screen button hides again. Does NOT send any SMS.
+// Admin — undo the release. Hides the home-screen button on every device
+// (the next /api/wrap/status poll returns released:false). Does NOT undo
+// any SMS that already went out — those are gone-gone.
 app.post('/api/admin/wrap-unrelease', adminAuth, async (req, res) => {
   try {
-    await store.setSetting('wrapped_released_at', null);
+    // Direct delete because setSetting can't write NULL into a NOT NULL
+    // column. Need access to the underlying pool — fall back to deleting
+    // the row.
+    if (typeof store.deleteSetting === 'function') {
+      await store.deleteSetting('wrapped_released_at');
+    } else {
+      // No deleteSetting helper — write a sentinel "" empty string. The
+      // wrap-status reader treats empty/missing as not-released.
+      await store.setSetting('wrapped_released_at', '');
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error('[wrap-unrelease]', err);
-    res.status(500).json({ error: 'Failed to unrelease' });
+    res.status(500).json({ error: 'Failed to unrelease', detail: err.message });
   }
 });
 
