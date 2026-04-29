@@ -1429,6 +1429,29 @@ app.get('/api/wrap/me', authMiddleware, async (req, res) => {
   return buildWrapResponse(req, res);
 });
 
+// Admin pre-launch summary — shows the count of people who will get the
+// SMS and the count who will see the button, so admin can sanity-check
+// before pulling the trigger. No state changes, just a peek.
+app.get('/api/admin/wrap-launch-preview', adminAuth, async (req, res) => {
+  try {
+    const [allUsers, subscribers] = await Promise.all([
+      store.getAllUsers(false),
+      store.getSubscribedUsers(false),
+    ]);
+    const activeUsers = allUsers.filter(u => u.active !== false);
+    const messageText =
+      "🍻 Your Shayprils Wrapped is here. Open the app — your 2026 month at Shays in screenshot-shareable form. https://shaperils.onrender.com";
+    res.json({
+      activeUserCount: activeUsers.length,
+      subscriberCount: subscribers.length,
+      sampleMessage: messageText,
+    });
+  } catch (err) {
+    console.error('[wrap-launch-preview]', err);
+    res.status(500).json({ error: 'Failed to load preview' });
+  }
+});
+
 // Admin trigger — flips the release flag and SMS-blasts everyone with the
 // link to come check out their Wrapped. Idempotent: subsequent calls just
 // return the existing release timestamp without re-blasting.
