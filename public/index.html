@@ -391,6 +391,163 @@
       100% { background-position: 0% 50%; }
     }
 
+    /* === Anonymous Chat tab (Yik-Yak style) === */
+    .chat-header {
+      text-align: center;
+      padding: 18px 16px 14px;
+      margin-bottom: 6px;
+    }
+    .chat-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.6rem; font-weight: 800;
+      color: var(--brick);
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+    .chat-tagline {
+      font-size: 0.82rem; color: var(--text-muted);
+      font-style: italic;
+      letter-spacing: 0.02em;
+    }
+    .chat-composer {
+      margin: 0 16px 14px;
+      padding: 14px;
+    }
+    .chat-composer textarea {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 0.95rem; line-height: 1.4;
+      color: var(--brown);
+      background: var(--cream);
+      resize: vertical;
+      min-height: 70px;
+    }
+    .chat-composer textarea:focus {
+      outline: none; border-color: var(--brick);
+      background: white;
+    }
+    .chat-composer-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-top: 8px;
+    }
+    .chat-char-count {
+      font-size: 0.74rem; color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+    .chat-char-count.over {
+      color: var(--red-accent); font-weight: 600;
+    }
+    .chat-composer .btn {
+      padding: 8px 18px;
+      font-size: 0.86rem;
+    }
+    .chat-cooldown {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(193,57,43,0.08);
+      color: var(--red-accent);
+      font-size: 0.78rem;
+      text-align: center;
+    }
+    .chat-guest-banner {
+      margin: 0 16px 14px;
+      padding: 12px 14px;
+    }
+    .chat-sort-toggles {
+      display: flex; gap: 6px; align-items: center;
+      padding: 0 16px;
+      margin-bottom: 10px;
+    }
+    .chat-sort-btn {
+      flex: 0 0 auto;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      color: var(--brown);
+      font-family: inherit;
+      font-size: 0.82rem; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chat-sort-btn.active {
+      background: var(--brick); color: white;
+      border-color: var(--brick);
+    }
+    .chat-refresh-btn {
+      margin-left: auto;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      color: var(--brown);
+      font-family: inherit;
+      font-size: 0.95rem; font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .chat-post {
+      margin: 0 16px 10px;
+      padding: 12px 14px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(91,27,40,0.04);
+    }
+    .chat-post-body {
+      font-size: 0.95rem; line-height: 1.5;
+      color: var(--brown);
+      white-space: pre-wrap; word-wrap: break-word;
+      margin-bottom: 10px;
+    }
+    .chat-post-meta {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.78rem; color: var(--text-muted);
+    }
+    .chat-cheer-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      color: var(--brown);
+      font-family: inherit;
+      font-size: 0.78rem; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .chat-cheer-btn:hover { border-color: var(--brick); }
+    .chat-cheer-btn.cheered {
+      background: var(--brick); color: white; border-color: var(--brick);
+    }
+    .chat-cheer-btn .cheer-icon { font-size: 0.95em; }
+    .chat-time {
+      flex: 1;
+    }
+    .chat-delete-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(193,57,43,0.35);
+      background: transparent;
+      color: var(--red-accent);
+      font-family: inherit;
+      font-size: 0.74rem; font-weight: 600;
+      cursor: pointer;
+    }
+    .chat-delete-btn:hover { background: rgba(193,57,43,0.08); }
+    .chat-admin-badge {
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--red-accent);
+      text-transform: uppercase;
+    }
+
     /* === Shayprils Wrapped preview === */
     @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700;900&display=swap');
 
@@ -1681,6 +1838,43 @@
         </div>
       </div>
     </div>
+
+    <!-- CHAT TAB — anonymous Yik-Yak-style feed -->
+    <div id="tab-chat" class="tab-content">
+      <div class="chat-header">
+        <div class="chat-title">The Shays Whisper</div>
+        <div class="chat-tagline">Anonymous. Unhinged. We're all here.</div>
+      </div>
+
+      <div class="chat-composer card" id="chatComposer">
+        <textarea
+          id="chatInput"
+          placeholder="Whisper something… (240 chars, anonymous, no take-backs)"
+          maxlength="240"
+          rows="3"></textarea>
+        <div class="chat-composer-row">
+          <span id="chatCharCount" class="chat-char-count">0 / 240</span>
+          <button id="chatPostBtn" class="btn btn-primary" onclick="chatSubmit()">Post</button>
+        </div>
+        <div id="chatCooldown" class="chat-cooldown hidden"></div>
+      </div>
+
+      <div class="chat-guest-banner card hidden" id="chatGuestBanner">
+        <div style="font-size:0.88rem;color:var(--brown);text-align:center;line-height:1.4;">
+          You can read along, but you'll need to <strong>sign in</strong> to whisper or cheer.
+        </div>
+      </div>
+
+      <div class="chat-sort-toggles">
+        <button class="chat-sort-btn active" data-sort="hot" onclick="chatSetSort('hot')">🔥 Hot</button>
+        <button class="chat-sort-btn" data-sort="new" onclick="chatSetSort('new')">⏱ New</button>
+        <button class="chat-refresh-btn" onclick="chatRefresh()" title="Refresh">↻</button>
+      </div>
+
+      <div id="chatList">
+        <div class="empty-state">No whispers yet. Start the chaos.</div>
+      </div>
+    </div>
   </div>
 
   <!-- Bottom Nav -->
@@ -1702,6 +1896,9 @@
     </button>
     <button class="nav-btn" data-tab="rally">
       <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4l11 5V5z"/><path d="M15 8a4 4 0 0 1 0 8"/></svg></span>Rally
+    </button>
+    <button class="nav-btn" data-tab="chat">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.7 7.1L3 21l1.9-6.3A8 8 0 1 1 21 12z"/></svg></span>Chat
     </button>
     <button class="nav-btn" data-tab="admin" id="adminNavBtn" style="display:none"><span class="nav-icon">⚙</span>Admin</button>
   </div>
@@ -2015,6 +2212,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (tab === 'leaderboard') loadLeaderboard();
     if (tab === 'album') loadAlbum();
     if (tab === 'feed') loadFeed();
+    if (tab === 'chat') chatRefresh();
     if (tab === 'rally') { loadSubscriberCount(); loadLastAlert(); }
     if (tab === 'checkin') { checkTodayCheckin(); renderNotificationSettings(); qotdLoad(); }
   });
@@ -2872,6 +3070,191 @@ async function loadAlbum() {
     document.getElementById('albumContent').innerHTML = '<div class="empty-state">Could not load photos</div>';
   }
 }
+
+/* =============================== */
+// ANONYMOUS CHAT
+/* =============================== */
+
+let chatSort = 'hot';
+
+function chatSetSort(sort) {
+  chatSort = sort;
+  document.querySelectorAll('.chat-sort-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.sort === sort);
+  });
+  chatRefresh();
+}
+
+function chatTimeAgo(iso) {
+  const d = new Date(iso);
+  const sec = Math.max(1, Math.floor((Date.now() - d.getTime()) / 1000));
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h';
+  if (sec < 7 * 86400) return Math.floor(sec / 86400) + 'd';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+async function chatRefresh() {
+  const list = document.getElementById('chatList');
+  if (!list) return;
+  // Show guest banner / hide composer if not signed in
+  const composer = document.getElementById('chatComposer');
+  const guestBanner = document.getElementById('chatGuestBanner');
+  if (!currentUser) {
+    if (composer) composer.classList.add('hidden');
+    if (guestBanner) guestBanner.classList.remove('hidden');
+  } else {
+    if (composer) composer.classList.remove('hidden');
+    if (guestBanner) guestBanner.classList.add('hidden');
+  }
+  try {
+    const headers = {};
+    const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+    if (token) headers['x-auth-token'] = token;
+    const r = await fetch(API + '/api/chat/posts?sort=' + chatSort + (TEST_MODE ? '&test=1' : ''), { headers });
+    const data = await r.json();
+    if (!r.ok) {
+      list.innerHTML = '<div class="empty-state">Couldn\'t load whispers.</div>';
+      return;
+    }
+    const posts = data.posts || [];
+    if (posts.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="margin:0 16px;">No whispers yet. Start the chaos.</div>';
+      return;
+    }
+    const isAdmin = !!adminPin;
+    list.innerHTML = posts.map(p => chatPostHtml(p, isAdmin)).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="empty-state">Couldn\'t load whispers.</div>';
+  }
+}
+
+function chatPostHtml(p, isAdmin) {
+  const cheerCls = p.mine ? 'chat-cheer-btn cheered' : 'chat-cheer-btn';
+  const cheerLabel = p.cheers > 0 ? p.cheers : '';
+  let actions = '';
+  if (p.isAuthor) {
+    actions = '<button class="chat-delete-btn" onclick="chatDeletePost(\'' + p.id + '\', false)">Delete</button>';
+  } else if (isAdmin) {
+    actions = '<button class="chat-delete-btn" onclick="chatDeletePost(\'' + p.id + '\', true)" title="Admin delete"><span class="chat-admin-badge">admin</span> Delete</button>';
+  }
+  return (
+    '<div class="chat-post" data-post-id="' + p.id + '">' +
+      '<div class="chat-post-body">' + escapeHtml(p.body) + '</div>' +
+      '<div class="chat-post-meta">' +
+        '<button class="' + cheerCls + '" onclick="chatToggleCheer(\'' + p.id + '\')">' +
+          '<span class="cheer-icon">🍻</span>' +
+          '<span class="cheer-count">' + (cheerLabel || '0') + '</span>' +
+        '</button>' +
+        '<span class="chat-time">' + chatTimeAgo(p.created_at) + '</span>' +
+        actions +
+      '</div>' +
+    '</div>'
+  );
+}
+
+async function chatToggleCheer(postId) {
+  if (!currentUser) return showToast('Sign in to cheer', 'error');
+  const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+  // Optimistic UI
+  const card = document.querySelector('.chat-post[data-post-id="' + postId + '"]');
+  const btn = card?.querySelector('.chat-cheer-btn');
+  const countEl = btn?.querySelector('.cheer-count');
+  if (btn && countEl) {
+    const wasCheered = btn.classList.contains('cheered');
+    btn.classList.toggle('cheered');
+    const cur = parseInt(countEl.textContent, 10) || 0;
+    countEl.textContent = wasCheered ? Math.max(0, cur - 1) : cur + 1;
+  }
+  try {
+    const r = await fetch(API + '/api/chat/cheer/' + encodeURIComponent(postId) + (TEST_MODE ? '?test=1' : ''), {
+      method: 'POST',
+      headers: { 'x-auth-token': token },
+    });
+    const data = await r.json();
+    if (!r.ok) { showToast(data.error || 'Failed to cheer', 'error'); chatRefresh(); return; }
+    // Sync to server count in case our optimistic guess was off (e.g., race)
+    if (countEl) countEl.textContent = data.count || 0;
+    if (btn) btn.classList.toggle('cheered', !!data.cheered);
+  } catch (e) {
+    showToast('Failed to cheer', 'error');
+    chatRefresh();
+  }
+}
+
+async function chatSubmit() {
+  if (!currentUser) return showToast('Sign in to post', 'error');
+  const ta = document.getElementById('chatInput');
+  const body = (ta?.value || '').trim();
+  if (!body) return;
+  if (body.length > 240) return showToast('Too long — 240 chars max', 'error');
+  const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+  const btn = document.getElementById('chatPostBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch(API + '/api/chat/post' + (TEST_MODE ? '?test=1' : ''), {
+      method: 'POST',
+      headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      if (data.retryAfter) {
+        const cd = document.getElementById('chatCooldown');
+        if (cd) {
+          cd.textContent = 'Slow down — ' + data.retryAfter + 's before you can post again.';
+          cd.classList.remove('hidden');
+          setTimeout(() => cd.classList.add('hidden'), data.retryAfter * 1000);
+        }
+      }
+      showToast(data.error || 'Failed to post', 'error');
+      return;
+    }
+    ta.value = '';
+    chatUpdateCharCount();
+    chatRefresh();
+  } catch (e) {
+    showToast('Failed to post', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function chatDeletePost(postId, isAdminDelete) {
+  if (!confirm('Delete this whisper? Can\'t be undone from here.')) return;
+  const headers = {};
+  if (isAdminDelete) {
+    headers['x-admin-pin'] = adminPin;
+  } else {
+    const token = localStorage.getItem(TEST_MODE ? 'shayprils_token_test' : 'shayprils_token');
+    if (token) headers['x-auth-token'] = token;
+  }
+  try {
+    const r = await fetch(API + '/api/chat/post/' + encodeURIComponent(postId) + (TEST_MODE ? '?test=1' : ''), {
+      method: 'DELETE',
+      headers,
+    });
+    const data = await r.json();
+    if (!r.ok) return showToast(data.error || 'Failed to delete', 'error');
+    showToast('Deleted');
+    chatRefresh();
+  } catch (e) {
+    showToast('Failed to delete', 'error');
+  }
+}
+
+function chatUpdateCharCount() {
+  const ta = document.getElementById('chatInput');
+  const counter = document.getElementById('chatCharCount');
+  if (!ta || !counter) return;
+  const len = ta.value.length;
+  counter.textContent = len + ' / 240';
+  counter.classList.toggle('over', len > 240);
+}
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'chatInput') chatUpdateCharCount();
+});
 
 async function loadFeed() {
   try {
