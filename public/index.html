@@ -1915,8 +1915,11 @@ function showApp() {
 }
 
 // Decides whether to show the home-screen Wrapped button. Hidden by
-// default; only visible after admin hits "Send Wrapped" in the admin
+// default; only visible after admin hits "Launch Wrapped" in the admin
 // panel (which sets the wrapped_released_at flag and SMS-blasts everyone).
+//
+// Also handles the ?openWrap=1 deep-link from the launch SMS — if it's
+// in the URL, we auto-open the wrap once the data is ready.
 async function updateWrappedBtnVisibility() {
   const btn = document.getElementById('wrapMineBtn');
   if (!btn) return;
@@ -1926,9 +1929,16 @@ async function updateWrappedBtnVisibility() {
     const d = await r.json();
     if (d && d.released) {
       btn.classList.remove('hidden');
-      // Now that we know wrap is released, prefetch the data so opening
-      // is instant.
-      prefetchMyWrap();
+      // Prefetch the data so opening is instant.
+      await prefetchMyWrap();
+      // Deep-link: if the user landed via the launch SMS, auto-open it
+      // once and clear the param so future reloads don't re-fire.
+      if (new URLSearchParams(location.search).get('openWrap') === '1') {
+        wrapOpenMine();
+        const url = new URL(location.href);
+        url.searchParams.delete('openWrap');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+      }
     } else {
       btn.classList.add('hidden');
     }
