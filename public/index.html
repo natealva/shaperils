@@ -700,6 +700,26 @@
       min-width: 44px; line-height: 1;
       letter-spacing: -0.04em;
     }
+    .wrap-buddy-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex: 0 0 auto;
+      border: 2px solid rgba(139,43,59,0.25);
+      box-shadow: 0 2px 6px rgba(91,27,40,0.15);
+      background: rgba(139,43,59,0.10);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wrap-buddy-row .wrap-buddy-item:nth-child(1) .wrap-buddy-avatar {
+      width: 52px; height: 52px;
+      border: 2.5px solid var(--wrap-gold);
+      box-shadow: 0 4px 12px rgba(201,152,88,0.35);
+    }
+    .wrap-buddy-avatar-initials {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.4rem; font-weight: 800;
+      color: var(--wrap-wine);
+    }
     .wrap-buddy-row .wrap-buddy-item:nth-child(1) .wrap-buddy-rank {
       opacity: 1;
       background: linear-gradient(135deg, var(--wrap-wine), var(--wrap-gold));
@@ -4414,7 +4434,19 @@ function wrapBuildSlides(data) {
   // Slide 4: Crew
   if (p.topBuddies && p.topBuddies.length > 0) {
     var buddyRows = p.topBuddies.map(function(b, i) {
-      return '<div class="wrap-buddy-item"><div class="wrap-buddy-rank">#' + (i + 1) + '</div><div class="wrap-buddy-name">' + escapeHtml(b.name) + '</div></div>';
+      // Buddy selfie if available — falls back to a clean monogram circle
+      var avatarHtml;
+      if (b.selfie) {
+        avatarHtml = '<img class="wrap-buddy-avatar" src="' + b.selfie + '" alt="" loading="lazy" />';
+      } else {
+        var initial = (b.name || '?').charAt(0).toUpperCase();
+        avatarHtml = '<div class="wrap-buddy-avatar wrap-buddy-avatar-initials">' + escapeHtml(initial) + '</div>';
+      }
+      return '<div class="wrap-buddy-item">' +
+               '<div class="wrap-buddy-rank">#' + (i + 1) + '</div>' +
+               avatarHtml +
+               '<div class="wrap-buddy-name">' + escapeHtml(b.name) + '</div>' +
+             '</div>';
     }).join('');
     var whoCount = p.totalUniqueBuddies;
     slides.push({
