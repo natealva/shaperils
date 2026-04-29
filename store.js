@@ -123,6 +123,31 @@ async function initDb() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    // Anonymous Chat tab — Yik-Yak-style: posts are shown without author,
+    // server tracks user_id privately for moderation. `deleted` is a soft-
+    // delete flag so admin actions are recoverable.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chat_posts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        deleted BOOLEAN DEFAULT false,
+        deleted_at TIMESTAMPTZ,
+        deleted_by TEXT,
+        test_mode BOOLEAN DEFAULT false
+      )
+    `);
+    // Cheers (likes) on chat posts. Toggleable, one per user per post.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chat_cheers (
+        id TEXT PRIMARY KEY,
+        post_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(post_id, user_id)
+      )
+    `);
     console.log('Database tables initialized');
   } finally {
     client.release();
@@ -747,6 +772,124 @@ async function getRecentQotDs(limit = 30) {
   return r.rows;
 }
 
+// ─── Anonymous Chat ───────────────────────────────────────────────
+//
+// Posts are stored with the author's user_id (private — never exposed in
+// API responses), a body, and a soft-delete flag. Cheers are toggleable
+// likes — one row per (post, user). The frontend can request "hot" or
+// "new" sort; the SQL does the math server-side so the frontend just
+// renders the rows it gets.
+
+async function createChatPost(userId, body, testMode = false) {
+  const id = 'cp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+  await pool.query(
+    'INSERT INTO chat_posts (id, user_id, body, test_mode) VALUES ($1, $2, $3, $4)',
+    [id, userId, body, !!testMode]
+  );
+  return { id, user_id: userId, body, created_at: new Date().toISOString() };
+}
+
+// Returns [{ id, body, created_at, cheers, mine, isAuthor }] sorted by
+// the requested mode. `mine` is true when the calling user has cheered
+// this post; `isAuthor` is true when the calling user wrote it (so the UI
+// can show a delete button).
+//
+// Hot ranking (HN-style): score = (cheers + 1) / pow(hours_since + 2, 1.5)
+// Decay factor 1.5 means very fresh posts always ride high, but a strongly
+// cheered post stays on top for a while.
+async function getChatPosts({ sort = 'hot', limit = 200, viewerId = null, testMode = false } = {}) {
+  const orderClause = sort === 'new'
+    ? 'p.created_at DESC'
+    : `((COALESCE(c.cheer_count, 0) + 1)::float /
+        POWER(EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600.0 + 2, 1.5)) DESC,
+       p.created_at DESC`;
+  const r = await pool.query(
+    `SELECT p.id, p.body, p.created_at, p.user_id,
+            COALESCE(c.cheer_count, 0) AS cheers,
+            CASE WHEN m.user_id IS NULL THEN false ELSE true END AS mine
+       FROM chat_posts p
+       LEFT JOIN (
+         SELECT post_id, COUNT(*)::int AS cheer_count
+           FROM chat_cheers GROUP BY post_id
+       ) c ON c.post_id = p.id
+       LEFT JOIN chat_cheers m
+              ON m.post_id = p.id AND m.user_id = $1
+      WHERE p.deleted = false AND p.test_mode = $2
+      ORDER BY ${orderClause}
+      LIMIT $3`,
+    [viewerId || '', !!testMode, limit]
+  );
+  return r.rows.map(row => ({
+    id: row.id,
+    body: row.body,
+    created_at: row.created_at,
+    cheers: row.cheers,
+    mine: !!row.mine,
+    isAuthor: viewerId && row.user_id === viewerId,
+  }));
+}
+
+async function getChatPost(postId, testMode = false) {
+  const r = await pool.query(
+    'SELECT * FROM chat_posts WHERE id=$1 AND test_mode=$2',
+    [postId, !!testMode]
+  );
+  return r.rows[0] || null;
+}
+
+// Toggle a cheer. Returns { cheered: bool, count: int } so the client
+// can update the UI without a second round-trip.
+async function toggleChatCheer(postId, userId) {
+  const existing = await pool.query(
+    'SELECT id FROM chat_cheers WHERE post_id=$1 AND user_id=$2',
+    [postId, userId]
+  );
+  if (existing.rows.length) {
+    await pool.query(
+      'DELETE FROM chat_cheers WHERE post_id=$1 AND user_id=$2',
+      [postId, userId]
+    );
+  } else {
+    const id = 'cc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    await pool.query(
+      'INSERT INTO chat_cheers (id, post_id, user_id) VALUES ($1, $2, $3)',
+      [id, postId, userId]
+    );
+  }
+  const cnt = await pool.query(
+    'SELECT COUNT(*)::int AS c FROM chat_cheers WHERE post_id=$1',
+    [postId]
+  );
+  return { cheered: !existing.rows.length, count: cnt.rows[0].c };
+}
+
+// Soft-delete. `actorId` is who pulled the trigger — stored for the audit
+// trail. The SQL caller is expected to enforce who's allowed to delete
+// (own post, or admin).
+async function deleteChatPost(postId, actorId) {
+  await pool.query(
+    `UPDATE chat_posts
+        SET deleted = true,
+            deleted_at = NOW(),
+            deleted_by = $2
+      WHERE id = $1`,
+    [postId, actorId]
+  );
+}
+
+// How long ago did this user post last? Used for rate-limiting (1 post
+// per 30s by default). Returns seconds since their most recent post, or
+// Infinity if they've never posted.
+async function secondsSinceLastChatPost(userId) {
+  const r = await pool.query(
+    `SELECT EXTRACT(EPOCH FROM (NOW() - MAX(created_at)))::int AS sec
+       FROM chat_posts WHERE user_id = $1`,
+    [userId]
+  );
+  const sec = r.rows[0]?.sec;
+  return sec == null ? Infinity : sec;
+}
+
 module.exports = {
   getUser, getUserByToken, getAllUsers, createUser, updateUserSubscription,
   getSubscribedUsers, addCheckin, getCheckinsForUser, getCheckinsForDate,
@@ -760,5 +903,8 @@ module.exports = {
   toggleMessageCheers, getMessageCheers, getCheersForMessages,
   getQotD, upsertQotD, getRecentQotDs,
   getUserByPhone, toggleUserSubscribed,
+  // Anonymous Chat
+  createChatPost, getChatPosts, getChatPost, toggleChatCheer,
+  deleteChatPost, secondsSinceLastChatPost,
   SELFIES_DIR, TEST_SELFIES_DIR, initDb
 };
