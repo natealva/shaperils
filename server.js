@@ -1439,12 +1439,10 @@ app.get('/api/admin/wrap-launch-preview', adminAuth, async (req, res) => {
       store.getSubscribedUsers(false),
     ]);
     const activeUsers = allUsers.filter(u => u.active !== false);
-    const messageText =
-      "🍻 Your Shayprils Wrapped is here. Open the app — your 2026 month at Shays in screenshot-shareable form. https://shaperils.onrender.com";
     res.json({
       activeUserCount: activeUsers.length,
       subscriberCount: subscribers.length,
-      sampleMessage: messageText,
+      sampleMessage: DEFAULT_WRAP_SMS,
     });
   } catch (err) {
     console.error('[wrap-launch-preview]', err);
@@ -1452,9 +1450,18 @@ app.get('/api/admin/wrap-launch-preview', adminAuth, async (req, res) => {
   }
 });
 
+// Default SMS body for the launch blast. The admin UI shows this and
+// allows overriding via a `messageText` field on the release request.
+const DEFAULT_WRAP_SMS =
+  "🍻 Your Shayprils Wrapped is here. Open the app — your 2026 month at Shays in screenshot-shareable form. https://shaperils.onrender.com";
+
 // Admin trigger — flips the release flag and SMS-blasts everyone with the
 // link to come check out their Wrapped. Idempotent: subsequent calls just
 // return the existing release timestamp without re-blasting.
+//
+// Accepts an optional `messageText` body field to override the default
+// SMS copy at launch time. Trims and clamps to ~480 chars (3 SMS segments)
+// so admins can't accidentally send a multi-page text.
 app.post('/api/admin/wrap-release', adminAuth, async (req, res) => {
   try {
     const existing = await store.getSetting('wrapped_released_at');
@@ -1469,8 +1476,10 @@ app.post('/api/admin/wrap-release', adminAuth, async (req, res) => {
     const now = new Date().toISOString();
     await store.setSetting('wrapped_released_at', now);
 
-    const messageText =
-      "🍻 Your Shayprils Wrapped is here. Open the app — your 2026 month at Shays in screenshot-shareable form. https://shaperils.onrender.com";
+    const customText = (req.body && typeof req.body.messageText === 'string')
+      ? req.body.messageText.trim().slice(0, 480)
+      : '';
+    const messageText = customText || DEFAULT_WRAP_SMS;
     let blast = { sent: 0, total: 0 };
     try {
       blast = await sendToSubscribers('Shayprils', messageText);
@@ -1482,10 +1491,42 @@ app.post('/api/admin/wrap-release', adminAuth, async (req, res) => {
       ok: true,
       releasedAt: now,
       smsBlast: blast,
+      messageText,
     });
   } catch (err) {
     console.error('[wrap-release] failed:', err);
     res.status(500).json({ error: 'Failed to release Wrapped' });
+  }
+});
+
+// Admin — send the launch SMS to ONE specific phone number, for testing
+// the SMS body before doing the real blast. No flag change; nothing else
+// fires. Body: { phone: "+15551234567", messageText?: "optional custom" }
+app.post('/api/admin/wrap-test-sms', adminAuth, async (req, res) => {
+  try {
+    const phone = (req.body && req.body.phone || '').trim();
+    if (!phone) return res.status(400).json({ error: 'phone is required' });
+    if (!/^\+?\d{7,15}$/.test(phone.replace(/\s/g, ''))) {
+      return res.status(400).json({ error: 'phone must be E.164 (e.g. +15551234567)' });
+    }
+    const customText = (req.body && typeof req.body.messageText === 'string')
+      ? req.body.messageText.trim().slice(0, 480)
+      : '';
+    const messageText = customText || DEFAULT_WRAP_SMS;
+
+    if (!twilioClient) {
+      return res.json({ ok: true, simulated: true, messageText });
+    }
+    const fromNumber = process.env.TWILIO_TFN_FROM || process.env.TWILIO_PHONE_NUMBER;
+    await twilioClient.messages.create({
+      body: messageText,
+      from: fromNumber,
+      to: phone,
+    });
+    res.json({ ok: true, sent: 1, to: phone, messageText });
+  } catch (err) {
+    console.error('[wrap-test-sms]', err);
+    res.status(500).json({ error: 'Failed to send test SMS', detail: err.message });
   }
 });
 
