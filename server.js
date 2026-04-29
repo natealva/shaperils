@@ -1606,7 +1606,18 @@ async function buildWrapResponse(req, res) {
       }
     }
     const buddyList = Object.values(buddyByUser).sort((a, b) => b.count - a.count);
-    const topBuddies = buddyList.slice(0, 3).map(b => ({ name: b.name, count: b.count }));
+    // For each top buddy, find a selfie of theirs from April so the crew
+    // slide can show real faces (not just names). Falls back to null if
+    // they don't have any uploaded selfies.
+    const topBuddies = buddyList.slice(0, 3).map(b => {
+      const buddyCheckins = aprilCheckins.filter(c =>
+        c.user_id === b.user_id && c.selfie && c.selfie.startsWith('http')
+      );
+      const selfieUrl = buddyCheckins.length
+        ? cloudinaryThumb(buddyCheckins[0].selfie, 240)
+        : null;
+      return { name: b.name, count: b.count, selfie: selfieUrl };
+    });
     const totalUniqueBuddies = buddyList.length;
 
     // Rally count (broadcasts sent by this user's name)
