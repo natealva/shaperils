@@ -350,6 +350,99 @@
       padding: 0 16px 16px;
     }
 
+    /* === Launch popup — full-screen takeover when wrap drops =========== */
+    .wrap-launch-popup {
+      position: fixed; inset: 0; z-index: 100000;
+      background: linear-gradient(135deg, rgba(91,27,40,0.92) 0%, rgba(28,8,12,0.96) 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 28px;
+      animation: wrapLaunchFade 0.5s ease both;
+    }
+    .wrap-launch-popup.hidden { display: none; }
+    @keyframes wrapLaunchFade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .wrap-launch-card {
+      max-width: 380px; width: 100%;
+      background: #FAF0DE;
+      border-radius: 22px;
+      padding: 36px 28px 28px;
+      text-align: center;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      position: relative;
+      animation: wrapLaunchPop 0.7s 0.10s cubic-bezier(.18,.99,.31,1.05) both;
+    }
+    @keyframes wrapLaunchPop {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .wrap-launch-spark {
+      font-size: 1.6rem;
+      letter-spacing: 0.4em;
+      margin-bottom: 4px;
+      animation: wrapWiggle 2.5s ease-in-out infinite;
+    }
+    .wrap-launch-eyebrow {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.5em;
+      color: #8B2B3B;
+      padding-left: 0.5em;
+      margin-bottom: 8px;
+    }
+    .wrap-launch-title {
+      font-family: 'Great Vibes', cursive;
+      font-size: 4.2rem;
+      line-height: 1;
+      color: #8B2B3B;
+      margin: 0 0 4px;
+      padding-bottom: 0.06em;
+    }
+    .wrap-launch-year {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.5rem; font-weight: 900;
+      color: #5B1B28;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+    .wrap-launch-blurb {
+      font-size: 0.92rem; line-height: 1.5;
+      color: #3E2723;
+      opacity: 0.85;
+      margin: 0 0 22px;
+    }
+    .wrap-launch-cta {
+      display: block; width: 100%;
+      padding: 16px 22px;
+      background: linear-gradient(135deg, #8B2B3B 0%, #5B1B28 50%, #8B2B3B 100%);
+      background-size: 200% 200%;
+      animation: wrapBtnShimmer 5s ease-in-out infinite;
+      color: white;
+      border: none; border-radius: 14px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.08rem; font-weight: 800;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(91,27,40,0.4);
+    }
+    .wrap-launch-cta:hover, .wrap-launch-cta:active {
+      transform: translateY(-1px);
+    }
+    .wrap-launch-later {
+      display: block; width: 100%;
+      margin-top: 10px;
+      background: transparent; border: none;
+      color: #8B2B3B;
+      opacity: 0.7;
+      font-family: inherit; font-size: 0.82rem;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .wrap-launch-later:hover { opacity: 1; }
+
     /* "Your Shayprils Wrapped" CTA on the home screen — appears in the
        final week of April once each user has enough data to make a recap
        interesting. Cream + burgundy gradient with a soft shimmer. */
@@ -940,6 +1033,154 @@
       margin-top: 6px; opacity: 0.95;
     }
     .wrap-group-totals .gt-row strong { color: #F0DBC0; font-weight: 800; }
+
+    /* === Winners podium slide — top 3 + honorable mentions =============== */
+    .wrap-podium-eyebrow {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.42em;
+      color: var(--wrap-wine);
+      margin: 0 0 4px;
+      padding-left: 0.42em;
+      animation: wrapCollageRise 0.6s ease both;
+    }
+    .wrap-podium-title {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(2.6rem, 9vw, 3.4rem);
+      color: var(--wrap-wine);
+      line-height: 1;
+      margin: 0 0 18px;
+      animation: wrapCollageRise 0.7s 0.1s ease both;
+    }
+    .wrap-podium {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      grid-template-areas: "second first third";
+      align-items: end;
+      gap: 10px;
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto 22px;
+    }
+    .wrap-podium-spot {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+    }
+    .wrap-podium-spot[data-rank="1"] { grid-area: first;  animation: wrapPodiumIn 0.7s 1.05s cubic-bezier(.21,.97,.32,1) both; }
+    .wrap-podium-spot[data-rank="2"] { grid-area: second; animation: wrapPodiumIn 0.7s 0.55s cubic-bezier(.21,.97,.32,1) both; }
+    .wrap-podium-spot[data-rank="3"] { grid-area: third;  animation: wrapPodiumIn 0.7s 0.05s cubic-bezier(.21,.97,.32,1) both; }
+    @keyframes wrapPodiumIn {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .wrap-podium-photo {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--wrap-wine);
+      box-shadow: 0 4px 12px rgba(91,27,40,0.25);
+      background: rgba(139,43,59,0.10);
+    }
+    .wrap-podium-spot[data-rank="1"] .wrap-podium-photo {
+      width: 110px; height: 110px;
+      border: 4px solid var(--wrap-gold);
+      box-shadow: 0 8px 24px rgba(201,152,88,0.45), 0 0 0 6px rgba(201,152,88,0.15);
+    }
+    .wrap-podium-photo-placeholder {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 3px solid var(--wrap-wine);
+      background: rgba(139,43,59,0.10);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.8rem; font-weight: 800;
+      color: var(--wrap-wine);
+    }
+    .wrap-podium-spot[data-rank="1"] .wrap-podium-photo-placeholder {
+      width: 110px; height: 110px; font-size: 2.4rem;
+      border: 4px solid var(--wrap-gold);
+    }
+    .wrap-podium-medal {
+      font-size: 1.6rem; line-height: 1;
+      margin: 6px 0 2px;
+    }
+    .wrap-podium-spot[data-rank="1"] .wrap-podium-medal { font-size: 2.2rem; margin-top: 8px; }
+    .wrap-podium-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.95rem; font-weight: 800;
+      color: var(--wrap-ink);
+      line-height: 1.15;
+      max-width: 100%;
+      overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .wrap-podium-spot[data-rank="1"] .wrap-podium-name {
+      font-size: 1.15rem; color: var(--wrap-wine);
+    }
+    .wrap-podium-stat {
+      font-size: 0.74rem; line-height: 1.3;
+      color: var(--wrap-ink); opacity: 0.80;
+      margin-top: 2px;
+    }
+    .wrap-podium-spot[data-rank="1"] .wrap-podium-stat {
+      font-weight: 700; opacity: 1;
+    }
+    .wrap-podium-base {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(139,43,59,0.18) 0%, rgba(139,43,59,0.30) 100%);
+      border-radius: 8px 8px 0 0;
+      margin-top: 10px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 900;
+      color: var(--wrap-wine);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wrap-podium-spot[data-rank="1"] .wrap-podium-base { height: 60px; font-size: 1.6rem; background: linear-gradient(180deg, var(--wrap-gold) 0%, #B07F3E 100%); color: white; }
+    .wrap-podium-spot[data-rank="2"] .wrap-podium-base { height: 44px; font-size: 1.2rem; }
+    .wrap-podium-spot[data-rank="3"] .wrap-podium-base { height: 30px; font-size: 1rem; }
+
+    .wrap-honor {
+      width: 100%; max-width: 380px;
+      margin: 0 auto;
+      animation: wrapCollageRise 0.7s 1.6s ease both;
+    }
+    .wrap-honor-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.32em;
+      color: var(--wrap-wine);
+      opacity: 0.85;
+      text-align: center;
+      margin: 0 0 8px;
+      padding-left: 0.32em;
+    }
+    .wrap-honor-list {
+      display: flex; flex-direction: column;
+      gap: 4px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: var(--wrap-ink);
+    }
+    .wrap-honor-row {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 3px 6px;
+      border-bottom: 1px dashed rgba(139,43,59,0.20);
+    }
+    .wrap-honor-row:last-child { border-bottom: none; }
+    .wrap-honor-rank {
+      font-weight: 800; color: var(--wrap-wine);
+      min-width: 18px;
+    }
+    .wrap-honor-name {
+      flex: 1; font-weight: 700;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .wrap-honor-stat {
+      font-size: 0.74rem; opacity: 0.75;
+      flex-shrink: 0;
+    }
 
     /* === Peak Night slide — single hero photo, dark overlay, big stat === */
     .wrap-slide.wrap-bg-peaknight {
@@ -1907,6 +2148,21 @@
 <!-- Admin Section -->
 <div id="adminSection" class="tab-content" style="display:none"></div>
 
+<!-- Shayprils Wrapped launch popup — appears on home screen the first time
+     a user opens the app after admin has launched. Dismissable; a flag in
+     localStorage keeps it from re-popping each load. -->
+<div id="wrapLaunchPopup" class="wrap-launch-popup hidden">
+  <div class="wrap-launch-card">
+    <div class="wrap-launch-spark">✦ ✦ ✦</div>
+    <div class="wrap-launch-eyebrow">IT'S HERE</div>
+    <div class="wrap-launch-title">Shayprils</div>
+    <div class="wrap-launch-year">2026 WRAPPED</div>
+    <p class="wrap-launch-blurb">Your month at Shays — every check-in, every drink, every face. Tap below to see your Wrapped.</p>
+    <button class="wrap-launch-cta" onclick="wrapLaunchOpenFromPopup()">Click here for your 2026 Wrapped →</button>
+    <button class="wrap-launch-later" onclick="wrapLaunchPopupDismiss()">Maybe later</button>
+  </div>
+</div>
+
 <!-- Shayprils Wrapped Preview (full-screen overlay, admin-triggered) -->
 <div id="wrapOverlay" class="wrap-overlay hidden">
   <button class="wrap-close-btn" onclick="wrapClose()" aria-label="Close">&times;</button>
@@ -2126,6 +2382,10 @@ function showApp() {
 //
 // Also handles the ?openWrap=1 deep-link from the launch SMS — if it's
 // in the URL, we auto-open the wrap once the data is ready.
+//
+// First-time-after-launch UX: pops a big in-your-face "It's here" overlay
+// if the user hasn't dismissed it yet. They can either tap into the wrap
+// or "maybe later", and either action retires the popup for that device.
 async function updateWrappedBtnVisibility() {
   const btn = document.getElementById('wrapMineBtn');
   if (!btn) return;
@@ -2144,6 +2404,9 @@ async function updateWrappedBtnVisibility() {
         const url = new URL(location.href);
         url.searchParams.delete('openWrap');
         history.replaceState(null, '', url.pathname + url.search + url.hash);
+      } else {
+        // Maybe show the launch popup (first-load-after-launch only).
+        maybeShowWrapLaunchPopup(d.releasedAt);
       }
     } else {
       btn.classList.add('hidden');
@@ -2151,6 +2414,38 @@ async function updateWrappedBtnVisibility() {
   } catch (e) {
     btn.classList.add('hidden');
   }
+}
+
+// The launch popup is keyed on releasedAt — if you re-launch later (or
+// admin un/re-releases for testing), users who already dismissed will
+// see it again because the timestamp changed.
+function maybeShowWrapLaunchPopup(releasedAt) {
+  if (!releasedAt) return;
+  // Skip if user has wrap data with 0 days — nothing to show.
+  if (wrapMineCache && wrapMineCache.personal && wrapMineCache.personal.daysAttended === 0) return;
+  const seenKey = 'shayprils_wrap_launch_seen_' + releasedAt;
+  if (localStorage.getItem(seenKey)) return;
+  const popup = document.getElementById('wrapLaunchPopup');
+  if (!popup) return;
+  // Small delay so the rest of the home renders first — feels less jarring.
+  setTimeout(function() {
+    popup.classList.remove('hidden');
+    popup._seenKey = seenKey;
+  }, 700);
+}
+
+function wrapLaunchPopupDismiss() {
+  const popup = document.getElementById('wrapLaunchPopup');
+  if (!popup) return;
+  popup.classList.add('hidden');
+  if (popup._seenKey) {
+    try { localStorage.setItem(popup._seenKey, '1'); } catch (e) {}
+  }
+}
+
+function wrapLaunchOpenFromPopup() {
+  wrapLaunchPopupDismiss();
+  wrapOpenMine();
 }
 
 function enterGuestMode() {
@@ -4993,6 +5288,62 @@ function wrapBuildSlides(data) {
       groupTotalsHtml
   });
 
+  // ─── Winners podium ───────────────────────────────────────────────
+  // Top 3 animate in as 3rd → 2nd → 1st with a gold-trimmed center pedestal.
+  // Honorable mentions (ranks 6–10) appear below as a tidy list.
+  if (g.topPodium && g.topPodium.length > 0) {
+    function podiumSpotHtml(w) {
+      var photoHtml;
+      if (w.selfie) {
+        photoHtml = '<img class="wrap-podium-photo" src="' + w.selfie + '" alt="" loading="lazy" />';
+      } else {
+        var initial = (w.name || '?').charAt(0).toUpperCase();
+        photoHtml = '<div class="wrap-podium-photo-placeholder">' + escapeHtml(initial) + '</div>';
+      }
+      var medal = w.rank === 1 ? '🥇' : (w.rank === 2 ? '🥈' : '🥉');
+      var statBits = [];
+      statBits.push(w.daysAttended + ' day' + (w.daysAttended === 1 ? '' : 's'));
+      if (w.totalDrinks > 0) statBits.push(w.totalDrinks + ' drinks');
+      return '<div class="wrap-podium-spot" data-rank="' + w.rank + '">' +
+               photoHtml +
+               '<div class="wrap-podium-medal">' + medal + '</div>' +
+               '<div class="wrap-podium-name">' + escapeHtml(w.name) + '</div>' +
+               '<div class="wrap-podium-stat">' + statBits.join(' · ') + '</div>' +
+               '<div class="wrap-podium-base">' + w.rank + '</div>' +
+             '</div>';
+    }
+    // Build the row in DOM order so flex/grid can place them. The CSS
+    // animation delays handle the 3 → 2 → 1 reveal sequence.
+    var podiumRows = g.topPodium.slice().sort((a, b) => a.rank - b.rank).map(podiumSpotHtml).join('');
+    var honorHtml = '';
+    if (g.honorableMentions && g.honorableMentions.length > 0) {
+      honorHtml =
+        '<div class="wrap-honor">' +
+          '<div class="wrap-honor-title">HONORABLE MENTIONS</div>' +
+          '<div class="wrap-honor-list">' +
+            g.honorableMentions.map(function(h) {
+              var bits = [h.daysAttended + 'd'];
+              if (h.totalDrinks > 0) bits.push(h.totalDrinks + ' drinks');
+              return '<div class="wrap-honor-row">' +
+                       '<span class="wrap-honor-rank">' + h.rank + '.</span>' +
+                       '<span class="wrap-honor-name">' + escapeHtml(h.name) + '</span>' +
+                       '<span class="wrap-honor-stat">' + bits.join(' · ') + '</span>' +
+                     '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+    }
+    slides.push({
+      bg: 'wrap-bg-archetype',
+      floatsHtml: wrapFloats(['🏆', '🥇', '✨', '🥂', '🏆']),
+      html:
+        '<div class="wrap-podium-eyebrow">CONGRATS, CREW</div>' +
+        '<div class="wrap-podium-title">The 2026 Winners</div>' +
+        '<div class="wrap-podium">' + podiumRows + '</div>' +
+        honorHtml
+    });
+  }
+
   // ─── Final slides: full-bleed photo collage (personal + group) ───
   // Same overlay structure for both; only the photo source, headline, and
   // stat block differ. Personal photos are padded with group selfies if the
@@ -5072,7 +5423,15 @@ function wrapBuildSlides(data) {
   groupStats.push('<div><strong>' + g.totalCheckins + '</strong> total check-ins</div>');
   groupStats.push('<div><strong>' + g.totalParticipants + '</strong> friends pulled up</div>');
   if (g.totalGroupDrinks > 0) groupStats.push('<div><strong>' + g.totalGroupDrinks + '</strong> drinks logged</div>');
-  if (g.biggestNight) groupStats.push('<div>Biggest night: <strong>' + wrapFormatDate(g.biggestNight.date) + '</strong></div>');
+  if (g.biggestNight) {
+    var bn = g.biggestNight;
+    var bnLine = 'Biggest night: <strong>' + wrapFormatDate(bn.date) + '</strong>';
+    var detail = [];
+    if (bn.count) detail.push(bn.count + ' friends');
+    if (bn.drinks > 0) detail.push(bn.drinks + ' drinks');
+    if (detail.length) bnLine += ' — ' + detail.join(', ');
+    groupStats.push('<div>' + bnLine + '</div>');
+  }
 
   slides.push(collageSlide({
     photos: data.groupSelfies || [],
