@@ -1810,6 +1810,47 @@ async function buildWrapResponse(req, res) {
     }
     const totalGroupDrinks = participants.reduce((s, u) => s + u.totalDrinks, 0);
 
+    // Drinks + total check-ins on the biggest night (multiple check-ins per
+    // user count for total). Powers the group collage's biggest-night line.
+    let biggestNightDrinks = 0;
+    let biggestNightCheckins = 0;
+    if (biggestDate) {
+      for (const c of aprilCheckins) {
+        if (c.date === biggestDate) {
+          biggestNightCheckins += 1;
+          biggestNightDrinks += Number(c.drinks) || 0;
+        }
+      }
+    }
+
+    // ─── Podium / honorable mentions ───
+    // Sorted leaderboard by days attended, with totalDrinks as tiebreaker
+    // so a tie at 22 days doesn't shuffle randomly between page loads.
+    const ranked = participants.slice().sort((a, b) => {
+      if (b.daysAttended !== a.daysAttended) return b.daysAttended - a.daysAttended;
+      if (b.totalDrinks !== a.totalDrinks) return b.totalDrinks - a.totalDrinks;
+      if (b.longestStreak !== a.longestStreak) return b.longestStreak - a.longestStreak;
+      return a.name.localeCompare(b.name);
+    });
+    function makeWinner(u, rank) {
+      const cs = aprilCheckins.filter(c =>
+        c.user_id === u.user_id && c.selfie && c.selfie.startsWith('http')
+      );
+      const selfie = cs.length ? cloudinaryThumb(cs[0].selfie, 360) : null;
+      return {
+        rank,
+        name: u.name,
+        daysAttended: u.daysAttended,
+        totalDrinks: u.totalDrinks,
+        longestStreak: u.longestStreak,
+        selfie,
+      };
+    }
+    const topPodium = ranked.slice(0, 3).map((u, i) => makeWinner(u, i + 1));
+    // Honorable mentions: ranks 6–10. (Per Nate's spec — 4 and 5 sit between
+    // the podium and the honor roll, intentionally not surfaced.)
+    const honorableMentions = ranked.slice(5, 10).map((u, i) => makeWinner(u, i + 6));
+
     // ─── Selfie URLs for the collage slides ───
     // Strategy:
     //   - selfies: this user's photos, transformed to a slightly larger thumb
@@ -1896,11 +1937,18 @@ async function buildWrapResponse(req, res) {
         totalCheckins: aprilCheckins.length,
         totalParticipants: participants.length,
         totalGroupDrinks,
-        biggestNight: biggestDate ? { date: biggestDate, count: biggestUsers } : null,
+        biggestNight: biggestDate ? {
+          date: biggestDate,
+          count: biggestUsers,
+          totalCheckins: biggestNightCheckins,
+          drinks: biggestNightDrinks,
+        } : null,
         topStreaker: topStreaker ? { name: topStreaker.name, days: topStreaker.longestStreak } : null,
         topRegular: topRegular ? { name: topRegular.name, days: topRegular.daysAttended } : null,
         topDrinker: topDrinker && topDrinker.totalDrinks > 0 ? { name: topDrinker.name, drinks: topDrinker.totalDrinks } : null,
         topRallyist: topRallyist && topRallyist.rallyCount > 0 ? { name: topRallyist.name, rallies: topRallyist.rallyCount } : null,
+        topPodium,
+        honorableMentions,
       },
       selfies,
       groupSelfies,
