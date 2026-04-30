@@ -1847,9 +1847,8 @@ async function buildWrapResponse(req, res) {
       };
     }
     const topPodium = ranked.slice(0, 3).map((u, i) => makeWinner(u, i + 1));
-    // Honorable mentions: ranks 6–10. (Per Nate's spec — 4 and 5 sit between
-    // the podium and the honor roll, intentionally not surfaced.)
-    const honorableMentions = ranked.slice(5, 10).map((u, i) => makeWinner(u, i + 6));
+    // Honorable mentions: ranks 4–10.
+    const honorableMentions = ranked.slice(3, 10).map((u, i) => makeWinner(u, i + 4));
 
     // ─── Selfie URLs for the collage slides ───
     // Strategy:
