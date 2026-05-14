@@ -43,14 +43,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─── Twilio Client ──────────────────────────────────────────
+// === Twilio Kill-Switch ===
+// Manual toggle to fully disable outgoing SMS without removing the code.
+// When true: no SMS is ever sent (cost: $0), but in-app broadcasts still
+// post to the feed and the Twilio inbound webhook still responds (so
+// STOP / TOGGLE compliance keeps working). Flip back to false to re-enable.
+const SMS_KILL_SWITCH = true;
+
+// === Twilio Client ===
 let twilioClient = null;
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
+if (SMS_KILL_SWITCH) {
+  console.warn('SMS_KILL_SWITCH enabled - Twilio outbound disabled');
+} else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN &&
     process.env.TWILIO_ACCOUNT_SID !== 'your_account_sid_here') {
   twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   console.log('Twilio client initialized');
 } else {
-  console.warn('Twilio credentials not set — running in demo mode');
+  console.warn('Twilio credentials not set - running in demo mode');
 }
 
 // ─── Twilio A2P Campaign Gate ───────────────────────────────
@@ -133,6 +142,13 @@ async function sendToSubscribers(senderName, messageText, excludeUserId = null, 
   const recipients = excludeUserId
     ? subscribers.filter(s => s.id !== excludeUserId)
     : subscribers;
+
+  // SMS kill-switch -- still post to the in-app feed (social signal stays
+  // intact), just never send any text messages. Saves $$ when SMS is off.
+  if (SMS_KILL_SWITCH) {
+    await store.logMessage(senderName, 'broadcast', messageText, 0, testMode);
+    return { sent: 0, total: recipients.length, smsDisabled: true };
+  }
 
   // Always post to the in-app activity feed, even if there are no SMS
   // recipients. The rally blast is a social signal for everyone looking at
@@ -1516,8 +1532,8 @@ app.post('/api/admin/wrap-test-sms', adminAuth, async (req, res) => {
       : '';
     const messageText = customText || DEFAULT_WRAP_SMS;
 
-    if (!twilioClient) {
-      return res.json({ ok: true, simulated: true, messageText });
+    if (SMS_KILL_SWITCH || !twilioClient) {
+      return res.json({ ok: true, simulated: true, smsDisabled: !!SMS_KILL_SWITCH, messageText });
     }
     const fromNumber = process.env.TWILIO_TFN_FROM || process.env.TWILIO_PHONE_NUMBER;
     await twilioClient.messages.create({
